@@ -6,7 +6,9 @@ import {
   renderAll, renderHUD, renderActions, updateHorseCard,
   showCareFeedback, showToast, showMoneyPop, changePaddock, resetPaddockView,
   showDonateBanner, hideDonateBanner,
+  renderShopButton, openShopModal, closeShopModal, renderShopModal,
 } from './render.js';
+import { buyItem } from './shop.js';
 import { syncOnLoad, pushCloudSave } from './cloud.js';
 
 // Visit index.html?reset to discard the save during development.
@@ -54,6 +56,7 @@ syncOnLoad().then((adopted) => {
 function refreshUI() {
   renderHUD(state);
   renderActions(state);
+  renderShopButton(state);
 }
 
 function persist() {
@@ -104,6 +107,27 @@ document.getElementById('actions').addEventListener('click', (event) => {
 
 document.getElementById('nav-older').addEventListener('click', () => changePaddock(1, state));
 document.getElementById('nav-newer').addEventListener('click', () => changePaddock(-1, state));
+
+// ---- shop ----
+
+document.getElementById('shop-btn').addEventListener('click', () => openShopModal(state));
+document.getElementById('shop-close').addEventListener('click', closeShopModal);
+document.getElementById('shop-overlay').addEventListener('click', (event) => {
+  if (event.target.id === 'shop-overlay') closeShopModal();
+});
+document.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape' && !document.getElementById('shop-overlay').hidden) closeShopModal();
+});
+
+document.getElementById('shop-modal').addEventListener('click', (event) => {
+  const btn = event.target.closest('.shop-buy-btn');
+  if (!btn) return;
+  const { ok } = buyItem(btn.dataset.itemId, state);
+  if (!ok) return;
+  renderShopModal(state); // refresh owned/afford states within the open modal
+  renderAll(state); // new wardrobe/decor shows up on the horses/paddock immediately
+  persist();
+});
 
 horsesEl.addEventListener('keydown', (event) => {
   if (event.key !== 'Enter' && event.key !== ' ') return;

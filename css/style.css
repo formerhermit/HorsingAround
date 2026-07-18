@@ -75,6 +75,41 @@ body {
   color: #8a7d68;
 }
 
+.shop-btn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font: inherit;
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: #6b5c44;
+  background: #fffdf7;
+  border: 1px solid #e6dcc6;
+  border-radius: 999px;
+  padding: 0.4rem 0.9rem;
+  cursor: pointer;
+}
+
+.shop-btn:hover {
+  border-color: #d8c39a;
+}
+
+.shop-btn[hidden] {
+  display: none;
+}
+
+.shop-badge {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #6f8f4f;
+}
+
+.shop-badge[hidden] {
+  display: none;
+}
+
 /* ---------- paddock scene ---------- */
 
 main {
@@ -123,6 +158,17 @@ main {
   opacity: 0.9;
 }
 
+/* Paddock decor overlay: purchased scene items, drawn behind the horses
+   (DOM order, not z-index -- same trick as .fence). Scales uniformly with
+   the paddock's width so hand-placed item coordinates never distort. */
+.paddock-decor {
+  position: absolute;
+  left: 0;
+  top: 56px;
+  width: 100%;
+  height: auto;
+}
+
 .horses {
   position: relative;
   display: flex;
@@ -148,6 +194,19 @@ main {
   gap: 1rem;
   margin-top: 12px;
   flex: 1;
+}
+
+/* Ground props (trough, buckets, bales, balls) sit in the actual gap
+   between the two rows -- a real flex row, not a guessed pixel offset. */
+.ground-decor {
+  width: 100%;
+  margin: 6px 0;
+}
+
+.ground-decor svg {
+  display: block;
+  width: 100%;
+  height: auto;
 }
 
 /* background horses: keep their cards quiet — just name and bar */
@@ -477,6 +536,141 @@ main {
     flex-wrap: wrap;
     justify-content: center;
     text-align: center;
+  }
+}
+
+/* ---------- shop modal ---------- */
+
+.shop-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(61, 52, 40, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  z-index: 100;
+}
+
+.shop-overlay[hidden] {
+  display: none;
+}
+
+.shop-modal {
+  background: #faf6ee;
+  border: 1px solid #e6dcc6;
+  border-radius: 18px;
+  box-shadow: 0 8px 24px rgba(61, 52, 40, 0.2);
+  padding: 1.25rem 1.5rem 1.5rem;
+  width: 100%;
+  max-width: 480px;
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
+.shop-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.25rem;
+}
+
+.shop-header h2 {
+  margin: 0;
+  font-size: 1.3rem;
+}
+
+.shop-close {
+  font: inherit;
+  font-size: 1.3rem;
+  line-height: 1;
+  color: #8a7d68;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.3rem;
+}
+
+.shop-close:hover {
+  color: #3d3428;
+}
+
+.shop-intro {
+  font-size: 0.85rem;
+  color: #5c5344;
+  margin: 0 0 1rem;
+}
+
+.shop-section h3 {
+  font-size: 0.9rem;
+  color: #8a7d68;
+  margin: 1.1rem 0 0.5rem;
+}
+
+.shop-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+}
+
+.shop-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #fffdf7;
+  border: 1px solid #e6dcc6;
+  border-radius: 12px;
+  padding: 0.5rem 0.7rem;
+}
+
+.shop-item.owned {
+  background: #f2ede0;
+  border-color: #ddd0b0;
+}
+
+.shop-item-icon {
+  font-size: 1.2rem;
+}
+
+.shop-item-name {
+  flex: 1;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #3d3428;
+}
+
+.shop-item-owned {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #6f8f4f;
+}
+
+.shop-buy-btn {
+  font: inherit;
+  font-weight: 700;
+  font-size: 0.8rem;
+  color: #fffdf7;
+  background: #b0823f;
+  border: none;
+  border-radius: 999px;
+  padding: 0.3rem 0.7rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.shop-buy-btn:hover:not(:disabled) {
+  background: #9a7135;
+}
+
+.shop-buy-btn:disabled {
+  background: #dcd3bf;
+  color: #a89b83;
+  cursor: default;
+}
+
+@media (max-width: 480px) {
+  .shop-grid {
+    grid-template-columns: 1fr;
   }
 }
 

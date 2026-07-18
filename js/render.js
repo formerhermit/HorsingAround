@@ -2,11 +2,13 @@
 
 import { horseSVG, paletteFor, wellbeingLabel, wellbeingColor } from './horse.js';
 import { rescueCost, shareValue, TRAIT_REVEAL_AT } from './game.js';
+import { SHOP_ITEMS, isUnlocked, isOwned, isAffordable, hasNewAffordableItem } from './shop.js';
 
 export function renderAll(state) {
   renderHUD(state);
   renderActions(state);
   renderPaddock(state);
+  renderShopButton(state);
 }
 
 export function renderHUD(state) {
@@ -59,6 +61,57 @@ export function renderActions(state) {
     rescue.querySelector('.action-cost').textContent = `€${cost}`;
     rescue.disabled = state.coins < cost;
   }
+}
+
+const ITEM_EMOJI = {
+  scarf: '🧣', 'ear-flower': '🌸', boots: '👢', 'leg-wraps': '🩹',
+  'forelock-bow': '🎀', 'saddle-blanket': '🟦',
+  'flower-garland': '🌼', bunting: '🎏', trough: '💧',
+  'flower-buckets': '🪣', 'hay-bales': '🌾', 'play-balls': '🎾', butterflies: '🦋',
+};
+
+/** Shop button: visible once funds exist, badged when something new is worth a look. */
+export function renderShopButton(state) {
+  const btn = document.getElementById('shop-btn');
+  btn.hidden = !state.unlocks.moneyUI;
+  document.getElementById('shop-badge').hidden = !hasNewAffordableItem(state);
+}
+
+function shopItemCard(item, state) {
+  const owned = isOwned(item, state);
+  const afford = isAffordable(item, state);
+  const card = document.createElement('div');
+  card.className = `shop-item${owned ? ' owned' : ''}`;
+  card.innerHTML = `
+    <span class="shop-item-icon">${ITEM_EMOJI[item.id] ?? '✨'}</span>
+    <span class="shop-item-name">${item.name}</span>
+    ${owned
+      ? '<span class="shop-item-owned">Owned</span>'
+      : `<button class="shop-buy-btn" data-item-id="${item.id}" ${afford ? '' : 'disabled'}>€${item.price}</button>`}
+  `;
+  return card;
+}
+
+/** Populate the shop grids. Locked items (not enough horses rescued yet) are absent entirely. */
+export function renderShopModal(state) {
+  const wardrobeGrid = document.getElementById('shop-grid-wardrobe');
+  const decorGrid = document.getElementById('shop-grid-decor');
+  wardrobeGrid.replaceChildren();
+  decorGrid.replaceChildren();
+  for (const item of SHOP_ITEMS) {
+    if (!isUnlocked(item, state)) continue;
+    const grid = item.category === 'wardrobe' ? wardrobeGrid : decorGrid;
+    grid.append(shopItemCard(item, state));
+  }
+}
+
+export function openShopModal(state) {
+  renderShopModal(state);
+  document.getElementById('shop-overlay').hidden = false;
+}
+
+export function closeShopModal() {
+  document.getElementById('shop-overlay').hidden = true;
 }
 
 /** Floating "+€x" over the share button. */
@@ -119,6 +172,7 @@ function renderPaddock(state) {
   const chunks = paddockChunks(state);
   currentPaddock = Math.max(0, Math.min(currentPaddock, chunks.length - 1));
   const chunk = chunks[currentPaddock]; // newest-first within the paddock
+  const wardrobe = state.shop.owned;
 
   // oldest→newest left to right, newest (largest) rightmost
   const front = chunk.slice(0, FRONT_COUNT).reverse();
@@ -126,16 +180,18 @@ function renderPaddock(state) {
 
   const backRow = document.createElement('div');
   backRow.className = 'horses-back';
-  back.forEach((h) => backRow.append(horseCard(h, BACK_SCALE, true)));
+  back.forEach((h) => backRow.append(horseCard(h, BACK_SCALE, true, wardrobe)));
 
   const frontRow = document.createElement('div');
   frontRow.className = 'horses-front';
   front.forEach((h, i) => {
     const rank = front.length - 1 - i; // 0 = newest
-    frontRow.append(horseCard(h, FRONT_SCALES[rank] ?? BACK_SCALE, false));
+    frontRow.append(horseCard(h, FRONT_SCALES[rank] ?? BACK_SCALE, false, wardrobe));
   });
 
-  document.getElementById('horses').replaceChildren(backRow, frontRow);
+  const ground = groundDecorRow(state);
+  document.getElementById('horses').replaceChildren(...[backRow, ground, frontRow].filter(Boolean));
+  renderPaddockDecor(state);
 
   // edge arrows + label, only when there is more than one paddock
   const older = document.getElementById('nav-older');
@@ -149,7 +205,68 @@ function renderPaddock(state) {
     : `Paddock ${currentPaddock + 1} of ${chunks.length} · old friends`;
 }
 
-function horseCard(horse, scale = 1, isBack = false) {
+// Fence-line decor: stays on the fixed overlay near the actual fence rails.
+// Positioned in a 900x130 space so items never collide even all owned at once.
+const FENCE_DECOR_MARKUP = {
+  'flower-garland': `
+    <circle cx="40" cy="24" r="4" fill="#F2A6C6"/><circle cx="52" cy="23" r="4" fill="#F5D949"/><circle cx="64" cy="24" r="4" fill="#8FC0E8"/>
+    <circle cx="220" cy="24" r="4" fill="#F2A6C6"/><circle cx="232" cy="23" r="4" fill="#F5D949"/><circle cx="244" cy="24" r="4" fill="#8FC0E8"/>
+    <circle cx="400" cy="24" r="4" fill="#F2A6C6"/><circle cx="412" cy="23" r="4" fill="#F5D949"/><circle cx="424" cy="24" r="4" fill="#8FC0E8"/>
+    <circle cx="580" cy="24" r="4" fill="#F2A6C6"/><circle cx="592" cy="23" r="4" fill="#F5D949"/><circle cx="604" cy="24" r="4" fill="#8FC0E8"/>
+    <circle cx="760" cy="24" r="4" fill="#F2A6C6"/><circle cx="772" cy="23" r="4" fill="#F5D949"/><circle cx="784" cy="24" r="4" fill="#8FC0E8"/>`,
+  bunting: `
+    <path d="M30,27 Q95,50 160,27" fill="none" stroke="#a3763a" stroke-width="1.5"/>
+    <path d="M55,35 L65,35 L60,48 Z" fill="#E8917A"/><path d="M78,40 L88,40 L83,53 Z" fill="#8FC0E8"/><path d="M101,42 L111,42 L106,55 Z" fill="#F5D949"/><path d="M124,38 L134,38 L129,51 Z" fill="#A6D8A0"/>
+    <path d="M390,27 Q455,50 520,27" fill="none" stroke="#a3763a" stroke-width="1.5"/>
+    <path d="M415,35 L425,35 L420,48 Z" fill="#E8917A"/><path d="M438,40 L448,40 L443,53 Z" fill="#8FC0E8"/><path d="M461,42 L471,42 L466,55 Z" fill="#F5D949"/><path d="M484,38 L494,38 L489,51 Z" fill="#A6D8A0"/>
+    <path d="M660,27 Q725,50 790,27" fill="none" stroke="#a3763a" stroke-width="1.5"/>
+    <path d="M685,35 L695,35 L690,48 Z" fill="#E8917A"/><path d="M708,40 L718,40 L713,53 Z" fill="#8FC0E8"/><path d="M731,42 L741,42 L736,55 Z" fill="#F5D949"/><path d="M754,38 L764,38 L759,51 Z" fill="#A6D8A0"/>`,
+};
+
+/** Draw whatever fence-line decor the player has bought. */
+function renderPaddockDecor(state) {
+  const layer = document.getElementById('paddock-decor');
+  const markup = state.shop.owned.map((id) => FENCE_DECOR_MARKUP[id] ?? '').join('');
+  layer.innerHTML = markup;
+}
+
+// Ground props: rendered as a real flex row between the back and front horse
+// rows, not an absolute overlay -- so they always land in the visible gap
+// between the two rows regardless of herd size or viewport width.
+const GROUND_DECOR_MARKUP = {
+  trough: `
+    <path d="M140,25 L200,25 L192,50 L148,50 Z" fill="#8A97A0"/>
+    <path d="M144,25 L196,25 L196,30 L144,30 Z" fill="#B9D4E8"/>
+    <path d="M140,25 L148,50" stroke="#6B7680" stroke-width="1.5"/><path d="M200,25 L192,50" stroke="#6B7680" stroke-width="1.5"/>`,
+  'flower-buckets': `
+    <path d="M45,30 L67,30 L63,55 L49,55 Z" fill="#B0823F"/>
+    <circle cx="47" cy="27" r="3.5" fill="#F2A6C6"/><circle cx="52" cy="25" r="3.5" fill="#F5D949"/><circle cx="57" cy="26" r="3.5" fill="#8FC0E8"/><circle cx="62" cy="27" r="3.5" fill="#F2A6C6"/><circle cx="50" cy="29.5" r="3.5" fill="#A6D8A0"/><circle cx="59" cy="29.5" r="3.5" fill="#F5D949"/><circle cx="54.5" cy="22.5" r="3.5" fill="#8FC0E8"/>
+    <path d="M735,32 L757,32 L753,57 L739,57 Z" fill="#B0823F"/>
+    <circle cx="737" cy="29" r="3.5" fill="#8FC0E8"/><circle cx="742" cy="27" r="3.5" fill="#F2A6C6"/><circle cx="747" cy="28" r="3.5" fill="#F5D949"/><circle cx="752" cy="29" r="3.5" fill="#8FC0E8"/><circle cx="740" cy="31.5" r="3.5" fill="#F5D949"/><circle cx="749" cy="31.5" r="3.5" fill="#A6D8A0"/><circle cx="744.5" cy="24.5" r="3.5" fill="#F2A6C6"/>`,
+  'hay-bales': `
+    <rect x="390" y="18" width="34" height="24" rx="2" fill="#D9B25C"/><rect x="390" y="18" width="34" height="24" rx="2" fill="none" stroke="#B4903E" stroke-width="2"/><line x1="390" y1="26" x2="424" y2="26" stroke="#B4903E" stroke-width="1.5"/><line x1="390" y1="34" x2="424" y2="34" stroke="#B4903E" stroke-width="1.5"/>
+    <rect x="414" y="30" width="30" height="18" rx="2" fill="#D9B25C"/><rect x="414" y="30" width="30" height="18" rx="2" fill="none" stroke="#B4903E" stroke-width="2"/><line x1="414" y1="36" x2="444" y2="36" stroke="#B4903E" stroke-width="1.5"/><line x1="414" y1="42" x2="444" y2="42" stroke="#B4903E" stroke-width="1.5"/>`,
+  'play-balls': `
+    <circle cx="570" cy="35" r="13" fill="#E85D75"/><circle cx="566" cy="30" r="3.5" fill="#F5A8B8"/>
+    <circle cx="610" cy="40" r="11" fill="#4FA8D8"/><circle cx="606" cy="36" r="3" fill="#A8D8ED"/>
+    <circle cx="640" cy="34" r="12" fill="#F5C242"/><circle cx="636" cy="29" r="3.2" fill="#FADD8C"/>`,
+  butterflies: `
+    <g transform="translate(260,15)"><path d="M0,0 Q-7,-7 -7,0 Q-7,7 0,0" fill="#F2A6C6"/><path d="M0,0 Q7,-7 7,0 Q7,7 0,0" fill="#F5D949"/></g>
+    <g transform="translate(490,20) scale(0.85)"><path d="M0,0 Q-7,-7 -7,0 Q-7,7 0,0" fill="#8FC0E8"/><path d="M0,0 Q7,-7 7,0 Q7,7 0,0" fill="#A6D8A0"/></g>
+    <g transform="translate(680,12) scale(0.75)"><path d="M0,0 Q-7,-7 -7,0 Q-7,7 0,0" fill="#F2A6C6"/><path d="M0,0 Q7,-7 7,0 Q7,7 0,0" fill="#F5D949"/></g>`,
+};
+
+/** Build the ground-props row, or null if nothing ground-level is owned. */
+function groundDecorRow(state) {
+  const markup = state.shop.owned.map((id) => GROUND_DECOR_MARKUP[id] ?? '').join('');
+  if (!markup) return null;
+  const row = document.createElement('div');
+  row.className = 'ground-decor';
+  row.innerHTML = `<svg viewBox="0 0 900 62" preserveAspectRatio="xMidYMid meet" aria-hidden="true">${markup}</svg>`;
+  return row;
+}
+
+function horseCard(horse, scale = 1, isBack = false, wardrobe = []) {
   const card = document.createElement('div');
   card.className = isBack ? 'horse is-back' : 'horse';
   card.style.width = `min(${Math.round(BASE_WIDTH * scale)}px, 70vw)`;
@@ -162,7 +279,7 @@ function horseCard(horse, scale = 1, isBack = false) {
   // trait/sponsor lines are always in the layout (visibility-toggled by the
   // "shown" class) so revealing them never changes card height mid-game
   card.innerHTML = `
-    ${horseSVG(horse)}
+    ${horseSVG(horse, wardrobe)}
     <p class="horse-name">${horse.name}</p>
     <p class="horse-condition">${wellbeingLabel(horse.wellbeing)}</p>
     <p class="horse-trait${showTrait ? ' shown' : ''}">${showTrait ? horse.trait : ''}</p>

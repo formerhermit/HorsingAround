@@ -45,9 +45,34 @@ export function paletteFor(horse) {
   return out;
 }
 
-/** Cosmetic layers (halter, scarf, flower...) — phase 3. */
-function accessoryMarkup(horse) {
-  return '';
+/**
+ * Wardrobe layers, drawn on top of the base shape in purchase order.
+ * `wardrobe` is the list of owned shop item ids (see shop.js) — global,
+ * not per-horse, so every horse wears whatever's been bought so far.
+ */
+function accessoryMarkup(wardrobe = []) {
+  let markup = '';
+  // Saddle blanket first so its front edge tucks behind the scarf, not
+  // over it -- the scarf wraps the neck in front of where the blanket sits.
+  if (wardrobe.includes('saddle-blanket')) {
+    markup += `<path d="M45,75 Q55,60 85,58 Q115,60 124,76 Q126,86 118,90 Q85,80 52,90 Q44,86 45,75 Z" fill="#5F8FBF"/><path d="M45,75 Q55,60 85,58 Q115,60 124,76" fill="none" stroke="#3F6C99" stroke-width="2"/>`;
+  }
+  if (wardrobe.includes('scarf')) {
+    markup += `<path d="M113,60 Q130,72 148,56 Q151,68 146,77 Q126,88 109,71 Q107,65 113,60 Z" fill="#D9534F"/><path d="M117,74 Q110,90 117,103 Q126,92 121,76 Z" fill="#C0392B"/>`;
+  }
+  if (wardrobe.includes('ear-flower')) {
+    markup += `<g transform="translate(133,26)"><circle cy="-4" r="3" fill="#F2A6C6"/><circle cx="4" cy="-1" r="3" fill="#F2A6C6"/><circle cx="2" cy="4" r="3" fill="#F2A6C6"/><circle cx="-3" cy="3" r="3" fill="#F2A6C6"/><circle cx="-4" cy="-2" r="3" fill="#F2A6C6"/><circle r="2" fill="#F5D949"/></g>`;
+  }
+  if (wardrobe.includes('boots')) {
+    markup += `<rect x="48" y="139" width="15" height="13" rx="4" fill="#4A7FB5"/><rect x="66" y="139" width="15" height="13" rx="4" fill="#4A7FB5"/><rect x="96" y="139" width="15" height="13" rx="4" fill="#4A7FB5"/><rect x="114" y="139" width="15" height="13" rx="4" fill="#4A7FB5"/>`;
+  }
+  if (wardrobe.includes('leg-wraps')) {
+    markup += `<rect x="48" y="119" width="15" height="11" rx="3" fill="#E091A8"/><rect x="66" y="123" width="15" height="10" rx="3" fill="#E091A8"/><rect x="96" y="123" width="15" height="10" rx="3" fill="#E091A8"/><rect x="114" y="119" width="15" height="11" rx="3" fill="#E091A8"/>`;
+  }
+  if (wardrobe.includes('forelock-bow')) {
+    markup += `<g transform="translate(145,7) rotate(-8)"><path d="M-7,0 Q-2,-6 0,0 Q-2,6 -7,0 Z" fill="#F0529B"/><path d="M7,0 Q2,-6 0,0 Q2,6 7,0 Z" fill="#F0529B"/><circle r="2.2" fill="#C93478"/></g>`;
+  }
+  return markup;
 }
 
 /**
@@ -55,7 +80,7 @@ function accessoryMarkup(horse) {
  * Geometry is the validated reference shape: mane on the crest edge,
  * short forelock.
  */
-export function horseSVG(horse) {
+export function horseSVG(horse, wardrobe = []) {
   const c = paletteFor(horse);
   const shine = (Math.min(Math.max(horse.wellbeing / 100, 0), 1)).toFixed(2);
   return `
@@ -86,7 +111,7 @@ export function horseSVG(horse) {
   <circle cx="156" cy="26" r="3" fill="#3A2A18"/>
   <circle data-part="shine" cx="157" cy="25" r="1" fill="#FFFFFF" opacity="${shine}"/>
   <path d="M178,51 q-5,3 -10,1" fill="none" stroke="#4A3A28" stroke-width="1.6" stroke-linecap="round"/>
-  <g class="accessories">${accessoryMarkup(horse)}</g>
+  <g class="accessories">${accessoryMarkup(wardrobe)}</g>
 </svg>`;
 }
 

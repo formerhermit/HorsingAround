@@ -23,6 +23,9 @@
         <span class="chip-value" id="hud-supporters">0</span>
         <span class="chip-label">supporters</span>
       </div>
+      <button class="shop-btn" id="shop-btn" hidden aria-haspopup="dialog" aria-controls="shop-modal">
+        🛍️ Shop<span class="shop-badge" id="shop-badge" hidden></span>
+      </button>
     </div>
   </header>
 
@@ -30,6 +33,7 @@
     <section class="paddock" id="paddock">
       <div class="toasts" id="toasts" role="status" aria-live="polite"></div>
       <div class="fence" aria-hidden="true"></div>
+      <svg class="paddock-decor" id="paddock-decor" viewBox="0 0 900 130" preserveAspectRatio="xMidYMin meet" aria-hidden="true"></svg>
       <button class="paddock-nav nav-older" id="nav-older" aria-label="Visit the older horses" hidden>‹</button>
       <button class="paddock-nav nav-newer" id="nav-newer" aria-label="Back towards the newest arrivals" hidden>›</button>
       <div class="paddock-label" id="paddock-label" hidden></div>
@@ -49,6 +53,27 @@
       <button class="donate-dismiss" id="donate-dismiss" aria-label="Dismiss">×</button>
     </aside>
   </main>
+
+  <div class="shop-overlay" id="shop-overlay" hidden>
+    <div class="shop-modal" id="shop-modal" role="dialog" aria-modal="true" aria-labelledby="shop-title">
+      <div class="shop-header">
+        <h2 id="shop-title">Shop</h2>
+        <button class="shop-close" id="shop-close" aria-label="Close shop">×</button>
+      </div>
+      <p class="shop-intro">
+        Wardrobe items dress every horse and help them attract more supporters.
+        Decor items dress the paddock and make every shared update worth more.
+      </p>
+      <div class="shop-section">
+        <h3>Wardrobe</h3>
+        <div class="shop-grid" id="shop-grid-wardrobe"></div>
+      </div>
+      <div class="shop-section">
+        <h3>Paddock decor</h3>
+        <div class="shop-grid" id="shop-grid-decor"></div>
+      </div>
+    </div>
+  </div>
 
   <footer class="credit">
     Inspired by <a href="https://www.horserescuespain.org/" target="_blank" rel="noopener"><strong>ARCH</strong>

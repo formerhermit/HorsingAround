@@ -56,6 +56,11 @@ export function defaultState() {
     // this map; the upgrade definitions themselves live in game data, not state.
     upgrades: {},
 
+    // permanent wardrobe/decor purchases; item definitions live in shop.js
+    shop: {
+      owned: [],
+    },
+
     // one-way feature gates flipped by progression
     unlocks: {
       moneyUI: false,    // flips when Biscuit first reaches "content"
@@ -129,9 +134,9 @@ function loadSave() {
 }
 
 /**
- * Heal known data problems in existing saves. Currently: duplicate horse ids
- * (an old build derived ids from Date.now(), which collides for rescues in
- * the same millisecond and cross-wires clicks and card updates).
+ * Heal known data problems in existing saves: duplicate horse ids (an old
+ * build derived ids from Date.now(), which collides for rescues in the same
+ * millisecond), and missing fields added after a save was first created.
  */
 function repair(save) {
   const seen = new Set();
@@ -141,6 +146,7 @@ function repair(save) {
     }
     seen.add(horse.id);
   }
+  save.shop ??= { owned: [] };
   return save;
 }
 

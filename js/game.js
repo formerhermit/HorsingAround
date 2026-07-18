@@ -6,6 +6,7 @@
 
 import { gameState, createHorse } from './state.js';
 import { PALETTE_KEYS } from './horse.js';
+import { attractionBonus, shareMultiplier } from './shop.js';
 
 // ---- tuning ----
 export const CARE_GAIN = 2;          // wellbeing per care click
@@ -27,12 +28,14 @@ const LONELY_DELAY = 8;              // seconds after first donation before the 
 // so each recovered horse permanently speeds up supporter growth — and a
 // fresh scruffy arrival adds nothing, but no longer drags the rest down.
 function attractionPerSecond() {
-  return gameState.horses.reduce((sum, h) => {
+  const fromHorses = gameState.horses.reduce((sum, h) => {
     if (h.wellbeing >= 95) return sum + 0.025;
     if (h.wellbeing >= 70) return sum + 0.015;
     if (h.wellbeing >= 50) return sum + 0.006;
     return sum;
   }, 0);
+  // Dressed-up horses turn heads too — wardrobe items add a flat bonus.
+  return fromHorses + attractionBonus(gameState);
 }
 
 const SUPPORTER_NAMES = [
@@ -161,9 +164,10 @@ export function careFor(horse) {
   return { gain: CARE_GAIN, message: randomFrom(CARE_MESSAGES), events };
 }
 
-/** € one shared update brings in at current supporter count. */
+/** € one shared update brings in at current supporter count. A nicer-looking
+ *  paddock makes every post perform better — decor items multiply this. */
 export function shareValue(state = gameState) {
-  return SHARE_BASE + SHARE_PER_SUPPORTER * state.supporters;
+  return (SHARE_BASE + SHARE_PER_SUPPORTER * state.supporters) * shareMultiplier(state);
 }
 
 /**
