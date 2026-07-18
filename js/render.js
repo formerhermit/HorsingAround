@@ -396,13 +396,14 @@ export function hideDonateBanner() {
 /**
  * Narrative toast at the top of the paddock (first donation, new
  * supporters, arrivals). Auto-dismisses via its CSS animation.
+ * Pass variant: 'intro' for the one-time colourful "how to play" nudge.
  */
-export function showToast(message) {
+export function showToast(message, variant = null) {
   const container = document.getElementById('toasts');
   // never stack more than 3 — the horses are the point, not the messages
   while (container.children.length >= 3) container.firstChild.remove();
   const toast = document.createElement('div');
-  toast.className = 'toast';
+  toast.className = variant ? `toast toast-${variant}` : 'toast';
   toast.textContent = message;
   container.appendChild(toast);
   toast.addEventListener('animationend', () => toast.remove());

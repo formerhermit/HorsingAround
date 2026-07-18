@@ -148,12 +148,17 @@ main {
      rows) from the very first horse, so the scene never visibly grows as
      more horses arrive -- measured at 504px for a full paddock. */
   min-height: 512px;
-  background: linear-gradient(
-    #d9ecf8 0px,
-    #e8f2e0 118px,
-    #a9c37f 120px,
-    #93b36c 100%
-  );
+  /* Split into separate layers instead of one gradient with stops 2px apart --
+     Safari's rasterizer has known edge cases with near-zero-distance colour
+     stops inside a single gradient, especially under border-radius clipping,
+     causing an intermittent blank paint on reload. Three simple flat/2-colour
+     layers avoid the tight-stop pattern entirely. */
+  background:
+    linear-gradient(#a9c37f, #93b36c) 0 120px / 100% calc(100% - 120px) no-repeat,
+    linear-gradient(#e8f2e0, #e8f2e0) 0 118px / 100% 2px no-repeat,
+    #d9ecf8;
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
 }
 
 /* fence: posts + two rails, drawn with layered gradients so it tiles at any width */
@@ -241,7 +246,17 @@ main {
   text-align: center;
   cursor: pointer;
   user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
   -webkit-tap-highlight-color: transparent;
+}
+
+/* Safari sometimes still treats the inline SVG as draggable/selectable
+   content even with user-select:none on the parent -- cover it directly. */
+.horse svg {
+  -webkit-user-select: none;
+  -webkit-user-drag: none;
+  user-select: none;
 }
 
 .horse:focus-visible {
@@ -751,6 +766,16 @@ main {
   max-width: 100%;
   text-align: center;
   animation: toast-life 5s ease forwards;
+}
+
+/* The one-time "tap Biscuit" nudge — warmer and bolder than a normal toast
+   so a brand-new player's eye actually lands on it. */
+.toast-intro {
+  background: #ffe8a3;
+  border: 2px solid #f0c955;
+  color: #7a5a0f;
+  font-weight: 700;
+  animation: toast-life 8s ease forwards;
 }
 
 @keyframes toast-life {

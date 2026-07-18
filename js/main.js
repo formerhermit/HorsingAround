@@ -22,6 +22,16 @@ const lastPlayedAt = state.savedAt;
 renderAll(state);
 save(); // persist immediately so the save shape exists from first load
 
+// ---- intro nudge ----
+// Brand-new players don't know clicking a horse does anything. One cute,
+// colourful, one-time toast fixes that -- never shown again after.
+
+if (!state.milestones.introToastShown) {
+  state.milestones.introToastShown = true;
+  setTimeout(() => showToast('👋 Tap Biscuit to give him some care!', 'intro'), 1200);
+  save();
+}
+
 // ---- real-donation banner ----
 // One quiet story moment (after the first sponsorship, when the game has
 // just taught what steady support means), plus a reprise whenever a player
