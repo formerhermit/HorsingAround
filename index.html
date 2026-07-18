@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Horsing Around</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="title-block">
+      <h1>Horsing Around</h1>
+      <p class="tagline">a little rescue paddock</p>
+    </div>
+    <div class="hud" id="hud">
+      <div class="chip" id="chip-funds" title="Money donated by supporters — spent on hay, vet care and rescues">
+        <span class="chip-icon">€</span>
+        <span class="chip-value" id="hud-coins">0</span>
+        <span class="chip-label">funds</span>
+      </div>
+      <div class="chip" id="chip-supporters" title="People who follow and support the rescue">
+        <span class="chip-icon">♥</span>
+        <span class="chip-value" id="hud-supporters">0</span>
+        <span class="chip-label">supporters</span>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="paddock" id="paddock">
+      <div class="toasts" id="toasts" role="status" aria-live="polite"></div>
+      <div class="fence" aria-hidden="true"></div>
+      <button class="paddock-nav nav-older" id="nav-older" aria-label="Visit the older horses" hidden>‹</button>
+      <button class="paddock-nav nav-newer" id="nav-newer" aria-label="Back towards the newest arrivals" hidden>›</button>
+      <div class="paddock-label" id="paddock-label" hidden></div>
+      <div class="horses" id="horses">
+        <!-- horse cards rendered by js/render.js -->
+      </div>
+    </section>
+    <section class="actions" id="actions" hidden></section>
+  </main>
+
+  <footer class="credit">
+    Inspired by <a href="https://www.horserescuespain.org/" target="_blank" rel="noopener"><strong>ARCH</strong>
+    — the Andalucian Rescue Centre for Horses</a>, a volunteer-run equine rescue charity near Málaga, Spain.
+  </footer>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
