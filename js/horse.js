@@ -58,6 +58,16 @@ function costumeMarkup(wardrobe = []) {
     m += `<path d="M412,84 L435,74 Q441,84 435,94 Z" fill="#F7CD3A"/>`;
     m += `<rect x="406" y="77" width="12" height="14" rx="4" fill="#E0A81E"/>`;
   }
+  if (wardrobe.includes('boots')) {
+    // a boot over each lower leg + hoof: body, cuff band, darker sole
+    const legs = [[94, 128], [149, 183], [281, 316], [331, 366]];
+    for (const [x0, x1] of legs) {
+      const w = x1 - x0;
+      m += `<rect x="${x0 - 3}" y="414" width="${w + 6}" height="52" rx="8" fill="#3F7FD6"/>`;
+      m += `<rect x="${x0 - 5}" y="409" width="${w + 10}" height="12" rx="5" fill="#5B97E8"/>`;
+      m += `<rect x="${x0 - 3}" y="457" width="${w + 6}" height="10" rx="4" fill="#2C5AA0"/>`;
+    }
+  }
   return m;
 }
 
