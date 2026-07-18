@@ -8,7 +8,7 @@ import {
   showDonateBanner, hideDonateBanner,
   renderShopButton, openShopModal, closeShopModal, renderShopModal,
 } from './render.js';
-import { buyItem } from './shop.js';
+import { buyDecor, buyWardrobe } from './shop.js';
 import { syncOnLoad, pushCloudSave } from './cloud.js';
 import './audio.js';
 
@@ -123,7 +123,11 @@ document.addEventListener('keydown', (event) => {
 document.getElementById('shop-modal').addEventListener('click', (event) => {
   const btn = event.target.closest('.shop-buy-btn');
   if (!btn) return;
-  const { ok } = buyItem(btn.dataset.itemId, state);
+  const itemId = btn.dataset.itemId;
+  const picker = btn.closest('.shop-item').querySelector('.shop-horse-picker');
+  const { ok } = picker
+    ? buyWardrobe(itemId, picker.value, state)
+    : buyDecor(itemId, state);
   if (!ok) return;
   renderShopModal(state); // refresh owned/afford states within the open modal
   renderAll(state); // new wardrobe/decor shows up on the horses/paddock immediately

@@ -1,9 +1,11 @@
 // shop.js — purchasable wardrobe & paddock decor items.
 //
-// Wardrobe items dress every horse (global, not per-horse) and boost passive
-// supporter attraction. Decor items dress the paddock scene and boost the
-// value of "share an update". Both are permanent once bought. Unlocking is
-// gated by herd size; locked items don't exist in the shop UI at all.
+// Decor items are global: one purchase dresses the whole paddock scene and
+// boosts the value of "share an update". Wardrobe items are per-horse: each
+// purchase dresses one chosen horse and boosts that horse's contribution to
+// passive supporter attraction — buy again to dress another horse. Both are
+// permanent once bought. Unlocking is gated by herd size; locked items
+// don't exist in the shop UI at all.
 
 export const SHOP_ITEMS = [
   // tier 1 — available as soon as the shop itself unlocks
@@ -32,32 +34,63 @@ export function isUnlocked(item, state) {
   return state.horses.length >= item.requiresHorses;
 }
 
-export function isOwned(item, state) {
-  return state.shop.owned.includes(item.id);
-}
-
 export function isAffordable(item, state) {
   return state.coins >= item.price;
 }
 
-export function canBuy(item, state) {
-  return isUnlocked(item, state) && !isOwned(item, state) && isAffordable(item, state);
+// ---- decor: global, one of each ----
+
+export function isDecorOwned(item, state) {
+  return state.shop.owned.includes(item.id);
 }
 
-/** Spend funds and add the item to the permanent collection. */
-export function buyItem(itemId, state) {
-  const item = SHOP_ITEMS.find((i) => i.id === itemId);
-  if (!item || !canBuy(item, state)) return { ok: false, item: null };
+export function canBuyDecor(item, state) {
+  return item.category === 'decor' && isUnlocked(item, state) && !isDecorOwned(item, state) && isAffordable(item, state);
+}
+
+export function buyDecor(itemId, state) {
+  const item = SHOP_ITEMS.find((i) => i.id === itemId && i.category === 'decor');
+  if (!item || !canBuyDecor(item, state)) return { ok: false, item: null };
   state.coins -= item.price;
   state.shop.owned.push(item.id);
   return { ok: true, item };
 }
 
-/** Flat bonus added to the per-second supporter attraction chance. */
+// ---- wardrobe: per-horse ----
+
+export function horseHasItem(horse, itemId) {
+  return horse.wardrobe.includes(itemId);
+}
+
+/** Horses that don't already own this wardrobe item — who it can still be bought for. */
+export function eligibleHorses(item, state) {
+  return state.horses.filter((h) => !horseHasItem(h, item.id));
+}
+
+export function canBuyWardrobeFor(item, horse, state) {
+  return item.category === 'wardrobe' && isUnlocked(item, state) && isAffordable(item, state) && !horseHasItem(horse, item.id);
+}
+
+export function buyWardrobe(itemId, horseId, state) {
+  const item = SHOP_ITEMS.find((i) => i.id === itemId && i.category === 'wardrobe');
+  const horse = state.horses.find((h) => h.id === horseId);
+  if (!item || !horse || !canBuyWardrobeFor(item, horse, state)) return { ok: false, item: null };
+  state.coins -= item.price;
+  horse.wardrobe.push(item.id);
+  return { ok: true, item, horse };
+}
+
+// ---- economy hooks ----
+
+/** Flat bonus added to the per-second supporter attraction chance, summed
+ *  across every horse's own wardrobe. */
 export function attractionBonus(state) {
-  return SHOP_ITEMS
-    .filter((i) => i.category === 'wardrobe' && state.shop.owned.includes(i.id))
-    .reduce((sum, i) => sum + i.attractionBonus, 0);
+  return state.horses.reduce((sum, horse) => {
+    const horseBonus = SHOP_ITEMS
+      .filter((i) => i.category === 'wardrobe' && horse.wardrobe.includes(i.id))
+      .reduce((s, i) => s + i.attractionBonus, 0);
+    return sum + horseBonus;
+  }, 0);
 }
 
 /** Multiplier applied to "share an update" income. */
@@ -68,7 +101,11 @@ export function shareMultiplier(state) {
   return 1 + bonus;
 }
 
-/** Whether anything in the shop is newly worth a look — unlocked, unowned, affordable. */
+/** Whether anything in the shop is newly worth a look — unlocked, affordable,
+ *  and (for wardrobe) at least one horse who doesn't have it yet. */
 export function hasNewAffordableItem(state) {
-  return SHOP_ITEMS.some((i) => canBuy(i, state));
+  return SHOP_ITEMS.some((i) => {
+    if (i.category === 'decor') return canBuyDecor(i, state);
+    return isUnlocked(i, state) && isAffordable(i, state) && eligibleHorses(i, state).length > 0;
+  });
 }

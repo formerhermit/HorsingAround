@@ -2,7 +2,10 @@
 
 import { horseSVG, paletteFor, wellbeingLabel, wellbeingColor } from './horse.js';
 import { rescueCost, shareValue, TRAIT_REVEAL_AT } from './game.js';
-import { SHOP_ITEMS, isUnlocked, isOwned, isAffordable, hasNewAffordableItem } from './shop.js';
+import {
+  SHOP_ITEMS, isUnlocked, isAffordable, hasNewAffordableItem,
+  isDecorOwned, eligibleHorses,
+} from './shop.js';
 
 export function renderAll(state) {
   renderHUD(state);
@@ -77,8 +80,8 @@ export function renderShopButton(state) {
   document.getElementById('shop-badge').hidden = !hasNewAffordableItem(state);
 }
 
-function shopItemCard(item, state) {
-  const owned = isOwned(item, state);
+function decorItemCard(item, state) {
+  const owned = isDecorOwned(item, state);
   const afford = isAffordable(item, state);
   const card = document.createElement('div');
   card.className = `shop-item${owned ? ' owned' : ''}`;
@@ -92,6 +95,40 @@ function shopItemCard(item, state) {
   return card;
 }
 
+/** Wardrobe cards get a horse picker instead of a single owned/buy state,
+ *  since the same item can be bought again and again for different horses. */
+function wardrobeItemCard(item, state) {
+  const eligible = eligibleHorses(item, state);
+  const card = document.createElement('div');
+
+  if (eligible.length === 0) {
+    card.className = 'shop-item shop-item-wardrobe owned';
+    card.innerHTML = `
+      <div class="shop-item-top">
+        <span class="shop-item-icon">${ITEM_EMOJI[item.id] ?? '✨'}</span>
+        <span class="shop-item-name">${item.name}</span>
+      </div>
+      <span class="shop-item-owned">Every horse has this</span>
+    `;
+    return card;
+  }
+
+  const afford = isAffordable(item, state);
+  const options = eligible.map((h) => `<option value="${h.id}">${h.name}</option>`).join('');
+  card.className = 'shop-item shop-item-wardrobe';
+  card.innerHTML = `
+    <div class="shop-item-top">
+      <span class="shop-item-icon">${ITEM_EMOJI[item.id] ?? '✨'}</span>
+      <span class="shop-item-name">${item.name}</span>
+    </div>
+    <div class="shop-item-buy-row">
+      <select class="shop-horse-picker" data-item-id="${item.id}" aria-label="Horse to dress in ${item.name}">${options}</select>
+      <button class="shop-buy-btn" data-item-id="${item.id}" ${afford ? '' : 'disabled'}>€${item.price}</button>
+    </div>
+  `;
+  return card;
+}
+
 /** Populate the shop grids. Locked items (not enough horses rescued yet) are absent entirely. */
 export function renderShopModal(state) {
   const wardrobeGrid = document.getElementById('shop-grid-wardrobe');
@@ -100,8 +137,11 @@ export function renderShopModal(state) {
   decorGrid.replaceChildren();
   for (const item of SHOP_ITEMS) {
     if (!isUnlocked(item, state)) continue;
-    const grid = item.category === 'wardrobe' ? wardrobeGrid : decorGrid;
-    grid.append(shopItemCard(item, state));
+    if (item.category === 'wardrobe') {
+      wardrobeGrid.append(wardrobeItemCard(item, state));
+    } else {
+      decorGrid.append(decorItemCard(item, state));
+    }
   }
 }
 
@@ -172,7 +212,6 @@ function renderPaddock(state) {
   const chunks = paddockChunks(state);
   currentPaddock = Math.max(0, Math.min(currentPaddock, chunks.length - 1));
   const chunk = chunks[currentPaddock]; // newest-first within the paddock
-  const wardrobe = state.shop.owned;
 
   // oldest→newest left to right, newest (largest) rightmost
   const front = chunk.slice(0, FRONT_COUNT).reverse();
@@ -180,13 +219,13 @@ function renderPaddock(state) {
 
   const backRow = document.createElement('div');
   backRow.className = 'horses-back';
-  back.forEach((h) => backRow.append(horseCard(h, BACK_SCALE, true, wardrobe)));
+  back.forEach((h) => backRow.append(horseCard(h, BACK_SCALE, true, h.wardrobe)));
 
   const frontRow = document.createElement('div');
   frontRow.className = 'horses-front';
   front.forEach((h, i) => {
     const rank = front.length - 1 - i; // 0 = newest
-    frontRow.append(horseCard(h, FRONT_SCALES[rank] ?? BACK_SCALE, false, wardrobe));
+    frontRow.append(horseCard(h, FRONT_SCALES[rank] ?? BACK_SCALE, false, h.wardrobe));
   });
 
   const ground = groundDecorRow(state);

@@ -685,6 +685,37 @@ main {
   cursor: default;
 }
 
+/* Wardrobe cards buy for one chosen horse, so they need a second row for
+   the horse picker rather than the single owned/buy state decor cards use. */
+.shop-item-wardrobe {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.4rem;
+}
+
+.shop-item-top {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.shop-item-buy-row {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.shop-horse-picker {
+  flex: 1;
+  min-width: 0;
+  font: inherit;
+  font-size: 0.78rem;
+  color: #3d3428;
+  background: #fffdf7;
+  border: 1px solid #e6dcc6;
+  border-radius: 8px;
+  padding: 0.25rem 0.4rem;
+}
+
 @media (max-width: 480px) {
   .shop-grid {
     grid-template-columns: 1fr;

@@ -1,8 +1,12 @@
 // state.js — single source of truth for everything the game knows,
 // plus localStorage persistence.
 
+import { SHOP_ITEMS } from './shop.js';
+
 export const SAVE_KEY = 'horsing-around:save';
 export const SAVE_VERSION = 1;
+
+const WARDROBE_IDS = new Set(SHOP_ITEMS.filter((i) => i.category === 'wardrobe').map((i) => i.id));
 
 // Live game state. Call initState() before using it.
 export let gameState = null;
@@ -19,6 +23,7 @@ export function createHorse({
   trait = null,        // personality trait id, assigned from phase 2 on
   real = null,         // null for fictional horses; for real ARCH horses:
                        // { photo, story, donateUrl } — rendered as a polaroid card
+  wardrobe = [],       // shop.js wardrobe item ids bought for this horse specifically
 }) {
   return {
     id,
@@ -30,6 +35,7 @@ export function createHorse({
     cosmetics: [],     // cosmetic ids, e.g. 'halter-red', 'flower' (phase 3)
     sponsor: null,     // supporter name once the horse reaches thriving; permanent income
     real,
+    wardrobe,
     arrivedAt: Date.now(),
   };
 }
@@ -145,8 +151,23 @@ function repair(save) {
       horse.id = `${horse.id}-r${Math.random().toString(36).slice(2, 6)}`;
     }
     seen.add(horse.id);
+    horse.wardrobe ??= [];
   }
   save.shop ??= { owned: [] };
+
+  // Wardrobe used to be a global purchase that dressed every horse at once.
+  // Anyone who bought one under that system keeps it -- migrate those ids
+  // onto every horse that already exists, then drop them from the global list.
+  const staleWardrobeIds = save.shop.owned.filter((id) => WARDROBE_IDS.has(id));
+  if (staleWardrobeIds.length) {
+    for (const horse of save.horses ?? []) {
+      for (const id of staleWardrobeIds) {
+        if (!horse.wardrobe.includes(id)) horse.wardrobe.push(id);
+      }
+    }
+    save.shop.owned = save.shop.owned.filter((id) => !WARDROBE_IDS.has(id));
+  }
+
   return save;
 }
 
