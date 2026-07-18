@@ -60,9 +60,9 @@ function costumeMarkup(wardrobe = []) {
   }
   if (wardrobe.includes('saddle-blanket')) {
     // a cloth draped over the back behind the withers, hanging down the barrel
-    m += `<path d="M195,200 Q250,189 298,195 Q308,199 306,238 Q304,272 297,282 Q248,289 199,283 Q190,273 188,238 Q186,199 195,200 Z" fill="#3F7FD6"/>`;
+    m += `<path d="M175,200 Q230,189 278,195 Q288,199 286,238 Q284,272 277,282 Q228,289 179,283 Q170,273 168,238 Q166,199 175,200 Z" fill="#3F7FD6"/>`;
     // light trim stripe near the hem
-    m += `<path d="M193,266 Q248,277 302,266" fill="none" stroke="#BFDBF7" stroke-width="7" stroke-linecap="round"/>`;
+    m += `<path d="M173,266 Q228,277 282,266" fill="none" stroke="#BFDBF7" stroke-width="7" stroke-linecap="round"/>`;
   }
   if (wardrobe.includes('boots')) {
     // a boot over each lower leg + hoof: body, cuff band, darker sole
@@ -72,6 +72,15 @@ function costumeMarkup(wardrobe = []) {
       m += `<rect x="${x0 - 3}" y="414" width="${w + 6}" height="52" rx="8" fill="#3F7FD6"/>`;
       m += `<rect x="${x0 - 5}" y="409" width="${w + 10}" height="12" rx="5" fill="#5B97E8"/>`;
       m += `<rect x="${x0 - 3}" y="457" width="${w + 6}" height="10" rx="4" fill="#2C5AA0"/>`;
+    }
+  }
+  if (wardrobe.includes('leg-wraps')) {
+    // white bandage wrapped around each lower leg (cannon), above the hoof
+    const legs = [[94, 128], [149, 183], [281, 316], [331, 366]];
+    for (const [x0, x1] of legs) {
+      const w = x1 - x0;
+      m += `<rect x="${x0 - 2}" y="388" width="${w + 4}" height="52" rx="6" fill="#F7F7F4"/>`;
+      for (const wy of [400, 413, 426]) m += `<line x1="${x0 - 1}" y1="${wy}" x2="${x1 + 1}" y2="${wy + 4}" stroke="#D5DBE0" stroke-width="2.5"/>`;
     }
   }
   return m;
