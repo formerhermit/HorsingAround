@@ -38,7 +38,13 @@ export function horseImageSrc(horse) {
  * now so horses render bare until the overlay is dialled in.
  */
 function costumeMarkup(wardrobe = []) {
-  return '';
+  let m = '';
+  if (wardrobe.includes('scarf')) {
+    // collar wrapping the lower neck + a small tail hanging at the throat
+    m += `<path d="M348,185 Q380,201 412,177 Q419,196 410,214 Q380,228 352,218 Q343,201 348,185 Z" fill="#D9534F"/>`;
+    m += `<path d="M398,209 Q392,241 400,265 Q411,245 407,210 Z" fill="#C0392B"/>`;
+  }
+  return m;
 }
 
 /**
