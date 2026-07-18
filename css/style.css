@@ -42,6 +42,7 @@ body {
 
 .hud {
   display: flex;
+  align-items: center;
   gap: 0.6rem;
 }
 
@@ -565,10 +566,22 @@ main {
 }
 
 @media (max-width: 560px) {
+  /* Stack on narrow screens: button above the text (rather than squeezed
+     to its right), dismiss tucked into the corner. */
   .donate-banner {
-    flex-wrap: wrap;
-    justify-content: center;
+    flex-direction: column;
+    align-items: center;
     text-align: center;
+    gap: 0.6rem;
+    position: relative;
+  }
+  .donate-link { order: 1; }
+  .donate-text { order: 2; }
+  .donate-dismiss {
+    position: absolute;
+    top: 0.25rem;
+    right: 0.4rem;
+    padding: 0.2rem;
   }
 }
 
