@@ -24,6 +24,8 @@ export function createHorse({
   real = null,         // null for fictional horses; for real ARCH horses:
                        // { photo, story, donateUrl } — rendered as a polaroid card
   wardrobe = [],       // shop.js wardrobe item ids bought for this horse specifically
+  facing = Math.random() < 0.5 ? 'left' : 'right', // fixed at arrival, purely visual
+  sizeJitter = 0.92 + Math.random() * 0.16,        // 0.92–1.08, breaks up row uniformity
 }) {
   return {
     id,
@@ -36,6 +38,8 @@ export function createHorse({
     sponsor: null,     // supporter name once the horse reaches thriving; permanent income
     real,
     wardrobe,
+    facing,
+    sizeJitter,
     arrivedAt: Date.now(),
   };
 }
@@ -153,6 +157,8 @@ function repair(save) {
     }
     seen.add(horse.id);
     horse.wardrobe ??= [];
+    horse.facing ??= Math.random() < 0.5 ? 'left' : 'right';
+    horse.sizeJitter ??= 0.92 + Math.random() * 0.16;
   }
   save.shop ??= { owned: [] };
   // Existing saves belong to players who've already figured out how to

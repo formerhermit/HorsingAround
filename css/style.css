@@ -145,9 +145,10 @@ main {
   overflow: hidden;
   border: 1px solid #e0d6bf;
   /* Reserved tall enough for a fully-populated paddock (3 front + 5 back
-     rows) from the very first horse, so the scene never visibly grows as
-     more horses arrive -- measured at 504px for a full paddock. */
-  min-height: 512px;
+     rows, plus the ground-decor row) from the very first horse, so the
+     scene never visibly grows as more horses or decor arrive -- measured
+     at 557px for a full paddock with ground decor. */
+  min-height: 564px;
   /* Split into separate layers instead of one gradient with stops 2px apart --
      Safari's rasterizer has known edge cases with near-zero-distance colour
      stops inside a single gradient, especially under border-radius clipping,
@@ -195,7 +196,7 @@ main {
   position: relative;
   display: flex;
   flex-direction: column;
-  min-height: 512px;
+  min-height: 564px;
   /* top padding places the background line just past the fence, on the grass */
   padding: 48px 1.25rem 1.75rem;
 }

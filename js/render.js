@@ -228,8 +228,7 @@ function renderPaddock(state) {
     frontRow.append(horseCard(h, FRONT_SCALES[rank] ?? BACK_SCALE, false, h.wardrobe));
   });
 
-  const ground = groundDecorRow(state);
-  document.getElementById('horses').replaceChildren(...[backRow, ground, frontRow].filter(Boolean));
+  document.getElementById('horses').replaceChildren(backRow, groundDecorRow(state), frontRow);
   renderPaddockDecor(state);
 
   // edge arrows + label, only when there is more than one paddock
@@ -255,11 +254,11 @@ const FENCE_DECOR_MARKUP = {
     <circle cx="760" cy="24" r="4" fill="#F2A6C6"/><circle cx="772" cy="23" r="4" fill="#F5D949"/><circle cx="784" cy="24" r="4" fill="#8FC0E8"/>`,
   bunting: `
     <path d="M30,27 Q95,50 160,27" fill="none" stroke="#a3763a" stroke-width="1.5"/>
-    <path d="M55,35 L65,35 L60,48 Z" fill="#E8917A"/><path d="M78,40 L88,40 L83,53 Z" fill="#8FC0E8"/><path d="M101,42 L111,42 L106,55 Z" fill="#F5D949"/><path d="M124,38 L134,38 L129,51 Z" fill="#A6D8A0"/>
+    <path d="M51,34.4 L61,34.4 L56,47.4 Z" fill="#E8917A"/><path d="M77,38 L87,38 L82,51 Z" fill="#8FC0E8"/><path d="M103,38 L113,38 L108,51 Z" fill="#F5D949"/><path d="M129,34.4 L139,34.4 L134,47.4 Z" fill="#A6D8A0"/>
     <path d="M390,27 Q455,50 520,27" fill="none" stroke="#a3763a" stroke-width="1.5"/>
-    <path d="M415,35 L425,35 L420,48 Z" fill="#E8917A"/><path d="M438,40 L448,40 L443,53 Z" fill="#8FC0E8"/><path d="M461,42 L471,42 L466,55 Z" fill="#F5D949"/><path d="M484,38 L494,38 L489,51 Z" fill="#A6D8A0"/>
+    <path d="M411,34.4 L421,34.4 L416,47.4 Z" fill="#E8917A"/><path d="M437,38 L447,38 L442,51 Z" fill="#8FC0E8"/><path d="M463,38 L473,38 L468,51 Z" fill="#F5D949"/><path d="M489,34.4 L499,34.4 L494,47.4 Z" fill="#A6D8A0"/>
     <path d="M660,27 Q725,50 790,27" fill="none" stroke="#a3763a" stroke-width="1.5"/>
-    <path d="M685,35 L695,35 L690,48 Z" fill="#E8917A"/><path d="M708,40 L718,40 L713,53 Z" fill="#8FC0E8"/><path d="M731,42 L741,42 L736,55 Z" fill="#F5D949"/><path d="M754,38 L764,38 L759,51 Z" fill="#A6D8A0"/>`,
+    <path d="M681,34.4 L691,34.4 L686,47.4 Z" fill="#E8917A"/><path d="M707,38 L717,38 L712,51 Z" fill="#8FC0E8"/><path d="M733,38 L743,38 L738,51 Z" fill="#F5D949"/><path d="M759,34.4 L769,34.4 L764,47.4 Z" fill="#A6D8A0"/>`,
 };
 
 /** Draw whatever fence-line decor the player has bought. */
@@ -295,10 +294,11 @@ const GROUND_DECOR_MARKUP = {
     <g transform="translate(680,12) scale(0.75)"><path d="M0,0 Q-7,-7 -7,0 Q-7,7 0,0" fill="#F2A6C6"/><path d="M0,0 Q7,-7 7,0 Q7,7 0,0" fill="#F5D949"/></g>`,
 };
 
-/** Build the ground-props row, or null if nothing ground-level is owned. */
+/** Build the ground-props row. Always present (even empty) so its height is
+ *  reserved from the very first render -- buying the first ground prop must
+ *  never make the paddock grow. */
 function groundDecorRow(state) {
   const markup = state.shop.owned.map((id) => GROUND_DECOR_MARKUP[id] ?? '').join('');
-  if (!markup) return null;
   const row = document.createElement('div');
   row.className = 'ground-decor';
   row.innerHTML = `<svg viewBox="0 0 900 62" preserveAspectRatio="xMidYMid meet" aria-hidden="true">${markup}</svg>`;
@@ -327,6 +327,11 @@ function horseCard(horse, scale = 1, isBack = false, wardrobe = []) {
          aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(horse.wellbeing)}">
       <div class="wellbeing-fill" style="width:${horse.wellbeing}%; background:${wellbeingColor(horse.wellbeing)}"></div>
     </div>`;
+  // Size variety is a paint-only transform on the artwork, never the card's
+  // own layout box -- so it can never change flex-wrap or paddock height,
+  // just how big the horse itself looks within its slot.
+  const jitter = horse.sizeJitter ?? 1;
+  if (jitter !== 1) card.querySelector('svg').style.transform = `scale(${jitter})`;
   return card;
 }
 

@@ -10,24 +10,24 @@
 export const SHOP_ITEMS = [
   // tier 1 — available as soon as the shop itself unlocks
   { id: 'scarf', name: 'Scarf', category: 'wardrobe', price: 150, requiresHorses: 1, attractionBonus: 0.006 },
-  { id: 'flower-garland', name: 'Flower garland', category: 'decor', price: 150, requiresHorses: 1, shareBonus: 0.04 },
+  { id: 'flower-garland', name: 'Flower garland', category: 'decor', price: 300, requiresHorses: 1, shareBonus: 0.04 },
   { id: 'ear-flower', name: 'Ear flower', category: 'wardrobe', price: 180, requiresHorses: 1, attractionBonus: 0.006 },
 
   // tier 2 — 3 horses rescued
   { id: 'boots', name: 'Boots', category: 'wardrobe', price: 400, requiresHorses: 3, attractionBonus: 0.010 },
-  { id: 'bunting', name: 'Bunting flags', category: 'decor', price: 400, requiresHorses: 3, shareBonus: 0.05 },
-  { id: 'trough', name: 'Water trough', category: 'decor', price: 450, requiresHorses: 3, shareBonus: 0.05 },
+  { id: 'bunting', name: 'Bunting flags', category: 'decor', price: 800, requiresHorses: 3, shareBonus: 0.05 },
+  { id: 'trough', name: 'Water trough', category: 'decor', price: 900, requiresHorses: 3, shareBonus: 0.05 },
 
   // tier 3 — 5 horses rescued
   { id: 'leg-wraps', name: 'Leg wraps', category: 'wardrobe', price: 900, requiresHorses: 5, attractionBonus: 0.014 },
   { id: 'forelock-bow', name: 'Forelock bow', category: 'wardrobe', price: 1000, requiresHorses: 5, attractionBonus: 0.014 },
-  { id: 'flower-buckets', name: 'Flower buckets', category: 'decor', price: 900, requiresHorses: 5, shareBonus: 0.06 },
-  { id: 'butterflies', name: 'Butterflies', category: 'decor', price: 950, requiresHorses: 5, shareBonus: 0.06 },
+  { id: 'flower-buckets', name: 'Flower buckets', category: 'decor', price: 1800, requiresHorses: 5, shareBonus: 0.06 },
+  { id: 'butterflies', name: 'Butterflies', category: 'decor', price: 1900, requiresHorses: 5, shareBonus: 0.06 },
 
   // tier 4 — 8 horses rescued (matches the paddock-paging threshold)
   { id: 'saddle-blanket', name: 'Saddle blanket', category: 'wardrobe', price: 2000, requiresHorses: 8, attractionBonus: 0.020 },
-  { id: 'hay-bales', name: 'Hay bales', category: 'decor', price: 2200, requiresHorses: 8, shareBonus: 0.08 },
-  { id: 'play-balls', name: 'Play balls', category: 'decor', price: 2200, requiresHorses: 8, shareBonus: 0.08 },
+  { id: 'hay-bales', name: 'Hay bales', category: 'decor', price: 4400, requiresHorses: 8, shareBonus: 0.08 },
+  { id: 'play-balls', name: 'Play balls', category: 'decor', price: 4400, requiresHorses: 8, shareBonus: 0.08 },
 ];
 
 export function isUnlocked(item, state) {
