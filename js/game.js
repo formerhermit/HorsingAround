@@ -226,10 +226,13 @@ export function tick(dt) {
     if (!horse.sponsor && horse.wellbeing >= SPONSOR_AT) {
       horse.sponsor = randomFrom(SUPPORTER_NAMES);
       gameState.supporters += 1;
-      events.push({
-        type: 'sponsor',
-        message: `${horse.sponsor} is so taken with ${horse.name} that they've set up a sponsorship — steady support, every month 💛`,
-      });
+      // The first sponsorship explains what it means; once the player
+      // knows, later ones just announce themselves.
+      const message = gameState.milestones.firstSponsorship
+        ? `${horse.sponsor} has sponsored ${horse.name} 💛`
+        : `${horse.sponsor} is so taken with ${horse.name} that they've set up a sponsorship — steady support, every month 💛`;
+      gameState.milestones.firstSponsorship = true;
+      events.push({ type: 'sponsor', message });
     }
   }
 

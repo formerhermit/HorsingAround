@@ -67,6 +67,7 @@ export function defaultState() {
     // story beats that must fire exactly once
     milestones: {
       firstDonation: false,
+      firstSponsorship: false,  // once true, sponsorship toasts go terse
       realHorsesTriggered: [],  // rescueOrder values whose ARCH horse card has appeared
     },
 
