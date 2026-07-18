@@ -58,6 +58,12 @@ function costumeMarkup(wardrobe = []) {
     m += `<path d="M412,84 L435,74 Q441,84 435,94 Z" fill="#F7CD3A"/>`;
     m += `<rect x="406" y="77" width="12" height="14" rx="4" fill="#E0A81E"/>`;
   }
+  if (wardrobe.includes('saddle-blanket')) {
+    // a cloth draped over the back behind the withers, hanging down the barrel
+    m += `<path d="M195,200 Q250,189 298,195 Q308,199 306,238 Q304,272 297,282 Q248,289 199,283 Q190,273 188,238 Q186,199 195,200 Z" fill="#3F7FD6"/>`;
+    // light trim stripe near the hem
+    m += `<path d="M193,266 Q248,277 302,266" fill="none" stroke="#BFDBF7" stroke-width="7" stroke-linecap="round"/>`;
+  }
   if (wardrobe.includes('boots')) {
     // a boot over each lower leg + hoof: body, cuff band, darker sole
     const legs = [[94, 128], [149, 183], [281, 316], [331, 366]];
