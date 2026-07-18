@@ -149,7 +149,7 @@ main {
      rows, plus the ground-decor row) from the very first horse, so the
      scene never visibly grows as more horses or decor arrive -- measured
      at 557px for a full paddock with ground decor. */
-  min-height: 564px;
+  min-height: 600px;
   /* Split into separate layers instead of one gradient with stops 2px apart --
      Safari's rasterizer has known edge cases with near-zero-distance colour
      stops inside a single gradient, especially under border-radius clipping,
@@ -197,7 +197,7 @@ main {
   position: relative;
   display: flex;
   flex-direction: column;
-  min-height: 564px;
+  min-height: 600px;
   /* top padding places the background line just past the fence, on the grass */
   padding: 48px 1.25rem 1.75rem;
 }
@@ -361,7 +361,9 @@ main {
   font-style: italic;
   color: #8a7d68;
   margin: -0.5em 0 0.5em;
-  min-height: 1.4em;
+  /* Reserve two lines: some traits wrap on a narrow card, and reserving the
+     worst case keeps card height constant so a reveal never jumps the paddock. */
+  min-height: 2.8em;
   visibility: hidden;
 }
 

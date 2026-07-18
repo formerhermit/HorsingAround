@@ -18,10 +18,11 @@ export const RESCUE_BASE_COST = 25;  // second horse; later rescues escalate
 export const RESCUE_COST_FACTOR = 1.8;
 export const TRAIT_REVEAL_AT = 40;   // wellbeing at which personality shows
 export const SPONSOR_AT = 95;        // "thriving" — earns the horse a sponsor
+export const FIRST_SPONSOR_AT = 88;  // Biscuit sponsors a touch earlier, as its own beat
 export const SPONSOR_RATE = 0.4;     // € per sponsored horse per second
 export const SHARE_BASE = 1;         // € per shared update...
 export const SHARE_PER_SUPPORTER = 0.3; // ...plus this per supporter
-const LONELY_DELAY = 8;              // seconds after first donation before the loneliness beat
+const LONELY_DELAY = 14;             // seconds after first donation before the loneliness beat
 
 // Chance per second that a new supporter notices the rescue. Every horse
 // contributes according to its own wellbeing and the contributions add up,
@@ -141,8 +142,11 @@ export function careFor(horse) {
   horse.wellbeing = Math.min(WELLBEING_MAX, horse.wellbeing + CARE_GAIN);
 
   const events = [];
-  // Personality emerges as a horse recovers enough to relax.
-  if (horse.trait && before < TRAIT_REVEAL_AT && horse.wellbeing >= TRAIT_REVEAL_AT) {
+  // Personality emerges as a horse recovers enough to relax. Assign one here
+  // if the horse doesn't have it yet (Biscuit starts without one) so this beat
+  // lands early, well before the donation/rescue/sponsor beats.
+  if (before < TRAIT_REVEAL_AT && horse.wellbeing >= TRAIT_REVEAL_AT) {
+    horse.trait ??= randomUnused(TRAITS, gameState.horses.map((h) => h.trait).filter(Boolean));
     events.push({
       type: 'trait',
       message: `${horse.name} is starting to relax — turns out ${horse.name} is ${horse.trait} 🐴`,
@@ -246,14 +250,11 @@ export function tick(dt) {
       gameState.unlocks.rescue = true;
       gameState.milestones.lonelyShown = true;
       const biscuit = gameState.horses[0];
-      biscuit.trait ??= randomFrom(TRAITS);
+      // Single toast now -- Biscuit's personality was already revealed earlier
+      // (at TRAIT_REVEAL_AT) rather than bundled in here.
       events.push({
         type: 'milestone',
         message: `${biscuit.name} keeps looking down the lane. Horses are herd animals — no horse should be alone. Maybe the rescue fund can help someone else too?`,
-      });
-      events.push({
-        type: 'trait',
-        message: `Now that ${biscuit.name} is feeling better, a personality is coming out — ${biscuit.name} is ${biscuit.trait} 🐴`,
       });
     }
   }
@@ -269,7 +270,8 @@ export function tick(dt) {
   // investment rather than just more work. Checked here (not on the care
   // click) so it also catches horses that are already thriving.
   for (const horse of gameState.horses) {
-    if (!horse.sponsor && horse.wellbeing >= SPONSOR_AT) {
+    const sponsorThreshold = horse.rescueOrder === 1 ? FIRST_SPONSOR_AT : SPONSOR_AT;
+    if (!horse.sponsor && horse.wellbeing >= sponsorThreshold) {
       horse.sponsor = randomFrom(SUPPORTER_NAMES);
       gameState.supporters += 1;
       // The first sponsorship explains what it means; once the player
