@@ -56,7 +56,7 @@ export function defaultState() {
       createHorse({
         id: 'biscuit',
         name: 'Biscuit',
-        paletteKey: 'chestnut',
+        paletteKey: 'bay',
         wellbeing: 12,   // scruffy arrival — clearly in need of care
         rescueOrder: 1,
       }),

@@ -1,6 +1,6 @@
 // render.js — turns gameState into DOM. No game logic lives here.
 
-import { horseSVG, paletteFor, wellbeingLabel, wellbeingColor } from './horse.js';
+import { horseFigureHTML, horseImageSrc, wellbeingLabel, wellbeingColor } from './horse.js';
 import { rescueCost, shareValue, TRAIT_REVEAL_AT } from './game.js';
 import {
   SHOP_ITEMS, isUnlocked, isAffordable, hasNewAffordableItem,
@@ -318,7 +318,7 @@ function horseCard(horse, scale = 1, isBack = false, wardrobe = []) {
   // trait/sponsor lines are always in the layout (visibility-toggled by the
   // "shown" class) so revealing them never changes card height mid-game
   card.innerHTML = `
-    ${horseSVG(horse, wardrobe)}
+    ${horseFigureHTML(horse, wardrobe)}
     <p class="horse-name">${horse.name}</p>
     <p class="horse-condition">${wellbeingLabel(horse.wellbeing)}</p>
     <p class="horse-trait${showTrait ? ' shown' : ''}">${showTrait ? horse.trait : ''}</p>
@@ -327,11 +327,15 @@ function horseCard(horse, scale = 1, isBack = false, wardrobe = []) {
          aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(horse.wellbeing)}">
       <div class="wellbeing-fill" style="width:${horse.wellbeing}%; background:${wellbeingColor(horse.wellbeing)}"></div>
     </div>`;
-  // Size variety is a paint-only transform on the artwork, never the card's
-  // own layout box -- so it can never change flex-wrap or paddock height,
-  // just how big the horse itself looks within its slot.
+  // Size variety + left/right facing are paint-only transforms on the whole
+  // figure (image + costume overlay together), never the card's own layout box
+  // -- so they can't change flex-wrap or paddock height, and costumes stay
+  // aligned when a horse is mirrored.
   const jitter = horse.sizeJitter ?? 1;
-  if (jitter !== 1) card.querySelector('svg').style.transform = `scale(${jitter})`;
+  const flip = horse.facing === 'left' ? -1 : 1;
+  if (jitter !== 1 || flip === -1) {
+    card.querySelector('.horse-figure').style.transform = `scale(${(flip * jitter).toFixed(3)}, ${jitter.toFixed(3)})`;
+  }
   return card;
 }
 
@@ -342,13 +346,11 @@ function horseCard(horse, scale = 1, isBack = false, wardrobe = []) {
 export function updateHorseCard(horse) {
   const card = document.querySelector(`.horse[data-horse-id="${horse.id}"]`);
   if (!card) return;
-  const c = paletteFor(horse);
-  card.querySelectorAll('[data-part="coat"]').forEach((el) => el.setAttribute('fill', c.coat));
-  card.querySelectorAll('[data-part="legs"]').forEach((el) => el.setAttribute('fill', c.legs));
-  card.querySelectorAll('[data-part="mane"]').forEach((el) => el.setAttribute('stroke', c.mane));
-  card.querySelector('[data-part="muzzle"]').setAttribute('fill', c.muzzle);
-  card.querySelector('[data-part="shine"]').setAttribute('opacity',
-    Math.min(Math.max(horse.wellbeing / 100, 0), 1).toFixed(2));
+  // Swap the image to the current coat/state (sad -> neutral -> happy). Setting
+  // src to an already-loaded image is instant, so care clicks feel responsive.
+  const img = card.querySelector('.horse-img');
+  const src = horseImageSrc(horse);
+  if (img.getAttribute('src') !== src) img.setAttribute('src', src);
 
   card.querySelector('.horse-condition').textContent = wellbeingLabel(horse.wellbeing);
   const traitEl = card.querySelector('.horse-trait');
