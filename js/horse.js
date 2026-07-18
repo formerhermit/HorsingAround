@@ -52,6 +52,12 @@ function costumeMarkup(wardrobe = []) {
     for (const [px, py] of petals) m += `<circle cx="${px}" cy="${py}" r="6.5" fill="#A971D6"/>`;
     m += `<circle cx="${cx}" cy="${cy}" r="5" fill="#F1C40F"/>`;
   }
+  if (wardrobe.includes('forelock-bow')) {
+    // a ribbon bow tied in the forelock, between the ears on the forehead
+    m += `<path d="M412,84 L389,74 Q383,84 389,94 Z" fill="#F7CD3A"/>`;
+    m += `<path d="M412,84 L435,74 Q441,84 435,94 Z" fill="#F7CD3A"/>`;
+    m += `<rect x="406" y="77" width="12" height="14" rx="4" fill="#E0A81E"/>`;
+  }
   return m;
 }
 
