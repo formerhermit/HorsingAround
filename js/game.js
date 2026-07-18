@@ -38,11 +38,32 @@ function attractionPerSecond() {
 const SUPPORTER_NAMES = [
   'María', 'Ana', 'Javi', 'Carmen', 'Pablo', 'Lucía',
   'Sofía', 'Diego', 'Elena', 'Marcos', 'Pilar', 'Álvaro',
+  'Jean', 'Aly', 'Jill', 'Stephanie', 'Elisabeth',
+  'Jo', 'Mark', 'Richard', 'Phil', 'Chris',
+  'Beth', 'Karen', 'Josephine', 'Louise', 'Meghan',
+  'Susan', 'Gillian', 'Peter', 'Simon', 'Rich',
+  'Keith', 'Judy', 'Daniel', 'Ben', 'Joel', 'Lucy',
+  'Claire', 'Clara', 'Roo', 'Ruth', 'Jake', 'Bethan', 'Ellie',
 ];
 
 const HORSE_NAMES = [
   'Canela', 'Luna', 'Chispa', 'Trufa', 'Nube', 'Pepita',
   'Almendra', 'Turrón', 'Membrillo', 'Aceituna', 'Bruno', 'Duquesa',
+  'Pastora', 'Graciella', 'Revoltosa', 'Bollycao', 'Ratatouille',
+  'Lola (Gabbi)', 'Borrego', 'Margarita', 'Bella', 'Brisa', 'Brava',
+  'Victoria', 'Lucero', 'Luz de Luna', 'Senador', 'Torero', 'Ida',
+  'Llaminera', 'Primero', 'Ramona', 'Simba', 'Pinocchio', 'Tizón',
+  'Esperanza', 'Cristal', 'Gitana', 'Hindia', 'Pirata', 'Lola',
+  'Fabiola', 'Abha', 'Pantoja 2', 'Alazana', 'Dulcinea', 'Curra',
+  'Soli', 'Campano', 'Perdigon', 'Abuela', 'Melanie', 'Carolina',
+  'Francisco', 'Delfín', 'Maria', 'Corrie', 'Ruco', 'Palmera',
+  'Bartolo', 'Castañito', 'Estrella', 'Perla', 'Sara', 'Zíngaro',
+  'Bayete', 'Triana',
+  'Bibbles', 'Riley', 'Pippin', 'Joya', 'Tobi', 'Spoons', 'Tiger',
+  'Nipsy', 'Roger', 'Squiggle', 'Starlight', 'Buttons', 'Indo',
+  'Effie', 'Lustro', 'Keith', 'Fandango', 'Ipsy', 'Bubbles', 'Chief',
+  'Kipsy', 'Jingles', 'Mopper', 'WingDing', 'Daisy', 'Duke', 'Muddle',
+  'Pipples', 'Boo',
 ];
 
 // Silly-as-seasoning personality traits. Phrased to follow "<name> is ...".
