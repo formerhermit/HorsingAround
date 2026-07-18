@@ -25,3 +25,9 @@ create policy "insert own save"
 create policy "update own save"
   on public.saves for update
   using (auth.uid() = user_id);
+
+-- Explicit table-level grant, independent of the project's "Automatically
+-- expose new tables" setting — works whether that's left on or (per
+-- Supabase's own recommendation) switched off. RLS above still governs
+-- which rows are actually reachable.
+grant select, insert, update on public.saves to authenticated;
