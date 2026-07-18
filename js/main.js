@@ -10,6 +10,7 @@ import {
 } from './render.js';
 import { buyItem } from './shop.js';
 import { syncOnLoad, pushCloudSave } from './cloud.js';
+import './audio.js';
 
 // Visit index.html?reset to discard the save during development.
 const reset = new URLSearchParams(location.search).has('reset');

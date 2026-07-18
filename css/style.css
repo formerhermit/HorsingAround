@@ -110,6 +110,23 @@ body {
   display: none;
 }
 
+.sound-btn {
+  font: inherit;
+  font-size: 1rem;
+  line-height: 1;
+  color: #6b5c44;
+  background: #fffdf7;
+  border: 1px solid #e6dcc6;
+  border-radius: 999px;
+  width: 2.3rem;
+  height: 2.3rem;
+  cursor: pointer;
+}
+
+.sound-btn:hover {
+  border-color: #d8c39a;
+}
+
 /* ---------- paddock scene ---------- */
 
 main {
