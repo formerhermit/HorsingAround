@@ -40,9 +40,17 @@ export function horseImageSrc(horse) {
 function costumeMarkup(wardrobe = []) {
   let m = '';
   if (wardrobe.includes('scarf')) {
-    // collar wrapping the lower neck + a small tail hanging at the throat
-    m += `<path d="M348,185 Q380,201 412,177 Q419,196 410,214 Q380,228 352,218 Q343,201 348,185 Z" fill="#D9534F"/>`;
-    m += `<path d="M398,209 Q392,241 400,265 Q411,245 407,210 Z" fill="#C0392B"/>`;
+    // band spanning the whole neck from the mane edge (~x305) to the throat
+    // (~x390), with a knotted tail hanging at the front of the throat
+    m += `<path d="M300,188 Q345,179 390,179 Q401,191 397,203 Q394,213 388,216 Q345,220 303,214 Q295,202 300,188 Z" fill="#D9534F"/>`;
+    m += `<path d="M382,213 Q378,239 385,259 Q397,241 396,211 Z" fill="#C0392B"/>`;
+  }
+  if (wardrobe.includes('ear-flower')) {
+    // a small daisy tucked at the base of the forward ear
+    const cx = 392, cy = 70;
+    const petals = [[cx, cy - 10], [cx + 9.5, cy - 3.1], [cx + 5.9, cy + 8.1], [cx - 5.9, cy + 8.1], [cx - 9.5, cy - 3.1]];
+    for (const [px, py] of petals) m += `<circle cx="${px}" cy="${py}" r="6.5" fill="#A971D6"/>`;
+    m += `<circle cx="${cx}" cy="${cy}" r="5" fill="#F1C40F"/>`;
   }
   return m;
 }
