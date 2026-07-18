@@ -92,7 +92,10 @@ main {
   border-radius: 18px;
   overflow: hidden;
   border: 1px solid #e0d6bf;
-  min-height: 400px;
+  /* Reserved tall enough for a fully-populated paddock (3 front + 5 back
+     rows) from the very first horse, so the scene never visibly grows as
+     more horses arrive -- measured at 504px for a full paddock. */
+  min-height: 512px;
   background: linear-gradient(
     #d9ecf8 0px,
     #e8f2e0 118px,
@@ -124,7 +127,7 @@ main {
   position: relative;
   display: flex;
   flex-direction: column;
-  min-height: 400px;
+  min-height: 512px;
   /* top padding places the background line just past the fence, on the grass */
   padding: 48px 1.25rem 1.75rem;
 }
@@ -297,18 +300,36 @@ main {
 .nav-older { left: 12px; }
 .nav-newer { right: 12px; }
 
+/* A little signpost rather than a floating UI chip -- same flat solid-fill
+   language as the horses and buttons (no gradients, strokes or shadows). */
 .paddock-label {
   position: absolute;
-  top: 10px;
-  right: 14px;
+  top: 14px;
+  right: 18px;
   z-index: 15;
-  background: rgba(255, 253, 247, 0.85);
-  border: 1px solid #e6dcc6;
-  border-radius: 999px;
-  padding: 0.2rem 0.7rem;
-  font-size: 0.75rem;
-  color: #6b5c44;
+  transform: rotate(-2deg);
+  background: #b0823f;
+  border-radius: 5px;
+  padding: 0.3rem 0.8rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #fffdf7;
 }
+
+.paddock-label::before,
+.paddock-label::after {
+  content: '';
+  position: absolute;
+  top: 5px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #8a6530;
+}
+
+.paddock-label::before { left: 7px; }
+.paddock-label::after { right: 7px; }
 
 .paddock-label[hidden] {
   display: none;
@@ -399,7 +420,9 @@ main {
   flex-direction: column;
   align-items: center;
   gap: 0.4rem;
-  z-index: 10;
+  /* Above the paddock sign and nav arrows -- a story-beat toast should
+     never be hidden behind scene furniture. */
+  z-index: 30;
   width: max-content;
   max-width: 92%;
   pointer-events: none;
