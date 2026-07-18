@@ -409,6 +409,77 @@ main {
   animation: care-pop-float 0.9s ease-out forwards;
 }
 
+/* ---------- donate banner ---------- */
+
+/* Same flat language as the chips: cream fill, thin border, no shadow.
+   Appears rarely (first sponsorship, or returning after a long break). */
+.donate-banner {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 0.9rem;
+  padding: 0.7rem 1rem;
+  background: #fffdf7;
+  border: 1px solid #e6dcc6;
+  border-radius: 14px;
+  animation: donate-in 0.4s ease;
+}
+
+.donate-banner[hidden] {
+  display: none;
+}
+
+@keyframes donate-in {
+  from { opacity: 0; translate: 0 6px; }
+}
+
+.donate-text {
+  margin: 0;
+  flex: 1;
+  font-size: 0.85rem;
+  color: #5c5344;
+}
+
+.donate-link {
+  flex-shrink: 0;
+  background: #6f8f4f;
+  color: #fffdf7;
+  font-weight: 700;
+  font-size: 0.85rem;
+  text-decoration: none;
+  border-radius: 999px;
+  padding: 0.45rem 1rem;
+  white-space: nowrap;
+}
+
+.donate-link:hover {
+  background: #5f7d42;
+}
+
+.donate-dismiss {
+  flex-shrink: 0;
+  font: inherit;
+  font-size: 1.1rem;
+  line-height: 1;
+  color: #8a7d68;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.3rem;
+}
+
+.donate-dismiss:hover {
+  color: #3d3428;
+}
+
+@media (max-width: 560px) {
+  .donate-banner {
+    flex-wrap: wrap;
+    justify-content: center;
+    text-align: center;
+  }
+}
+
 /* ---------- toasts & HUD reveal ---------- */
 
 .toasts {

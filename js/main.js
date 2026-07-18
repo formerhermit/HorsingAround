@@ -5,6 +5,7 @@ import { careFor, tick, rescueHorse, shareUpdate } from './game.js';
 import {
   renderAll, renderHUD, renderActions, updateHorseCard,
   showCareFeedback, showToast, showMoneyPop, changePaddock, resetPaddockView,
+  showDonateBanner, hideDonateBanner,
 } from './render.js';
 import { syncOnLoad, pushCloudSave } from './cloud.js';
 
@@ -12,8 +13,32 @@ import { syncOnLoad, pushCloudSave } from './cloud.js';
 const reset = new URLSearchParams(location.search).has('reset');
 const state = initState({ reset });
 
+// Captured before save() stamps a fresh time: how long ago the last session was.
+const lastPlayedAt = state.savedAt;
+
 renderAll(state);
 save(); // persist immediately so the save shape exists from first load
+
+// ---- real-donation banner ----
+// One quiet story moment (after the first sponsorship, when the game has
+// just taught what steady support means), plus a reprise whenever a player
+// comes back after a proper break. Never more than that.
+
+const RETURN_BREAK_MS = 12 * 60 * 60 * 1000;
+
+function maybeOfferDonation() {
+  if (!state.milestones.firstSponsorship || state.milestones.donateBannerShown) return;
+  state.milestones.donateBannerShown = true;
+  // let the sponsorship toast land first
+  setTimeout(showDonateBanner, 4000);
+}
+
+if (state.unlocks.moneyUI && Date.now() - lastPlayedAt > RETURN_BREAK_MS) {
+  state.milestones.donateBannerShown = true; // counts as the one story moment too
+  showDonateBanner();
+}
+
+document.getElementById('donate-dismiss').addEventListener('click', hideDonateBanner);
 
 // Cloud sync is a background enhancement, never a blocker on first paint —
 // Biscuit is already on screen and clickable before this resolves.
@@ -39,6 +64,7 @@ function persist() {
 function processEvents(events) {
   if (!events.length) return;
   events.forEach((e) => showToast(e.message));
+  maybeOfferDonation(); // fires once, on the first sponsorship beat
   refreshUI();
   persist(); // story beats are worth persisting immediately
 }

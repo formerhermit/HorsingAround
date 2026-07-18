@@ -68,6 +68,7 @@ export function defaultState() {
     milestones: {
       firstDonation: false,
       firstSponsorship: false,  // once true, sponsorship toasts go terse
+      donateBannerShown: false, // real-donation banner fired its one story moment
       realHorsesTriggered: [],  // rescueOrder values whose ARCH horse card has appeared
     },
 

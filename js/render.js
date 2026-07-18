@@ -228,6 +228,15 @@ export function showCareFeedback(card, message, clickEvent) {
   pop.addEventListener('animationend', () => pop.remove());
 }
 
+/** The real-donation banner under the action bar. */
+export function showDonateBanner() {
+  document.getElementById('donate-banner').hidden = false;
+}
+
+export function hideDonateBanner() {
+  document.getElementById('donate-banner').hidden = true;
+}
+
 /**
  * Narrative toast at the top of the paddock (first donation, new
  * supporters, arrivals). Auto-dismisses via its CSS animation.
