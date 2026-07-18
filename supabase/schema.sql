@@ -37,3 +37,12 @@ create policy "update own save"
   which rows are actually reachable.
 */
 grant select, insert, update on public.saves to authenticated;
+
+/*
+  Also let the plain (unauthenticated) anon role run a select -- needed so
+  the GitHub Actions keep-alive ping (which holds only the publishable key,
+  no signed-in user) can touch the database with a clean 200 instead of
+  being rejected before RLS even runs. Harmless: RLS still requires
+  auth.uid() = user_id, so an anon request always sees zero rows.
+*/
+grant select on public.saves to anon;
