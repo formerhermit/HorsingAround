@@ -46,7 +46,10 @@ function attractionPerSecond() {
     return sum;
   }, 0);
   // Dressed-up horses turn heads too — wardrobe items add a flat bonus.
-  return fromHorses + attractionBonus(gameState);
+  const base = fromHorses + attractionBonus(gameState);
+  // A freshly-tended horse makes the whole paddock buzz for a short while (see
+  // the little-needs cycle below): attraction is boosted until glowUntil.
+  return Date.now() < glowUntil ? base * WANT_GLOW_MULT : base;
 }
 
 const SUPPORTER_NAMES = [
@@ -423,6 +426,85 @@ export function markPostcardsRead(state = gameState) {
   for (const pc of state.postcards) pc.read = true;
 }
 
+// ---- little needs ----
+// A content horse occasionally has a small want, shown as a thought bubble.
+// Tending it (a tap on that horse) gives an instant supporter burst plus a
+// short attraction glow. Ignoring a want never hurts the horse: it just fades
+// untended and the reward goes uncollected. Gentle by design: one want at a
+// time, spaced out, and only on horses already doing well.
+const WANT_MIN_GAP = 60;          // seconds between wants, once none is active
+const WANT_MAX_GAP = 150;
+const WANT_TTL = 60;              // a want fades if untended this long
+const WANT_MIN_WELLBEING = 60;   // only content-ish horses get little luxuries
+const WANT_SUPPORTER_BURST = 3;  // supporters gained on fulfilling one
+const WANT_GLOW_DURATION = 60;   // seconds the attraction glow lasts
+const WANT_GLOW_MULT = 2;        // attraction multiplier during the glow
+
+// Each need: the bubble shown above the horse and the pop shown when tended.
+// `photo` marks the "take a photo" want, which gets a camera flash in the UI.
+const NEEDS = [
+  { id: 'mint',    bubble: '🍬', done: '🍬 a happy crunch' },
+  { id: 'carrot',  bubble: '🥕', done: '🥕 nom nom' },
+  { id: 'apple',   bubble: '🍎', done: '🍎 crunch!' },
+  { id: 'brush',   bubble: '🪮', done: '✨ a gleaming coat' },
+  { id: 'scratch', bubble: '🫶', done: '💛 utter bliss' },
+  { id: 'lonely',  bubble: '💭', done: '💛 feeling loved' },
+  { id: 'play',    bubble: '🎾', done: '🎉 zoomies!' },
+  { id: 'photo',   bubble: '📸', done: '📸 what a star!', photo: true },
+];
+
+let activeWant = null; // { horseId, need, expiresAt } or null; not persisted
+let wantCountdown = randomBetween(WANT_MIN_GAP, WANT_MAX_GAP);
+let glowUntil = 0;     // timestamp; attraction is boosted until then (read above)
+
+/** The current want (for drawing its bubble), or null. */
+export function getActiveWant() {
+  return activeWant;
+}
+
+// Wants land only on the horses always visible in the home paddock (the newest
+// front row), and only when they're content enough to fancy a little luxury.
+function eligibleWantHorses() {
+  return gameState.horses.slice(-FRONT_ROW).filter((h) => h.wellbeing >= WANT_MIN_WELLBEING);
+}
+
+/** Advance the little-needs cycle by dt seconds. One want at a time; spawns
+ *  when the gap elapses, clears when it's tended, times out, or its horse
+ *  leaves. Called from tick (so it only runs once the money side is unlocked). */
+function updateWants(dt, now) {
+  if (activeWant) {
+    const horseGone = !gameState.horses.some((h) => h.id === activeWant.horseId);
+    if (horseGone || now > activeWant.expiresAt) {
+      activeWant = null;
+      wantCountdown = randomBetween(WANT_MIN_GAP, WANT_MAX_GAP);
+    }
+    return;
+  }
+  wantCountdown -= dt;
+  if (wantCountdown > 0) return;
+  wantCountdown = randomBetween(WANT_MIN_GAP, WANT_MAX_GAP);
+  const candidates = eligibleWantHorses();
+  if (!candidates.length) return; // nobody in the mood; try again next gap
+  activeWant = {
+    horseId: randomFrom(candidates).id,
+    need: randomFrom(NEEDS),
+    expiresAt: now + WANT_TTL * 1000,
+  };
+}
+
+/** Tend the active want if this is the horse that wanted something. Grants the
+ *  supporter burst + glow and returns { need, supporters } for feedback, else
+ *  null (so a normal care tap is unaffected). */
+export function fulfilWant(horseId, now = Date.now()) {
+  if (!activeWant || activeWant.horseId !== horseId) return null;
+  const { need } = activeWant;
+  activeWant = null;
+  wantCountdown = randomBetween(WANT_MIN_GAP, WANT_MAX_GAP);
+  gameState.supporters += WANT_SUPPORTER_BURST;
+  glowUntil = now + WANT_GLOW_DURATION * 1000;
+  return { need, supporters: WANT_SUPPORTER_BURST };
+}
+
 // Not persisted: restarting the wait after a reload is harmless.
 let lonelyCountdown = LONELY_DELAY;
 
@@ -538,6 +620,7 @@ export function tick(dt) {
 
   maybeOfferRehome(dt, events);
   checkMilestones(events);
+  updateWants(dt, Date.now()); // the little-needs cycle (bubbles drawn by main)
 
   return events;
 }

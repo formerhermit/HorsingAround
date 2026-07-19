@@ -1,7 +1,7 @@
 // render.js — turns gameState into DOM. No game logic lives here.
 
 import { horseFigureHTML, horseImageSrc, wellbeingLabel, wellbeingColor } from './horse.js';
-import { rescueCost, shareValue, FRONT_ROW } from './game.js';
+import { rescueCost, shareValue, FRONT_ROW, getActiveWant } from './game.js';
 import {
   SHOP_ITEMS, isUnlocked, isAffordable, hasNewAffordableItem,
   PADDOCK_CAP, paddockCount, paddockDecor,
@@ -385,6 +385,8 @@ function renderPaddock(state) {
   label.textContent = currentPaddock === 0
     ? `Home paddock · 1 of ${chunks.length}`
     : `Paddock ${currentPaddock + 1} of ${chunks.length} · old friends`;
+
+  renderWantBubbles(state); // re-attach the want bubble to the freshly-built card
 }
 
 // Fence-line decor: stays on the fixed overlay near the actual fence rails.
@@ -599,6 +601,50 @@ export function showTipPop(card, tip) {
   pop.style.top = `${rect.height * 0.12}px`;
   card.appendChild(pop);
   pop.addEventListener('animationend', () => pop.remove());
+}
+
+// ---- little needs ----
+
+/** Sync want thought-bubbles onto the on-screen horse cards: add one to the
+ *  horse that currently wants something, remove any that shouldn't be there.
+ *  Patches existing cards (never rebuilds), so a fulfilment pop isn't wiped. */
+export function renderWantBubbles(state) {
+  const want = getActiveWant();
+  for (const card of document.querySelectorAll('.horse')) {
+    const bubble = card.querySelector('.want-bubble');
+    const wants = want && card.dataset.horseId === want.horseId;
+    if (wants && !bubble) {
+      const b = document.createElement('div');
+      b.className = 'want-bubble';
+      b.textContent = want.need.bubble;
+      card.appendChild(b);
+    } else if (wants && bubble) {
+      bubble.textContent = want.need.bubble;
+    } else if (!wants && bubble) {
+      bubble.remove();
+    }
+  }
+}
+
+/** Feedback for tending a want: the flavour pop, a supporter-burst pop, and a
+ *  camera flash for the "take a photo" want. */
+export function showWantFulfilled(card, want, clickEvent) {
+  showCareFeedback(card, want.need.done, clickEvent, { crit: true });
+  const pop = document.createElement('span');
+  pop.className = 'care-pop tip';
+  pop.style.setProperty('--tilt', `${(Math.random() * 8 - 4).toFixed(1)}deg`);
+  pop.textContent = `+${want.supporters} supporters 💛`;
+  const rect = card.getBoundingClientRect();
+  pop.style.left = `${rect.width * 0.5}px`;
+  pop.style.top = `${rect.height * 0.1}px`;
+  card.appendChild(pop);
+  pop.addEventListener('animationend', () => pop.remove());
+  if (want.need.photo) {
+    const flash = document.createElement('div');
+    flash.className = 'photo-flash';
+    card.appendChild(flash);
+    flash.addEventListener('animationend', () => flash.remove());
+  }
 }
 
 /** The real-donation banner under the action bar. */
