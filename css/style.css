@@ -800,10 +800,11 @@ main {
 /* Decor item that can't be placed: the target paddock is at its decoration
    limit. Muted, like the owned state, but not celebratory. */
 .shop-item-note {
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   font-weight: 600;
   color: #a89b83;
-  white-space: nowrap;
+  text-align: right;
+  line-height: 1.2;
 }
 
 @media (max-width: 480px) {

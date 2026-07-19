@@ -21,20 +21,48 @@ export const FENCE_DECOR_IDS = new Set(['flower-garland', 'bunting']);
 // Ground/ambient props a single paddock can hold, beyond the fence-line decor.
 export const MAX_EXTRA_DECOR = 3;
 
-export const SHOP_ITEMS = [
-  // tier 1 — available as soon as the shop itself unlocks
-  { id: 'scarf', name: 'Scarf', category: 'wardrobe', price: 150, requiresHorses: 1, attractionBonus: 0.006 },
-  { id: 'flower-garland', name: 'Flower garland', category: 'decor', price: 300, requiresHorses: 1, shareBonus: 0.04 },
-  { id: 'ear-flower', name: 'Ear flower', category: 'wardrobe', price: 180, requiresHorses: 1, attractionBonus: 0.006 },
+// Items that compete for a single slot on a target: a paddock flies the flower
+// garland OR the bunting, a horse wears the ear flower OR the forelock bow --
+// never both. Owning one blocks buying its rival for that same paddock/horse.
+export const EXCLUSIVE_GROUPS = [
+  ['flower-garland', 'bunting'],   // fence banner, per paddock
+  ['ear-flower', 'forelock-bow'],  // head flair, per horse
+];
 
-  // tier 2 — 3 horses rescued
+function exclusiveSiblings(itemId) {
+  const group = EXCLUSIVE_GROUPS.find((g) => g.includes(itemId));
+  return group ? group.filter((id) => id !== itemId) : [];
+}
+
+/** If an exclusive-group rival of this item is already placed in the paddock,
+ *  return its id (so the shop can name the chosen one); else null. */
+export function paddockExclusiveRival(item, state, paddock) {
+  const placed = paddockDecor(state, paddock);
+  return exclusiveSiblings(item.id).find((id) => placed.includes(id)) ?? null;
+}
+
+/** Likewise for a rival already worn by the horse. */
+export function horseExclusiveRival(item, horse) {
+  return exclusiveSiblings(item.id).find((id) => horse.wardrobe.includes(id)) ?? null;
+}
+
+export const SHOP_ITEMS = [
+  // tier 1 — available as soon as the shop itself unlocks. Flower garland and
+  // bunting are the two fence-banner styles: a paddock flies one OR the other
+  // (see EXCLUSIVE_GROUPS), priced the same so the pick is purely a matter of taste.
+  { id: 'scarf', name: 'Scarf', category: 'wardrobe', price: 150, requiresHorses: 1, attractionBonus: 0.006 },
+  { id: 'flower-garland', name: 'Flower garland', category: 'decor', price: 500, requiresHorses: 1, shareBonus: 0.05 },
+  { id: 'bunting', name: 'Bunting flags', category: 'decor', price: 500, requiresHorses: 1, shareBonus: 0.05 },
+
+  // tier 2 — 3 horses rescued. Ear flower and forelock bow are the two head-flair
+  // styles: a horse wears one OR the other, again same price so it's a free choice.
+  { id: 'ear-flower', name: 'Ear flower', category: 'wardrobe', price: 500, requiresHorses: 3, attractionBonus: 0.012 },
+  { id: 'forelock-bow', name: 'Forelock bow', category: 'wardrobe', price: 500, requiresHorses: 3, attractionBonus: 0.012 },
   { id: 'boots', name: 'Boots', category: 'wardrobe', price: 400, requiresHorses: 3, attractionBonus: 0.010 },
-  { id: 'bunting', name: 'Bunting flags', category: 'decor', price: 800, requiresHorses: 3, shareBonus: 0.05 },
   { id: 'trough', name: 'Water trough', category: 'decor', price: 900, requiresHorses: 3, shareBonus: 0.05 },
 
   // tier 3 — 5 horses rescued
   { id: 'leg-wraps', name: 'Leg wraps', category: 'wardrobe', price: 900, requiresHorses: 5, attractionBonus: 0.014 },
-  { id: 'forelock-bow', name: 'Forelock bow', category: 'wardrobe', price: 1000, requiresHorses: 5, attractionBonus: 0.014 },
   { id: 'flower-buckets', name: 'Flower buckets', category: 'decor', price: 3000, requiresHorses: 5, shareBonus: 0.06 },
   { id: 'apple-barrel', name: 'Apple barrel', category: 'decor', price: 3400, requiresHorses: 5, shareBonus: 0.06 },
   { id: 'butterflies', name: 'Butterflies', category: 'decor', price: 3600, requiresHorses: 5, shareBonus: 0.06 },
@@ -86,6 +114,7 @@ export function extraDecorCount(state, paddock) {
 /** Whether this paddock has room for one more of this item, ignoring cost. */
 export function paddockHasRoomFor(item, state, paddock) {
   if (isDecorInPaddock(item, state, paddock)) return false;
+  if (paddockExclusiveRival(item, state, paddock)) return false; // its either/or rival is up
   if (FENCE_DECOR_IDS.has(item.id)) return true; // fence decor never crowds
   return extraDecorCount(state, paddock) < MAX_EXTRA_DECOR;
 }
@@ -120,13 +149,15 @@ export function horseHasItem(horse, itemId) {
   return horse.wardrobe.includes(itemId);
 }
 
-/** Horses that don't already own this wardrobe item — who it can still be bought for. */
+/** Horses this wardrobe item can still be bought for: they don't already own it,
+ *  and aren't wearing its exclusive-group rival. */
 export function eligibleHorses(item, state) {
-  return state.horses.filter((h) => !horseHasItem(h, item.id));
+  return state.horses.filter((h) => !horseHasItem(h, item.id) && !horseExclusiveRival(item, h));
 }
 
 export function canBuyWardrobeFor(item, horse, state) {
-  return item.category === 'wardrobe' && isUnlocked(item, state) && isAffordable(item, state) && !horseHasItem(horse, item.id);
+  return item.category === 'wardrobe' && isUnlocked(item, state) && isAffordable(item, state)
+    && !horseHasItem(horse, item.id) && !horseExclusiveRival(item, horse);
 }
 
 export function buyWardrobe(itemId, horseId, state) {

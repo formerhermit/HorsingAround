@@ -6,7 +6,10 @@ import {
   SHOP_ITEMS, isUnlocked, isAffordable, hasNewAffordableItem,
   PADDOCK_CAP, paddockCount, paddockDecor,
   horseHasItem, isDecorInPaddock, paddockHasRoomFor,
+  paddockExclusiveRival, horseExclusiveRival,
 } from './shop.js';
+
+const ITEM_NAME = Object.fromEntries(SHOP_ITEMS.map((i) => [i.id, i.name]));
 
 export function renderAll(state) {
   renderHUD(state);
@@ -89,14 +92,21 @@ export function renderShopButton(state) {
 let shopHorseTarget = null;   // horse id
 let shopPaddockTarget = 0;    // paddock index
 
-/** One item row for the chosen horse: owned, buyable, or too dear. */
+/** One item row for the chosen horse: owned, blocked by its either/or rival,
+ *  buyable, or too dear. */
 function wardrobeItemRow(item, horse, state) {
   const row = document.createElement('div');
   const owned = horseHasItem(horse, item.id);
-  row.className = `shop-item${owned ? ' owned' : ''}`;
-  const control = owned
-    ? '<span class="shop-item-owned">Owned</span>'
-    : `<button class="shop-buy-btn" data-item-id="${item.id}" data-cat="wardrobe" ${isAffordable(item, state) ? '' : 'disabled'}>€${item.price}</button>`;
+  const rival = owned ? null : horseExclusiveRival(item, horse);
+  row.className = `shop-item${owned || rival ? ' owned' : ''}`;
+  let control;
+  if (owned) {
+    control = '<span class="shop-item-owned">Owned</span>';
+  } else if (rival) {
+    control = `<span class="shop-item-note">${ITEM_NAME[rival]} chosen</span>`;
+  } else {
+    control = `<button class="shop-buy-btn" data-item-id="${item.id}" data-cat="wardrobe" ${isAffordable(item, state) ? '' : 'disabled'}>€${item.price}</button>`;
+  }
   row.innerHTML = `
     <span class="shop-item-icon">${ITEM_EMOJI[item.id] ?? '✨'}</span>
     <span class="shop-item-name">${item.name}</span>
@@ -104,17 +114,19 @@ function wardrobeItemRow(item, horse, state) {
   return row;
 }
 
-/** One item row for the chosen paddock: already placed, buyable, out of room,
- *  or too dear. */
+/** One item row for the chosen paddock: already placed, blocked by its either/or
+ *  rival, out of room, buyable, or too dear. */
 function decorItemRow(item, paddock, state) {
   const row = document.createElement('div');
   const inPaddock = isDecorInPaddock(item, state, paddock);
-  const room = paddockHasRoomFor(item, state, paddock);
-  const blocked = !inPaddock && !room; // paddock at its 3-decoration limit
-  row.className = `shop-item${inPaddock || blocked ? ' owned' : ''}`;
+  const rival = inPaddock ? null : paddockExclusiveRival(item, state, paddock);
+  const blocked = !inPaddock && !rival && !paddockHasRoomFor(item, state, paddock); // at the 3-decor cap
+  row.className = `shop-item${inPaddock || rival || blocked ? ' owned' : ''}`;
   let control;
   if (inPaddock) {
     control = '<span class="shop-item-owned">In paddock</span>';
+  } else if (rival) {
+    control = `<span class="shop-item-note">${ITEM_NAME[rival]} chosen</span>`;
   } else if (blocked) {
     control = '<span class="shop-item-note">Paddock full</span>';
   } else {
