@@ -1,7 +1,7 @@
 // main.js — boot the game: load state, render, wire input and persistence.
 
 import { initState, save, gameState } from './state.js';
-import { careFor, tick, rescueHorse, shareUpdate, rescueCost, acceptRehome, declineRehome } from './game.js';
+import { careFor, tick, rescueHorse, shareUpdate, rescueCost, acceptRehome, declineRehome, collectOfflineEarnings } from './game.js';
 import {
   renderAll, renderHUD, renderActions, updateHorseCard,
   showCareFeedback, showToast, showMoneyPop, changePaddock, resetPaddockView,
@@ -18,6 +18,11 @@ const state = initState({ reset });
 
 // Captured before save() stamps a fresh time: how long ago the last session was.
 const lastPlayedAt = state.savedAt;
+
+// Credit anything the rescue earned while the game was closed, before the first
+// paint, so the HUD already shows the boosted totals. The summary (or null) is
+// held for the welcome-back popup, shown once the dialog plumbing is set up.
+const offlineSummary = collectOfflineEarnings(lastPlayedAt);
 
 renderAll(state);
 save(); // persist immediately so the save shape exists from first load
@@ -159,6 +164,39 @@ function pumpDialogs() {
     })),
   });
 }
+
+// ---- welcome back ----
+// A warm summary of what the rescue earned while the game was closed. The money
+// and supporters were already credited at boot; this just tells the story.
+
+/** "2h 14m", "45m" — the human-friendly length of a trip away. */
+function formatAway(seconds) {
+  const mins = Math.round(seconds / 60);
+  if (mins < 60) return `${mins}m`;
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  return m ? `${h}h ${m}m` : `${h}h`;
+}
+
+function showWelcomeBack(summary) {
+  const money = Math.floor(summary.income);
+  const parts = [`your supporters donated €${money}`];
+  if (summary.newSupporters > 0) {
+    parts.push(summary.newSupporters === 1
+      ? '1 new supporter found the rescue'
+      : `${summary.newSupporters} new supporters found the rescue`);
+  }
+  // A random horse "missed you" — the personal touch that makes it warm.
+  const horse = state.horses[Math.floor(Math.random() * state.horses.length)];
+  const earnings = parts.length === 2 ? `${parts[0]} and ${parts[1]}` : parts[0];
+  enqueueDialog({
+    emoji: '💛',
+    text: `Welcome back! While you were away (${formatAway(summary.awaySeconds)}), ${earnings}. ${horse.name} missed you 🐴`,
+    buttons: [{ label: 'Lovely!', variant: 'primary' }],
+  });
+}
+
+if (offlineSummary) showWelcomeBack(offlineSummary);
 
 const DONATE_URL = 'https://donorbox.org/donate-to-arch?amount=10';
 

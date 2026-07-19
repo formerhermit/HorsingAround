@@ -301,6 +301,46 @@ const SUPPORTER_TOAST_EVERY = 18; // seconds
 let pendingSupporters = 0;
 let supporterToastCooldown = 0;
 
+// ---- offline earnings ----
+// Time the game was closed still counts: the supporters and sponsors you've
+// already earned keep donating, and a few new supporters drift in. Credited at
+// OFFLINE_RATE of the live rate (so sitting and playing always beats leaving),
+// and only up to OFFLINE_CAP_SECONDS of it (supporters can stockpile just so
+// much goodwill). Under OFFLINE_MIN_SECONDS we skip it entirely -- a quick
+// tab-switch shouldn't pop a "welcome back".
+export const OFFLINE_MIN_SECONDS = 30 * 60;      // ignore anything under 30 min away
+export const OFFLINE_CAP_SECONDS = 4 * 60 * 60;  // credit at most 4 hours
+export const OFFLINE_RATE = 0.5;                 // offline earns at half the live rate
+
+/**
+ * Credit earnings accrued while the game was closed and return a summary for
+ * the welcome-back popup, or null if nothing worth showing happened (too short
+ * a trip, economy not unlocked yet, or the amounts round to nothing). Mutates
+ * state: adds the money and any new supporters. `now` is injectable for tests.
+ */
+export function collectOfflineEarnings(lastPlayedAt, now = Date.now()) {
+  if (!gameState.unlocks.moneyUI || !lastPlayedAt) return null;
+  const awaySeconds = (now - lastPlayedAt) / 1000;
+  if (awaySeconds < OFFLINE_MIN_SECONDS) return null;
+
+  // Cap the raw time away, then scale by the offline rate — one knob feeds both
+  // the donations and the new-supporter count below.
+  const seconds = Math.min(awaySeconds, OFFLINE_CAP_SECONDS) * OFFLINE_RATE;
+  const sponsored = gameState.horses.filter((h) => h.sponsor).length;
+  const income = (gameState.supporters * SUPPORTER_RATE + sponsored * SPONSOR_RATE) * seconds;
+  // New supporters arrive at the same per-second chance the live tick rolls.
+  // They only start donating from now on — we don't back-pay their giving.
+  const newSupporters = Math.floor(attractionPerSecond() * seconds);
+
+  if (Math.floor(income) < 1 && newSupporters < 1) return null;
+
+  gameState.coins += income;
+  gameState.stats.totalDonated += income;
+  gameState.supporters += newSupporters;
+
+  return { awaySeconds, capped: awaySeconds > OFFLINE_CAP_SECONDS, income, newSupporters };
+}
+
 /**
  * Passive simulation step. dt in seconds. Returns events to show.
  */
