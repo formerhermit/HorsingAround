@@ -1,14 +1,14 @@
 // main.js — boot the game: load state, render, wire input and persistence.
 
 import { initState, save, gameState } from './state.js';
-import { careFor, tick, rescueHorse, shareUpdate } from './game.js';
+import { careFor, tick, rescueHorse, shareUpdate, rescueCost } from './game.js';
 import {
   renderAll, renderHUD, renderActions, updateHorseCard,
   showCareFeedback, showToast, showMoneyPop, changePaddock, resetPaddockView,
   showDonateBanner, hideDonateBanner, showNudgePopup, hideNudgePopup,
   renderShopButton, openShopModal, closeShopModal, renderShopModal, shopDecorPaddock,
 } from './render.js';
-import { buyDecorIn, buyWardrobe } from './shop.js';
+import { buyDecorIn, buyWardrobe, hasNewAffordableItem } from './shop.js';
 import { syncOnLoad, pushCloudSave } from './cloud.js';
 import './audio.js';
 
@@ -78,35 +78,43 @@ function refreshUI() {
 // playful arrow pointing at its button. Shown one at a time in this order, and
 // snoozed for the session once dismissed so they never nag -- they reappear next
 // visit only while their goal is still outstanding.
-const NUDGES = {
-  share: {
+/** The popup shown for a given onboarding goal. Rescue reads the first horse's
+ *  name so it lands as "Biscuit wants a friend", not a generic prompt. */
+function nudgeConfig(id) {
+  if (id === 'share') return {
     emoji: '💛', dir: 'down',
     text: 'You can raise money for the rescue! Tap “Share an update” below to tell your supporters how the horses are doing.',
-  },
-  rescue: {
-    emoji: '🐴', dir: 'down',
-    text: 'No horse should be alone. When you can afford it, tap “Rescue another horse” below to bring in a new friend.',
-  },
-  shop: {
+  };
+  if (id === 'rescue') {
+    const first = state.horses[0]?.name ?? 'Your horse';
+    return {
+      emoji: '🐴', dir: 'down',
+      text: `${first} keeps looking down the lane — no horse should be alone. You've saved enough to help: tap “Rescue another horse” below to bring home a friend.`,
+    };
+  }
+  return {
     emoji: '🛍️', dir: 'up',
     text: 'The shop is open! Tap the Shop button up top to dress your horses and decorate the paddock.',
-  },
-};
+  };
+}
 
 let onboardingSnoozed = false; // dismissed for this session
 
-/** The highest-priority onboarding goal still outstanding, or null. */
+/** The highest-priority onboarding goal still outstanding, or null. Rescue and
+ *  shop only surface once they're actually actionable -- enough money for the
+ *  first rescue, or an affordable item in the shop -- so their arrow always
+ *  points at a button the player can use right now. */
 function pendingNudge() {
   const m = state.milestones;
   if (state.unlocks.moneyUI && !m.hasSharedUpdate) return 'share';
-  if (state.unlocks.rescue && !m.hasRescuedAgain) return 'rescue';
-  if (state.unlocks.moneyUI && m.hasSharedUpdate && !m.shopIntroDone) return 'shop';
+  if (state.unlocks.rescue && !m.hasRescuedAgain && state.coins >= rescueCost(state)) return 'rescue';
+  if (state.unlocks.moneyUI && !m.shopIntroDone && hasNewAffordableItem(state)) return 'shop';
   return null;
 }
 
 function updateOnboardingNudges() {
   const id = onboardingSnoozed ? null : pendingNudge();
-  if (id) showNudgePopup(id, NUDGES[id]);
+  if (id) showNudgePopup(id, nudgeConfig(id));
   else hideNudgePopup();
 }
 

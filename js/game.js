@@ -242,20 +242,15 @@ export function tick(dt) {
   const events = [];
   if (!gameState.unlocks.moneyUI) return events;
 
-  // The loneliness beat: a little after the first donation, motivate the
-  // second rescue — horses are herd animals.
+  // The loneliness beat: a little after the first donation, unlock the second
+  // rescue -- horses are herd animals. The "wants a friend" message is delivered
+  // by the onboarding popup (main.js), which waits until the player can actually
+  // afford the rescue so its arrow points at a usable button.
   if (!gameState.unlocks.rescue && gameState.horses.length === 1) {
     lonelyCountdown -= dt;
     if (lonelyCountdown <= 0) {
       gameState.unlocks.rescue = true;
       gameState.milestones.lonelyShown = true;
-      const biscuit = gameState.horses[0];
-      // Single toast now -- Biscuit's personality was already revealed earlier
-      // (at TRAIT_REVEAL_AT) rather than bundled in here.
-      events.push({
-        type: 'milestone',
-        message: `${biscuit.name} keeps looking down the lane. Horses are herd animals — no horse should be alone. Maybe the rescue fund can help someone else too?`,
-      });
     }
   }
 
