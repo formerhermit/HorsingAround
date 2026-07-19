@@ -393,6 +393,15 @@ main {
   font-size: 0.95em;
   color: #5c5344;
   margin: 0 0 0.45em;
+  line-height: 1.2;
+  /* Always reserve two lines, and centre the text within them, so a status that
+     wraps ("just arrived — needs a lot of care") is the same height as a short
+     one ("in rough shape") -- the card, and the paddock, never jump. */
+  min-height: 2.4em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
 }
 
 /* The sponsor line always occupies its line of space; the "shown" class only
