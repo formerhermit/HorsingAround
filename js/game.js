@@ -9,7 +9,7 @@ import {
   RESCUE_MILESTONES, REHOME_MILESTONES, DONATE_MILESTONE,
 } from './state.js';
 import { PALETTE_KEYS } from './horse.js';
-import { attractionBonus, shareMultiplier } from './shop.js';
+import { attractionBonus, shareMultiplier, PADDOCK_CAP } from './shop.js';
 
 // ---- tuning ----
 export const CARE_GAIN = 2;          // wellbeing per care click
@@ -454,7 +454,9 @@ const NEEDS = [
 ];
 
 let activeWant = null; // { horseId, need, expiresAt } or null; not persisted
-let wantCountdown = randomBetween(WANT_MIN_GAP, WANT_MAX_GAP);
+// First want of a session comes sooner (discoverability); later ones use the
+// gentle gap. Only counts down once the money side is unlocked (see tick).
+let wantCountdown = randomBetween(20, 45);
 let glowUntil = 0;     // timestamp; attraction is boosted until then (read above)
 
 /** The current want (for drawing its bubble), or null. */
@@ -462,10 +464,13 @@ export function getActiveWant() {
   return activeWant;
 }
 
-// Wants land only on the horses always visible in the home paddock (the newest
-// front row), and only when they're content enough to fancy a little luxury.
+// Wants land on horses in the home paddock (the newest PADDOCK_CAP, both rows,
+// all visible on the default view) that are content enough to fancy a little
+// luxury. Keying off the whole home chunk (not just the front row) matters:
+// the front row is usually the freshly-rescued scruffy arrivals, while the
+// recovered horses that actually want treats sit just behind them.
 function eligibleWantHorses() {
-  return gameState.horses.slice(-FRONT_ROW).filter((h) => h.wellbeing >= WANT_MIN_WELLBEING);
+  return gameState.horses.slice(-PADDOCK_CAP).filter((h) => h.wellbeing >= WANT_MIN_WELLBEING);
 }
 
 /** Advance the little-needs cycle by dt seconds. One want at a time; spawns
@@ -482,9 +487,12 @@ function updateWants(dt, now) {
   }
   wantCountdown -= dt;
   if (wantCountdown > 0) return;
-  wantCountdown = randomBetween(WANT_MIN_GAP, WANT_MAX_GAP);
   const candidates = eligibleWantHorses();
-  if (!candidates.length) return; // nobody in the mood; try again next gap
+  if (!candidates.length) {
+    wantCountdown = randomBetween(15, 30); // nobody content yet; check again soon
+    return;
+  }
+  wantCountdown = randomBetween(WANT_MIN_GAP, WANT_MAX_GAP);
   activeWant = {
     horseId: randomFrom(candidates).id,
     need: randomFrom(NEEDS),
