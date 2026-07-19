@@ -79,6 +79,12 @@ export function defaultState() {
       decorByPaddock: {},
     },
 
+    // Keepsake postcards from rehomed horses. `pendingPostcards` holds ones
+    // scheduled but not yet due (each carries a dueAt); they move to
+    // `postcards` when delivered. Scheduling + delivery live in game.js.
+    postcards: [],
+    pendingPostcards: [],
+
     // one-way feature gates flipped by progression
     unlocks: {
       moneyUI: false,    // flips when Biscuit first reaches "content"
@@ -101,6 +107,7 @@ export function defaultState() {
       rehomeRewardsGiven: [],   // rehome-count milestones already rewarded
       donateMilestoneShown: false, // the 10-rescue confetti/donate popup fired
       donateOptOut: false,      // player chose "Don't ask again" on the donate popup
+      firstPostcardShown: false, // the first postcard's toast explains the album
     },
 
     stats: {
@@ -196,6 +203,12 @@ function repair(save) {
   save.milestones.rehomeRewardsGiven ??= REHOME_MILESTONES.filter((n) => save.stats.horsesRehomed >= n);
   save.milestones.donateMilestoneShown ??= save.stats.horsesRescued >= DONATE_MILESTONE;
   save.milestones.donateOptOut ??= false;
+
+  // Postcards are new; existing saves start with empty collections. A returning
+  // player's next rehoming earns their first postcard (and its explanatory toast).
+  save.postcards ??= [];
+  save.pendingPostcards ??= [];
+  save.milestones.firstPostcardShown ??= false;
 
   // Wardrobe used to be a global purchase that dressed every horse at once.
   // Anyone who bought one under that system keeps it -- migrate those ids
