@@ -110,12 +110,11 @@ function updateOnboardingNudges() {
   else hideNudgePopup();
 }
 
+// Only the "Got it!" button dismisses -- clicking the dimmed background does
+// nothing, so a player can't skip past the prompt by accident.
 document.getElementById('nudge-dismiss').addEventListener('click', () => {
   onboardingSnoozed = true;
   hideNudgePopup();
-});
-document.getElementById('nudge-overlay').addEventListener('click', (event) => {
-  if (event.target.id === 'nudge-overlay') { onboardingSnoozed = true; hideNudgePopup(); }
 });
 
 // Re-assert the onboarding nudge on load: a player who unlocked money but never

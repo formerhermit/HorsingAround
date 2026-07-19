@@ -4,6 +4,13 @@
   box-sizing: border-box;
 }
 
+:root {
+  /* Width of a scale-1 (front, newest) horse. Keyed off viewport height so the
+     whole paddock shrinks to fit shorter screens rather than growing so tall it
+     hides the buttons and donate text below it. Capped so it never gets huge. */
+  --horse-unit: clamp(104px, 19vh, 196px);
+}
+
 body {
   margin: 0;
   font-family: "Avenir Next", "Segoe UI", system-ui, sans-serif;
@@ -145,11 +152,10 @@ main {
   border-radius: 18px;
   overflow: hidden;
   border: 1px solid #e0d6bf;
-  /* Reserved tall enough for a fully-populated paddock (3 front + 5 back
-     rows, plus the ground-decor row) from the very first horse, so the
-     scene never visibly grows as more horses or decor arrive -- measured
-     at 557px for a full paddock with ground decor. */
-  min-height: 600px;
+  /* Reserved from the very first horse so the scene never visibly grows as more
+     horses or decor arrive. Derived from --horse-unit so it, too, shrinks to fit
+     shorter screens. */
+  min-height: calc(var(--horse-unit) * 2.55);
   /* Split into separate layers instead of one gradient with stops 2px apart --
      Safari's rasterizer has known edge cases with near-zero-distance colour
      stops inside a single gradient, especially under border-radius clipping,
@@ -197,9 +203,9 @@ main {
   position: relative;
   display: flex;
   flex-direction: column;
-  min-height: 600px;
+  min-height: calc(var(--horse-unit) * 2.55);
   /* top padding places the background line just past the fence, on the grass */
-  padding: 48px 1.25rem 1.75rem;
+  padding: 44px 1.25rem 1rem;
 }
 
 /* Butterflies: a scatter centred in the middle of the paddock, behind the
@@ -222,14 +228,14 @@ main {
 
 /* Reserve the back row's height even while it's empty, so the front horses
    keep a fixed position: the first horse to reach the back row must never
-   shove the whole paddock downward. Sized to one back-row card. */
+   shove the whole paddock downward. Sized to one back-row card (scale 0.48). */
 .horses-back {
   display: flex;
   align-items: flex-end;
   justify-content: center;
   flex-wrap: wrap;
   gap: 0.75rem;
-  min-height: 124px;
+  min-height: calc(var(--horse-unit) * 0.55);
 }
 
 .horses-front {
@@ -241,17 +247,19 @@ main {
   margin-top: 12px;
 }
 
-/* Ground props (trough, buckets, bales, balls) sit in the actual gap
-   between the two rows -- a real flex row, not a guessed pixel offset. */
+/* Ground props (trough, buckets, bales, balls) sit in the gap between the two
+   rows. Height keys off --horse-unit (not the paddock width) so the band stays
+   compact and shrinks with the rest of the scene on short screens. */
 .ground-decor {
   width: 100%;
-  margin: 6px 0;
+  height: calc(var(--horse-unit) * 0.62);
+  margin: 2px 0;
 }
 
 .ground-decor svg {
   display: block;
   width: 100%;
-  height: auto;
+  height: 100%;
 }
 
 /* background horses: keep their cards quiet — just name and bar */
@@ -381,10 +389,10 @@ main {
   font-size: 0.75em;
   font-style: italic;
   color: #8a7d68;
-  margin: -0.5em 0 0.5em;
-  /* Reserve two lines: some traits wrap on a narrow card, and reserving the
-     worst case keeps card height constant so a reveal never jumps the paddock. */
-  min-height: 2.8em;
+  margin: -0.5em 0 0.4em;
+  /* Reserve one line; the paddock's overall min-height absorbs the rare
+     two-line trait so a reveal still doesn't jump the scene. */
+  min-height: 1.5em;
   visibility: hidden;
 }
 

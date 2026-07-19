@@ -260,7 +260,7 @@ export function showMoneyPop(amount) {
 const FRONT_COUNT = 3;
 const FRONT_SCALES = [1, 0.82, 0.68]; // newest first
 const BACK_SCALE = 0.48;
-const BASE_WIDTH = 220; // px card width at scale 1
+// A scale-1 card is one --horse-unit wide (set in CSS, viewport-responsive).
 
 // PADDOCK_CAP (how many horses fill a paddock before older ones roll over)
 // lives in shop.js so decor rules can count paddocks; imported above.
@@ -435,7 +435,7 @@ function groundDecorRow(state, paddock) {
     .join('');
   const row = document.createElement('div');
   row.className = 'ground-decor';
-  row.innerHTML = `<svg viewBox="0 0 900 100" preserveAspectRatio="xMidYMid meet" aria-hidden="true">${images}</svg>`;
+  row.innerHTML = `<svg viewBox="0 0 900 100" preserveAspectRatio="xMidYMax meet" aria-hidden="true">${images}</svg>`;
   return row;
 }
 
@@ -452,8 +452,11 @@ function butterfliesOverlay(state, paddock) {
 function horseCard(horse, scale = 1, isBack = false, wardrobe = []) {
   const card = document.createElement('div');
   card.className = isBack ? 'horse is-back' : 'horse';
-  card.style.width = `min(${Math.round(BASE_WIDTH * scale)}px, 70vw)`;
-  card.style.fontSize = `${scale.toFixed(2)}em`; // card text/bar scale with the horse
+  // Width and text both key off --horse-unit (a viewport-responsive length, see
+  // CSS) so the whole scene shrinks to fit shorter screens instead of pushing
+  // the buttons off the bottom. 70vw keeps a lone big horse off the edges.
+  card.style.width = `min(calc(var(--horse-unit) * ${scale}), 70vw)`;
+  card.style.fontSize = `calc(var(--horse-unit) * ${scale} / 13.5)`;
   card.dataset.horseId = horse.id;
   card.setAttribute('role', 'button');
   card.setAttribute('tabindex', '0');
