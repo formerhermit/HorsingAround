@@ -162,6 +162,8 @@ function repair(save) {
     horse.wardrobe ??= [];
     horse.facing ??= Math.random() < 0.5 ? 'left' : 'right';
     horse.sizeJitter ??= 0.92 + Math.random() * 0.16;
+    // Joya is now reserved for the dog decor item; rename any horse
+    if (horse.name === 'Joya') horse.name = 'Billy';
   }
   save.shop ??= {};
   // Existing saves belong to players who've already figured out how to
@@ -190,9 +192,18 @@ function repair(save) {
     const decor = legacyOwned.filter((id) => !WARDROBE_IDS.has(id));
     if (decor.length) {
       const home = (save.shop.decorByPaddock[0] ??= []);
-      for (const id of decor) if (!home.includes(id)) home.push(id);
+      for (let id of decor) {
+        // Joya (dog) was renamed to Muffin; new Joya is a different dog
+        if (id === 'joya') id = 'muffin';
+        if (!home.includes(id)) home.push(id);
+      }
     }
     delete save.shop.owned;
+  }
+  // Also rename joya to muffin in existing per-paddock decor
+  for (const paddockDecor of Object.values(save.shop.decorByPaddock ?? {})) {
+    const idx = paddockDecor.indexOf('joya');
+    if (idx >= 0) paddockDecor[idx] = 'muffin';
   }
 
   return save;

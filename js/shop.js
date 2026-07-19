@@ -48,8 +48,9 @@ export const SHOP_ITEMS = [
 
   // tier 5 — the companions. Far out of reach until the rescue is thriving:
   // a real end-game money sink and a reward for a long-tended paddock.
-  { id: 'joya', name: 'Joya the dog', category: 'decor', price: 50000, requiresHorses: 8, shareBonus: 0.12 },
+  { id: 'muffin', name: 'Muffin the dog', category: 'decor', price: 50000, requiresHorses: 8, shareBonus: 0.12 },
   { id: 'marmalade', name: 'Marmalade the cat', category: 'decor', price: 65000, requiresHorses: 8, shareBonus: 0.12 },
+  { id: 'joya', name: 'Joya the dog', category: 'decor', price: 75000, requiresHorses: 8, shareBonus: 0.15 },
 ];
 
 /** How many paddocks the herd currently fills (home paddock always counts). */

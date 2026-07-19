@@ -71,7 +71,7 @@ const ITEM_EMOJI = {
   'forelock-bow': '🎀', 'saddle-blanket': '🟦',
   'flower-garland': '🌼', bunting: '🎏', trough: '💧',
   'flower-buckets': '🪣', 'apple-barrel': '🍎', 'hay-bales': '🌾',
-  'play-balls': '🎾', butterflies: '🦋', joya: '🐶', marmalade: '🐱',
+  'play-balls': '🎾', butterflies: '🦋', muffin: '🐶', marmalade: '🐱', joya: '🐕',
 };
 
 /** Shop button: visible once funds exist, badged when something new is worth a look. */
@@ -278,13 +278,22 @@ function renderPaddock(state) {
 
 // Fence-line decor: stays on the fixed overlay near the actual fence rails.
 // Positioned in a 900x130 space so items never collide even all owned at once.
+// Flower garland is now an image, placed at three evenly-spaced positions.
+function fenceGarlandImages() {
+  const garland = { aspect: 1.500, fw: 0.635, fh: 0.287, subjH: 32 };
+  const hImg = garland.subjH / garland.fh;
+  const wImg = hImg * garland.aspect;
+  const y = 12 - hImg / 2; // top of fence area, centered
+  const images = [];
+  [225, 450, 675].forEach(cx => {
+    const x = cx - wImg / 2;
+    images.push(`<image href="assets/decor/flower-garland.png" x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${wImg.toFixed(1)}" height="${hImg.toFixed(1)}"/>`);
+  });
+  return images.join('');
+}
+
 const FENCE_DECOR_MARKUP = {
-  'flower-garland': `
-    <circle cx="40" cy="24" r="4" fill="#F2A6C6"/><circle cx="52" cy="23" r="4" fill="#F5D949"/><circle cx="64" cy="24" r="4" fill="#8FC0E8"/>
-    <circle cx="220" cy="24" r="4" fill="#F2A6C6"/><circle cx="232" cy="23" r="4" fill="#F5D949"/><circle cx="244" cy="24" r="4" fill="#8FC0E8"/>
-    <circle cx="400" cy="24" r="4" fill="#F2A6C6"/><circle cx="412" cy="23" r="4" fill="#F5D949"/><circle cx="424" cy="24" r="4" fill="#8FC0E8"/>
-    <circle cx="580" cy="24" r="4" fill="#F2A6C6"/><circle cx="592" cy="23" r="4" fill="#F5D949"/><circle cx="604" cy="24" r="4" fill="#8FC0E8"/>
-    <circle cx="760" cy="24" r="4" fill="#F2A6C6"/><circle cx="772" cy="23" r="4" fill="#F5D949"/><circle cx="784" cy="24" r="4" fill="#8FC0E8"/>`,
+  'flower-garland': fenceGarlandImages(),
   bunting: `
     <path d="M30,27 Q95,50 160,27" fill="none" stroke="#a3763a" stroke-width="1.5"/>
     <path d="M51,34.4 L61,34.4 L56,47.4 Z" fill="#E8917A"/><path d="M77,38 L87,38 L82,51 Z" fill="#8FC0E8"/><path d="M103,38 L113,38 L108,51 Z" fill="#F5D949"/><path d="M129,34.4 L139,34.4 L134,47.4 Z" fill="#A6D8A0"/>
@@ -312,14 +321,17 @@ const GROUND_BASELINE = 128; // subject bottoms rest near here
 // Each prop is a transparent PNG; aspect + fw/fh (fraction of the trimmed frame
 // its solid subject fills, glow ignored) let us size from a target subject
 // height. The horizontal slot is assigned dynamically so any mix of props
-// spreads evenly across the row.
+// spreads evenly across the row. Butterflies are overlay-only (no ground slot).
 const GROUND_IMAGES = {
+  'flower-garland': { aspect: 1.500, fw: 0.635, fh: 0.287, subjH: 52 },
   'flower-buckets': { aspect: 1.465, fw: 0.551, fh: 0.819, subjH: 84 },
   'apple-barrel':   { aspect: 1.465, fw: 0.382, fh: 0.612, subjH: 80 },
   trough:           { aspect: 1.485, fw: 0.747, fh: 0.343, subjH: 42 },
   'hay-bales':      { aspect: 1.476, fw: 0.584, fh: 0.686, subjH: 72 },
   'play-balls':     { aspect: 1.500, fw: 0.477, fh: 0.331, subjH: 46 },
-  joya:             { aspect: 1.477, fw: 0.510, fh: 0.542, subjH: 74 },
+  butterflies:      { aspect: 1.500, fw: 0.905, fh: 1.000, subjH: 80 },
+  muffin:           { aspect: 1.500, fw: 0.502, fh: 0.541, subjH: 66 },
+  joya:             { aspect: 1.500, fw: 0.581, fh: 0.645, subjH: 78 },
   marmalade:        { aspect: 1.465, fw: 0.509, fh: 0.532, subjH: 62 },
 };
 
@@ -332,26 +344,21 @@ function groundImage(id, cx) {
   return `<image href="assets/decor/${id}.png" x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${wImg.toFixed(1)}" height="${hImg.toFixed(1)}"/>`;
 }
 
-// Butterflies stay hand-drawn: an ambient scatter, not a grounded prop.
-const BUTTERFLIES_MARKUP = `
-    <g transform="translate(260,15)"><path d="M0,0 Q-7,-7 -7,0 Q-7,7 0,0" fill="#F2A6C6"/><path d="M0,0 Q7,-7 7,0 Q7,7 0,0" fill="#F5D949"/></g>
-    <g transform="translate(490,20) scale(0.85)"><path d="M0,0 Q-7,-7 -7,0 Q-7,7 0,0" fill="#8FC0E8"/><path d="M0,0 Q7,-7 7,0 Q7,7 0,0" fill="#A6D8A0"/></g>
-    <g transform="translate(680,12) scale(0.75)"><path d="M0,0 Q-7,-7 -7,0 Q-7,7 0,0" fill="#F2A6C6"/><path d="M0,0 Q7,-7 7,0 Q7,7 0,0" fill="#F5D949"/></g>`;
-
 /** Build the ground-props row for one paddock. Always present (even empty) so
  *  its height is reserved from the first render -- buying the first ground prop
- *  must never make the paddock grow. Grounded props spread evenly across the
- *  row; butterflies overlay as an ambient scatter. */
+ *  must never make the paddock grow. Butterflies render first (behind other props)
+ *  if owned; grounded props spread evenly across the row on top. */
 function groundDecorRow(state, paddock) {
   const owned = paddockDecor(state, paddock);
-  const props = owned.filter((id) => GROUND_IMAGES[id]);
+  const props = owned.filter((id) => GROUND_IMAGES[id] && id !== 'butterflies');
   const images = props
     .map((id, i) => groundImage(id, (900 * (i + 1)) / (props.length + 1)))
     .join('');
-  const butterflies = owned.includes('butterflies') ? BUTTERFLIES_MARKUP : '';
+  // Butterflies render first (SVG order = behind) if owned; placed at center
+  const butterflies = owned.includes('butterflies') ? groundImage('butterflies', 450) : '';
   const row = document.createElement('div');
   row.className = 'ground-decor';
-  row.innerHTML = `<svg viewBox="0 0 900 140" preserveAspectRatio="xMidYMid meet" aria-hidden="true">${images}${butterflies}</svg>`;
+  row.innerHTML = `<svg viewBox="0 0 900 140" preserveAspectRatio="xMidYMid meet" aria-hidden="true">${butterflies}${images}</svg>`;
   return row;
 }
 
