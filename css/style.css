@@ -383,10 +383,16 @@ main {
 /* Card text and bar use em so they scale with the card's font-size,
    which renderPaddock sets per depth rank. Names are bigger now that the
    personality trait line is gone. */
+/* Every text line below the horse has a FIXED height (not min-height), so no
+   status change, sponsor reveal, or line-metric quirk can ever change the
+   card's height -- and therefore the paddock's. */
 .horse-name {
   margin: 0.35em 0 0.25em;
   font-weight: 700;
   font-size: 1.35em;
+  line-height: 1.2;
+  height: 1.2em;
+  white-space: nowrap; /* a name never wraps to a second line */
 }
 
 .horse-condition {
@@ -394,24 +400,28 @@ main {
   color: #5c5344;
   margin: 0 0 0.45em;
   line-height: 1.2;
-  /* Always reserve two lines, and centre the text within them, so a status that
-     wraps ("just arrived — needs a lot of care") is the same height as a short
-     one ("in rough shape") -- the card, and the paddock, never jump. */
-  min-height: 2.4em;
+  /* Exactly two lines, text centred within them: a status that wraps ("just
+     arrived, needs a lot of care") takes the same space as a short one
+     ("in rough shape"). Fixed height (not min-height) so even browsers that
+     round line boxes up can't grow the card. */
+  height: 2.4em;
   display: flex;
   align-items: center;
   justify-content: center;
   text-align: center;
 }
 
-/* The sponsor line always occupies its line of space; the "shown" class only
-   flips visibility. This keeps card height constant, so a sponsorship reveal
-   never makes the paddock jump. */
+/* The sponsor line always occupies exactly one line of space; the "shown"
+   class only flips visibility. Fixed height + nowrap keep card height
+   constant, so a sponsorship reveal (or a long sponsor name) never makes
+   the paddock jump. */
 .horse-sponsor {
   font-size: 0.88em;
   color: #a3763a;
   margin: -0.25em 0 0.45em;
-  min-height: 1.3em;
+  line-height: 1.3;
+  height: 1.3em;
+  white-space: nowrap;
   visibility: hidden;
 }
 

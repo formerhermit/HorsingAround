@@ -358,12 +358,15 @@ function fenceGarlandImages() {
 
 // Bunting: swags of triangular flags strung from the top rail, repeating
 // edge-to-edge across the whole fence just like the flower garland.
+// In the 900x130 decor space the top rail sits at y~18 and the lower rail at
+// y~40, so the string hangs just above the top rail and the flags drape into
+// the gap below it without reaching the lower rail.
 const BUNTING_COLORS = ['#E8917A', '#8FC0E8', '#F5D949', '#A6D8A0'];
 function fenceBuntingSwags() {
   const swagW = 130;   // one swag spans this much of the fence
-  const y0 = 30;       // string endpoints (on the top rail)
-  const dip = 20;      // how far the string sags at the swag's centre
-  const fw = 5, fh = 13; // flag half-width and length
+  const y0 = 15;       // string endpoints, resting on the top rail
+  const dip = 7;       // how far the string sags at the swag's centre
+  const fw = 4.5, fh = 10; // flag half-width and length
   const parts = [];
   for (let x0 = 0; x0 < 900; x0 += swagW) {
     const xc = x0 + swagW / 2;
