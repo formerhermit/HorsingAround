@@ -6,7 +6,7 @@ import {
   renderAll, renderHUD, renderActions, updateHorseCard,
   showCareFeedback, showToast, showMoneyPop, changePaddock, resetPaddockView,
   showDonateBanner, hideDonateBanner, showStickyToast, dismissStickyToast,
-  renderShopButton, openShopModal, closeShopModal, renderShopModal,
+  renderShopButton, openShopModal, closeShopModal, renderShopModal, shopDecorPaddock,
 } from './render.js';
 import { buyDecorIn, buyWardrobe } from './shop.js';
 import { syncOnLoad, pushCloudSave } from './cloud.js';
@@ -167,14 +167,14 @@ document.getElementById('shop-modal').addEventListener('click', (event) => {
   const btn = event.target.closest('.shop-buy-btn');
   if (!btn) return;
   const itemId = btn.dataset.itemId;
-  const card = btn.closest('.shop-item');
+  // The buy target is chosen once per section, not per item.
   let ok;
-  if (btn.dataset.decor) {
-    const paddockPicker = card.querySelector('.shop-paddock-picker');
-    ({ ok } = buyDecorIn(itemId, paddockPicker ? paddockPicker.value : 0, state));
+  if (btn.dataset.cat === 'decor') {
+    ({ ok } = buyDecorIn(itemId, shopDecorPaddock(), state));
   } else {
-    const horsePicker = card.querySelector('.shop-horse-picker');
-    ({ ok } = buyWardrobe(itemId, horsePicker.value, state));
+    const horseSelect = document.getElementById('shop-horse-select');
+    const horseId = horseSelect ? horseSelect.value : state.horses[state.horses.length - 1]?.id;
+    ({ ok } = buyWardrobe(itemId, horseId, state));
   }
   if (!ok) return;
   renderShopModal(state); // refresh owned/afford states within the open modal

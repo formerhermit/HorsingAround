@@ -696,10 +696,44 @@ main {
   margin: 0 0 1rem;
 }
 
-.shop-section h3 {
+/* Section head: title on the left, the section's one target selector on the
+   right (e.g. "Wardrobe        Dressing [ Biscuit ▾ ]"). */
+.shop-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin: 1.1rem 0 0.5rem;
+}
+
+.shop-section-head h3 {
   font-size: 0.9rem;
   color: #8a7d68;
-  margin: 1.1rem 0 0.5rem;
+  margin: 0;
+}
+
+.shop-target-inner {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.shop-target-label {
+  font-size: 0.78rem;
+  color: #8a7d68;
+}
+
+.shop-target-select {
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #3d3428;
+  background: #fffdf7;
+  border: 1px solid #e6dcc6;
+  border-radius: 8px;
+  padding: 0.25rem 0.5rem;
+  max-width: 11rem;
 }
 
 .shop-grid {
@@ -763,37 +797,13 @@ main {
   cursor: default;
 }
 
-/* Wardrobe cards buy for one chosen horse and decor cards place into one
-   chosen paddock, so both need a second row for their picker. */
-.shop-item-wardrobe,
-.shop-item-decor {
-  flex-direction: column;
-  align-items: stretch;
-  gap: 0.4rem;
-}
-
-.shop-item-top {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.shop-item-buy-row {
-  display: flex;
-  gap: 0.4rem;
-}
-
-.shop-horse-picker,
-.shop-paddock-picker {
-  flex: 1;
-  min-width: 0;
-  font: inherit;
-  font-size: 0.78rem;
-  color: #3d3428;
-  background: #fffdf7;
-  border: 1px solid #e6dcc6;
-  border-radius: 8px;
-  padding: 0.25rem 0.4rem;
+/* Decor item that can't be placed: the target paddock is at its decoration
+   limit. Muted, like the owned state, but not celebratory. */
+.shop-item-note {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #a89b83;
+  white-space: nowrap;
 }
 
 @media (max-width: 480px) {

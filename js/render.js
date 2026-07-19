@@ -3,8 +3,9 @@
 import { horseFigureHTML, horseImageSrc, wellbeingLabel, wellbeingColor } from './horse.js';
 import { rescueCost, shareValue, TRAIT_REVEAL_AT } from './game.js';
 import {
-  SHOP_ITEMS, isUnlocked, isAffordable, hasNewAffordableItem, eligibleHorses,
-  PADDOCK_CAP, paddockCount, paddockDecor, paddocksOpenFor,
+  SHOP_ITEMS, isUnlocked, isAffordable, hasNewAffordableItem,
+  PADDOCK_CAP, paddockCount, paddockDecor,
+  horseHasItem, isDecorInPaddock, paddockHasRoomFor,
 } from './shop.js';
 
 export function renderAll(state) {
@@ -81,98 +82,116 @@ export function renderShopButton(state) {
   document.getElementById('shop-badge').hidden = !hasNewAffordableItem(state);
 }
 
-/** Decor cards place one item in a chosen paddock. With a single paddock it's a
- *  plain buy button; with several, a paddock picker (like the wardrobe horse
- *  picker). Paddocks that already have the item — or are at their decoration
- *  limit — drop out of the options. */
-function decorItemCard(item, state) {
-  const open = paddocksOpenFor(item, state); // paddock indices with room
-  const total = paddockCount(state);
-  const card = document.createElement('div');
+// The shop is target-first: pick one horse / one paddock at the top of each
+// section, then every item row shows that target's own state (owned, buyable,
+// or blocked). Beats a picker on every card and makes the target unmistakable.
+// These hold the chosen target across re-renders while the modal is open.
+let shopHorseTarget = null;   // horse id
+let shopPaddockTarget = 0;    // paddock index
 
-  if (open.length === 0) {
-    // Nowhere left to put it: every paddock either has it or is full.
-    const full = state.horses.length > 0
-      && Array.from({ length: total }, (_, p) => p).some((p) => paddockDecor(state, p).includes(item.id));
-    card.className = 'shop-item shop-item-decor owned';
-    card.innerHTML = `
-      <div class="shop-item-top">
-        <span class="shop-item-icon">${ITEM_EMOJI[item.id] ?? '✨'}</span>
-        <span class="shop-item-name">${item.name}</span>
-      </div>
-      <span class="shop-item-owned">${full && total === 1 ? 'In your paddock' : 'Every paddock is set'}</span>
-    `;
-    return card;
-  }
-
-  const afford = isAffordable(item, state);
-  card.className = 'shop-item shop-item-decor';
-  const picker = total > 1
-    ? `<select class="shop-paddock-picker" data-item-id="${item.id}" aria-label="Paddock to decorate with ${item.name}">${
-        open.map((p) => `<option value="${p}">${paddockLabel(p)}</option>`).join('')
-      }</select>`
-    : '';
-  card.innerHTML = `
-    <div class="shop-item-top">
-      <span class="shop-item-icon">${ITEM_EMOJI[item.id] ?? '✨'}</span>
-      <span class="shop-item-name">${item.name}</span>
-    </div>
-    <div class="shop-item-buy-row">
-      ${picker}
-      <button class="shop-buy-btn" data-item-id="${item.id}" data-decor="1" ${afford ? '' : 'disabled'}>€${item.price}</button>
-    </div>
-  `;
-  return card;
+/** One item row for the chosen horse: owned, buyable, or too dear. */
+function wardrobeItemRow(item, horse, state) {
+  const row = document.createElement('div');
+  const owned = horseHasItem(horse, item.id);
+  row.className = `shop-item${owned ? ' owned' : ''}`;
+  const control = owned
+    ? '<span class="shop-item-owned">Owned</span>'
+    : `<button class="shop-buy-btn" data-item-id="${item.id}" data-cat="wardrobe" ${isAffordable(item, state) ? '' : 'disabled'}>€${item.price}</button>`;
+  row.innerHTML = `
+    <span class="shop-item-icon">${ITEM_EMOJI[item.id] ?? '✨'}</span>
+    <span class="shop-item-name">${item.name}</span>
+    ${control}`;
+  return row;
 }
 
-/** Wardrobe cards get a horse picker instead of a single owned/buy state,
- *  since the same item can be bought again and again for different horses. */
-function wardrobeItemCard(item, state) {
-  const eligible = eligibleHorses(item, state);
-  const card = document.createElement('div');
-
-  if (eligible.length === 0) {
-    card.className = 'shop-item shop-item-wardrobe owned';
-    card.innerHTML = `
-      <div class="shop-item-top">
-        <span class="shop-item-icon">${ITEM_EMOJI[item.id] ?? '✨'}</span>
-        <span class="shop-item-name">${item.name}</span>
-      </div>
-      <span class="shop-item-owned">Every horse has this</span>
-    `;
-    return card;
+/** One item row for the chosen paddock: already placed, buyable, out of room,
+ *  or too dear. */
+function decorItemRow(item, paddock, state) {
+  const row = document.createElement('div');
+  const inPaddock = isDecorInPaddock(item, state, paddock);
+  const room = paddockHasRoomFor(item, state, paddock);
+  const blocked = !inPaddock && !room; // paddock at its 3-decoration limit
+  row.className = `shop-item${inPaddock || blocked ? ' owned' : ''}`;
+  let control;
+  if (inPaddock) {
+    control = '<span class="shop-item-owned">In paddock</span>';
+  } else if (blocked) {
+    control = '<span class="shop-item-note">Paddock full</span>';
+  } else {
+    control = `<button class="shop-buy-btn" data-item-id="${item.id}" data-cat="decor" ${isAffordable(item, state) ? '' : 'disabled'}>€${item.price}</button>`;
   }
-
-  const afford = isAffordable(item, state);
-  const options = eligible.map((h) => `<option value="${h.id}">${h.name}</option>`).join('');
-  card.className = 'shop-item shop-item-wardrobe';
-  card.innerHTML = `
-    <div class="shop-item-top">
-      <span class="shop-item-icon">${ITEM_EMOJI[item.id] ?? '✨'}</span>
-      <span class="shop-item-name">${item.name}</span>
-    </div>
-    <div class="shop-item-buy-row">
-      <select class="shop-horse-picker" data-item-id="${item.id}" aria-label="Horse to dress in ${item.name}">${options}</select>
-      <button class="shop-buy-btn" data-item-id="${item.id}" ${afford ? '' : 'disabled'}>€${item.price}</button>
-    </div>
-  `;
-  return card;
+  row.innerHTML = `
+    <span class="shop-item-icon">${ITEM_EMOJI[item.id] ?? '✨'}</span>
+    <span class="shop-item-name">${item.name}</span>
+    ${control}`;
+  return row;
 }
 
-/** Populate the shop grids. Locked items (not enough horses rescued yet) are absent entirely. */
+/** A section's target selector: "<label> [ <select> ]". Re-renders the whole
+ *  modal on change so every row reflects the newly chosen target. */
+function targetSelector({ id, label, options, selected, onChange, state }) {
+  const mount = document.createElement('div');
+  mount.className = 'shop-target-inner';
+  mount.innerHTML = `
+    <label class="shop-target-label" for="${id}">${label}</label>
+    <select class="shop-target-select" id="${id}">${
+      options.map((o) => `<option value="${o.value}"${String(o.value) === String(selected) ? ' selected' : ''}>${o.text}</option>`).join('')
+    }</select>`;
+  mount.querySelector('select').addEventListener('change', (e) => {
+    onChange(e.target.value);
+    renderShopModal(state);
+  });
+  return mount;
+}
+
+/** Populate the shop: a target selector + item rows per section. Locked items
+ *  (not enough horses rescued yet) are absent entirely. */
 export function renderShopModal(state) {
+  const wardrobeTarget = document.getElementById('shop-target-wardrobe');
+  const decorTarget = document.getElementById('shop-target-decor');
   const wardrobeGrid = document.getElementById('shop-grid-wardrobe');
   const decorGrid = document.getElementById('shop-grid-decor');
-  wardrobeGrid.replaceChildren();
-  decorGrid.replaceChildren();
-  for (const item of SHOP_ITEMS) {
-    if (!isUnlocked(item, state)) continue;
-    if (item.category === 'wardrobe') {
-      wardrobeGrid.append(wardrobeItemCard(item, state));
-    } else {
-      decorGrid.append(decorItemCard(item, state));
+  [wardrobeTarget, decorTarget, wardrobeGrid, decorGrid].forEach((el) => el.replaceChildren());
+
+  const unlocked = SHOP_ITEMS.filter((item) => isUnlocked(item, state));
+
+  // --- wardrobe: choose a horse, then dress them ---
+  const horses = state.horses;
+  if (!horses.some((h) => h.id === shopHorseTarget)) {
+    shopHorseTarget = horses[horses.length - 1]?.id ?? null; // default: newest arrival
+  }
+  const horse = horses.find((h) => h.id === shopHorseTarget);
+  if (horse && horses.length > 1) {
+    wardrobeTarget.append(targetSelector({
+      id: 'shop-horse-select', label: 'Dressing', state,
+      options: horses.map((h) => ({ value: h.id, text: h.name })),
+      selected: shopHorseTarget, onChange: (v) => { shopHorseTarget = v; },
+    }));
+  }
+  if (horse) {
+    for (const item of unlocked) {
+      if (item.category === 'wardrobe') wardrobeGrid.append(wardrobeItemRow(item, horse, state));
     }
   }
+
+  // --- decor: choose a paddock, then decorate it ---
+  const total = paddockCount(state);
+  shopPaddockTarget = Math.min(Math.max(0, shopPaddockTarget), total - 1);
+  if (total > 1) {
+    decorTarget.append(targetSelector({
+      id: 'shop-paddock-select', label: 'Decorating', state,
+      options: Array.from({ length: total }, (_, p) => ({ value: p, text: paddockLabel(p) })),
+      selected: shopPaddockTarget, onChange: (v) => { shopPaddockTarget = Number(v); },
+    }));
+  }
+  for (const item of unlocked) {
+    if (item.category === 'decor') decorGrid.append(decorItemRow(item, shopPaddockTarget, state));
+  }
+}
+
+/** The paddock the decor section is currently targeting (read by the buy handler). */
+export function shopDecorPaddock() {
+  return shopPaddockTarget;
 }
 
 export function openShopModal(state) {
