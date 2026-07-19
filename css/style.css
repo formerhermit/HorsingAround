@@ -202,13 +202,14 @@ main {
   padding: 48px 1.25rem 1.75rem;
 }
 
-/* Butterflies span the full paddock as an ambient scatter behind the horses. */
+/* Butterflies: a scatter centred in the middle of the paddock, behind the
+   horses. Sized well below full-bleed so it reads as a cluster, not wallpaper. */
 .paddock-butterflies {
   position: absolute;
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  background: url('../assets/decor/butterflies.png') center / cover no-repeat;
+  background: url('../assets/decor/butterflies.png') center center / 42% auto no-repeat;
 }
 
 /* Rows sit above the butterfly layer. */

@@ -298,15 +298,33 @@ function fenceGarlandImages() {
   return images.join('');
 }
 
+// Bunting: swags of triangular flags strung from the top rail, repeating
+// edge-to-edge across the whole fence just like the flower garland.
+const BUNTING_COLORS = ['#E8917A', '#8FC0E8', '#F5D949', '#A6D8A0'];
+function fenceBuntingSwags() {
+  const swagW = 130;   // one swag spans this much of the fence
+  const y0 = 30;       // string endpoints (on the top rail)
+  const dip = 20;      // how far the string sags at the swag's centre
+  const fw = 5, fh = 13; // flag half-width and length
+  const parts = [];
+  for (let x0 = 0; x0 < 900; x0 += swagW) {
+    const xc = x0 + swagW / 2;
+    const x1 = x0 + swagW;
+    parts.push(`<path d="M${x0},${y0} Q${xc},${y0 + dip} ${x1},${y0}" fill="none" stroke="#a3763a" stroke-width="1.5"/>`);
+    for (let i = 0; i < 4; i++) {
+      const t = (i + 0.5) / 4;
+      const fx = x0 + t * swagW;
+      // string y at t on the quadratic bezier
+      const sy = (1 - t) * (1 - t) * y0 + 2 * (1 - t) * t * (y0 + dip) + t * t * y0;
+      parts.push(`<path d="M${(fx - fw).toFixed(1)},${sy.toFixed(1)} L${(fx + fw).toFixed(1)},${sy.toFixed(1)} L${fx.toFixed(1)},${(sy + fh).toFixed(1)} Z" fill="${BUNTING_COLORS[i]}"/>`);
+    }
+  }
+  return parts.join('');
+}
+
 const FENCE_DECOR_MARKUP = {
   'flower-garland': fenceGarlandImages(),
-  bunting: `
-    <path d="M30,27 Q95,50 160,27" fill="none" stroke="#a3763a" stroke-width="1.5"/>
-    <path d="M51,34.4 L61,34.4 L56,47.4 Z" fill="#E8917A"/><path d="M77,38 L87,38 L82,51 Z" fill="#8FC0E8"/><path d="M103,38 L113,38 L108,51 Z" fill="#F5D949"/><path d="M129,34.4 L139,34.4 L134,47.4 Z" fill="#A6D8A0"/>
-    <path d="M390,27 Q455,50 520,27" fill="none" stroke="#a3763a" stroke-width="1.5"/>
-    <path d="M411,34.4 L421,34.4 L416,47.4 Z" fill="#E8917A"/><path d="M437,38 L447,38 L442,51 Z" fill="#8FC0E8"/><path d="M463,38 L473,38 L468,51 Z" fill="#F5D949"/><path d="M489,34.4 L499,34.4 L494,47.4 Z" fill="#A6D8A0"/>
-    <path d="M660,27 Q725,50 790,27" fill="none" stroke="#a3763a" stroke-width="1.5"/>
-    <path d="M681,34.4 L691,34.4 L686,47.4 Z" fill="#E8917A"/><path d="M707,38 L717,38 L712,51 Z" fill="#8FC0E8"/><path d="M733,38 L743,38 L738,51 Z" fill="#F5D949"/><path d="M759,34.4 L769,34.4 L764,47.4 Z" fill="#A6D8A0"/>`,
+  bunting: fenceBuntingSwags(),
 };
 
 /** Draw the fence-line decor placed in the on-screen paddock. */
@@ -323,7 +341,7 @@ function renderPaddockDecor(state, paddock) {
 // at a footprint in the 900x140 row. fw/fh are the fraction of the trimmed
 // frame the subject fills; the subject is centred in the frame, so we size the
 // image from the wanted subject height and centre it on (cx, baseline).
-const GROUND_BASELINE = 128; // subject bottoms rest near here
+const GROUND_BASELINE = 92; // subject bottoms rest near here (in the 100-tall row)
 // Each prop is a transparent PNG; aspect + fw/fh (fraction of the trimmed frame
 // its solid subject fills, glow ignored) let us size from a target subject
 // height. The horizontal slot is assigned dynamically so any mix of props
@@ -333,10 +351,10 @@ const GROUND_IMAGES = {
   'apple-barrel':   { aspect: 1.465, fw: 0.382, fh: 0.612, subjH: 80 },
   trough:           { aspect: 1.485, fw: 0.747, fh: 0.343, subjH: 42 },
   'hay-bales':      { aspect: 1.476, fw: 0.584, fh: 0.686, subjH: 72 },
-  'play-balls':     { aspect: 1.500, fw: 0.477, fh: 0.331, subjH: 46 },
+  'play-balls':     { aspect: 2.163, fw: 0.475, fh: 0.329, subjH: 46 },
   muffin:           { aspect: 1.500, fw: 0.502, fh: 0.541, subjH: 66 },
   joya:             { aspect: 1.500, fw: 0.581, fh: 0.645, subjH: 78 },
-  marmalade:        { aspect: 1.465, fw: 0.509, fh: 0.532, subjH: 62 },
+  marmalade:        { aspect: 1.465, fw: 0.509, fh: 0.532, subjH: 48 },
 };
 
 function groundImage(id, cx) {
@@ -359,7 +377,7 @@ function groundDecorRow(state, paddock) {
     .join('');
   const row = document.createElement('div');
   row.className = 'ground-decor';
-  row.innerHTML = `<svg viewBox="0 0 900 140" preserveAspectRatio="xMidYMid meet" aria-hidden="true">${images}</svg>`;
+  row.innerHTML = `<svg viewBox="0 0 900 100" preserveAspectRatio="xMidYMid meet" aria-hidden="true">${images}</svg>`;
   return row;
 }
 
