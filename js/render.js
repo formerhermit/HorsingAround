@@ -512,14 +512,15 @@ export function updateHorseCard(horse) {
  * Click feedback: bounce the horse and float a little care message up
  * from where the click landed.
  */
-export function showCareFeedback(card, message, clickEvent) {
+export function showCareFeedback(card, message, clickEvent, { crit = false } = {}) {
   card.classList.remove('just-cared');
   void card.offsetWidth; // restart the bounce animation
   card.classList.add('just-cared');
 
   const pop = document.createElement('span');
-  // random pastel variant + slight tilt keeps repeated clicks lively
-  pop.className = `care-pop c${Math.floor(Math.random() * 5)}`;
+  // A crit gets the standout gold pop; everyday clicks get a random pastel
+  // variant + slight tilt to keep repeated clicks lively.
+  pop.className = crit ? 'care-pop crit' : `care-pop c${Math.floor(Math.random() * 5)}`;
   pop.style.setProperty('--tilt', `${(Math.random() * 12 - 6).toFixed(1)}deg`);
   pop.textContent = message;
   const rect = card.getBoundingClientRect();
@@ -528,6 +529,21 @@ export function showCareFeedback(card, message, clickEvent) {
   const y = clickEvent?.clientY ? clickEvent.clientY - rect.top : rect.height * 0.3;
   pop.style.left = `${x}px`;
   pop.style.top = `${y}px`;
+  card.appendChild(pop);
+  pop.addEventListener('animationend', () => pop.remove());
+}
+
+/** A spontaneous-tip pop, money-coloured so it clearly reads as cash. Placed
+ *  near the top of the card (not at the pointer) so it doesn't collide with the
+ *  care pop when the same click both cares for the horse and draws a tip. */
+export function showTipPop(card, tip) {
+  const pop = document.createElement('span');
+  pop.className = 'care-pop tip';
+  pop.style.setProperty('--tilt', `${(Math.random() * 8 - 4).toFixed(1)}deg`);
+  pop.textContent = `💛 ${tip.supporter} tipped €${tip.amount}`;
+  const rect = card.getBoundingClientRect();
+  pop.style.left = `${rect.width * 0.5}px`;
+  pop.style.top = `${rect.height * 0.12}px`;
   card.appendChild(pop);
   pop.addEventListener('animationend', () => pop.remove());
 }

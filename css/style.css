@@ -343,6 +343,35 @@ main {
   100% { opacity: 0; translate: 0 -34px; }
 }
 
+/* Crit: a care click that lands especially well. Larger and gold, with a pop of
+   scale and a higher float so it clearly outshines an everyday care pop. */
+.care-pop.crit {
+  background: linear-gradient(#fff4cc, #ffe39a);
+  border-color: #eab945;
+  color: #8a5a1f;
+  font-size: 1.02rem;
+  padding: 0.28rem 0.8rem;
+  box-shadow: 0 2px 10px rgba(224, 168, 30, 0.35);
+  animation: care-pop-crit 1.05s ease-out forwards;
+}
+
+/* Spontaneous tip: money-coloured (matches the share money-pop) so it reads as
+   cash even mid-paddock, and shares the crit's livelier float. */
+.care-pop.tip {
+  background: #e4f2d4;
+  border-color: #b7d89a;
+  color: #4e6e2f;
+  font-weight: 700;
+  animation: care-pop-crit 1.05s ease-out forwards;
+}
+
+@keyframes care-pop-crit {
+  0%   { opacity: 0; translate: 0 8px; scale: 0.7; }
+  18%  { opacity: 1; scale: 1.12; }
+  32%  { scale: 1; }
+  100% { opacity: 0; translate: 0 -46px; }
+}
+
 /* The horse figure: image + costume overlay share one box (500x480 art
    canvas), with a soft ground shadow behind. Jitter/facing transforms are
    applied to .horse-figure so image and costume move together. */
