@@ -1,13 +1,14 @@
 // main.js — boot the game: load state, render, wire input and persistence.
 
 import { initState, save, gameState } from './state.js';
-import { careFor, tick, rescueHorse, shareUpdate, rescueCost, acceptRehome, declineRehome, collectOfflineEarnings, collectDuePostcards, markPostcardsRead } from './game.js';
+import { careFor, tick, rescueHorse, shareUpdate, rescueCost, acceptRehome, declineRehome, collectOfflineEarnings, collectDuePostcards, markPostcardsRead, fulfilWant } from './game.js';
 import {
   renderAll, renderHUD, renderActions, updateHorseCard,
   showCareFeedback, showTipPop, showToast, showMoneyPop, changePaddock, resetPaddockView,
   showDonateBanner, hideDonateBanner, showNudgePopup, hideNudgePopup, showDialog,
   renderShopButton, openShopModal, closeShopModal, renderShopModal, shopDecorPaddock,
   renderPostcardButton, openPostcardAlbum, closePostcardAlbum,
+  renderWantBubbles, showWantFulfilled,
 } from './render.js';
 import { buyDecorIn, buyWardrobe, hasNewAffordableItem } from './shop.js';
 import { syncOnLoad, pushCloudSave } from './cloud.js';
@@ -273,9 +274,19 @@ function processEvents(events) {
 function handleCare(card, event) {
   const horse = state.horses.find((h) => h.id === card.dataset.horseId);
   if (!horse) return;
+  // A tap on a horse that wants something tends the want; otherwise it's a
+  // normal care click. Either way the tap still cares for the horse.
+  const want = fulfilWant(horse.id);
   const { message, crit, tip, events } = careFor(horse);
   updateHorseCard(horse);
-  showCareFeedback(card, message, event, { crit });
+  if (want) {
+    showWantFulfilled(card, want, event); // its own flavour + supporter-burst pops
+    renderWantBubbles(state);             // clear the tended bubble
+    renderHUD(state);                     // supporters jumped
+    persist();
+  } else {
+    showCareFeedback(card, message, event, { crit });
+  }
   if (tip) {
     showTipPop(card, tip);
     renderHUD(state); // the tip lands in the fund right away
@@ -393,6 +404,7 @@ setInterval(() => {
   refreshUI();
   processEvents(events);
   deliverPostcards(collectDuePostcards(now)); // same-visit postcards land here
+  renderWantBubbles(state); // show/hide the little-needs bubble as wants come and go
 }, 1000);
 
 // ---- persistence ----
