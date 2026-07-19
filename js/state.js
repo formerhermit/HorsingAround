@@ -164,6 +164,7 @@ function repair(save) {
     horse.sizeJitter ??= 0.92 + Math.random() * 0.16;
     // Joya is now reserved for the dog decor item; rename any horse
     if (horse.name === 'Joya') horse.name = 'Billy';
+    if (horse.name === 'Pantoja 2' || horse.name === 'Panjota 2') horse.name = 'Binky';
   }
   save.shop ??= {};
   // Existing saves belong to players who've already figured out how to

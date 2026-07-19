@@ -807,6 +807,28 @@ main {
   line-height: 1.2;
 }
 
+/* An either/or pair spans the full grid width with an OR between the two
+   choices, so it reads as a single "pick one" row. */
+.shop-pair {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: stretch;
+  gap: 0.5rem;
+}
+
+.shop-pair > .shop-item {
+  flex: 1;
+  min-width: 0;
+}
+
+.shop-pair-or {
+  align-self: center;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  color: #b3a488;
+}
+
 @media (max-width: 480px) {
   .shop-grid {
     grid-template-columns: 1fr;

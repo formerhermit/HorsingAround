@@ -47,18 +47,19 @@ export function horseExclusiveRival(item, horse) {
 }
 
 export const SHOP_ITEMS = [
-  // tier 1 — available as soon as the shop itself unlocks. Flower garland and
-  // bunting are the two fence-banner styles: a paddock flies one OR the other
-  // (see EXCLUSIVE_GROUPS), priced the same so the pick is purely a matter of taste.
+  // tier 1 — from the first rescue. Scarf and boots are the cheap starter
+  // wardrobe; flower garland and bunting are the two fence-banner styles: a
+  // paddock flies one OR the other (see EXCLUSIVE_GROUPS), priced the same so
+  // the pick is purely a matter of taste.
   { id: 'scarf', name: 'Scarf', category: 'wardrobe', price: 150, requiresHorses: 1, attractionBonus: 0.006 },
+  { id: 'boots', name: 'Boots', category: 'wardrobe', price: 250, requiresHorses: 1, attractionBonus: 0.010 },
   { id: 'flower-garland', name: 'Flower garland', category: 'decor', price: 500, requiresHorses: 1, shareBonus: 0.05 },
   { id: 'bunting', name: 'Bunting flags', category: 'decor', price: 500, requiresHorses: 1, shareBonus: 0.05 },
 
   // tier 2 — 3 horses rescued. Ear flower and forelock bow are the two head-flair
   // styles: a horse wears one OR the other, again same price so it's a free choice.
-  { id: 'ear-flower', name: 'Ear flower', category: 'wardrobe', price: 500, requiresHorses: 3, attractionBonus: 0.012 },
-  { id: 'forelock-bow', name: 'Forelock bow', category: 'wardrobe', price: 500, requiresHorses: 3, attractionBonus: 0.012 },
-  { id: 'boots', name: 'Boots', category: 'wardrobe', price: 400, requiresHorses: 3, attractionBonus: 0.010 },
+  { id: 'ear-flower', name: 'Ear flower', category: 'wardrobe', price: 650, requiresHorses: 3, attractionBonus: 0.012 },
+  { id: 'forelock-bow', name: 'Forelock bow', category: 'wardrobe', price: 650, requiresHorses: 3, attractionBonus: 0.012 },
   { id: 'trough', name: 'Water trough', category: 'decor', price: 900, requiresHorses: 3, shareBonus: 0.05 },
 
   // tier 3 — 5 horses rescued

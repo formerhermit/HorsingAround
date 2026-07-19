@@ -6,10 +6,16 @@ import {
   SHOP_ITEMS, isUnlocked, isAffordable, hasNewAffordableItem,
   PADDOCK_CAP, paddockCount, paddockDecor,
   horseHasItem, isDecorInPaddock, paddockHasRoomFor,
-  paddockExclusiveRival, horseExclusiveRival,
+  paddockExclusiveRival, horseExclusiveRival, EXCLUSIVE_GROUPS,
 } from './shop.js';
 
 const ITEM_NAME = Object.fromEntries(SHOP_ITEMS.map((i) => [i.id, i.name]));
+
+/** The exclusive-group partner of an item id, if any. */
+function exclusiveSiblingId(id) {
+  const group = EXCLUSIVE_GROUPS.find((g) => g.includes(id));
+  return group ? group.find((x) => x !== id) : null;
+}
 
 export function renderAll(state) {
   renderHUD(state);
@@ -156,6 +162,29 @@ function targetSelector({ id, label, options, selected, onChange, state }) {
   return mount;
 }
 
+/** Fill a shop grid from an ordered item list, using buildRow(item) for each.
+ *  Exclusive-group partners that are both present render together in a
+ *  full-width "one OR the other" row so the either/or reads at a glance. */
+function fillGrid(grid, items, buildRow) {
+  const done = new Set();
+  for (const item of items) {
+    if (done.has(item.id)) continue;
+    const sibling = items.find((i) => i.id === exclusiveSiblingId(item.id));
+    if (sibling) {
+      const pair = document.createElement('div');
+      pair.className = 'shop-pair';
+      const or = document.createElement('span');
+      or.className = 'shop-pair-or';
+      or.textContent = 'OR';
+      pair.append(buildRow(item), or, buildRow(sibling));
+      grid.append(pair);
+      done.add(item.id).add(sibling.id);
+    } else {
+      grid.append(buildRow(item));
+    }
+  }
+}
+
 /** Populate the shop: a target selector + item rows per section. Locked items
  *  (not enough horses rescued yet) are absent entirely. */
 export function renderShopModal(state) {
@@ -181,9 +210,8 @@ export function renderShopModal(state) {
     }));
   }
   if (horse) {
-    for (const item of unlocked) {
-      if (item.category === 'wardrobe') wardrobeGrid.append(wardrobeItemRow(item, horse, state));
-    }
+    fillGrid(wardrobeGrid, unlocked.filter((i) => i.category === 'wardrobe'),
+      (item) => wardrobeItemRow(item, horse, state));
   }
 
   // --- decor: choose a paddock, then decorate it ---
@@ -196,9 +224,8 @@ export function renderShopModal(state) {
       selected: shopPaddockTarget, onChange: (v) => { shopPaddockTarget = Number(v); },
     }));
   }
-  for (const item of unlocked) {
-    if (item.category === 'decor') decorGrid.append(decorItemRow(item, shopPaddockTarget, state));
-  }
+  fillGrid(decorGrid, unlocked.filter((i) => i.category === 'decor'),
+    (item) => decorItemRow(item, shopPaddockTarget, state));
 }
 
 /** The paddock the decor section is currently targeting (read by the buy handler). */

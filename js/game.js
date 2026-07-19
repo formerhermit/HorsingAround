@@ -58,7 +58,7 @@ const HORSE_NAMES = [
   'Victoria', 'Lucero', 'Luz de Luna', 'Senador', 'Torero', 'Ida',
   'Llaminera', 'Primero', 'Ramona', 'Simba', 'Pinocchio', 'Tizón',
   'Esperanza', 'Cristal', 'Gitana', 'Hindia', 'Pirata', 'Lola',
-  'Fabiola', 'Abha', 'Pantoja 2', 'Alazana', 'Dulcinea', 'Curra',
+  'Fabiola', 'Abha', 'Binky', 'Alazana', 'Dulcinea', 'Curra',
   'Soli', 'Campano', 'Perdigon', 'Abuela', 'Melanie', 'Carolina',
   'Francisco', 'Delfín', 'Maria', 'Corrie', 'Ruco', 'Palmera',
   'Bartolo', 'Castañito', 'Estrella', 'Perla', 'Sara', 'Zíngaro',
