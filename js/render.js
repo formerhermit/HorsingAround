@@ -456,7 +456,7 @@ function horseCard(horse, scale = 1, isBack = false, wardrobe = []) {
   // CSS) so the whole scene shrinks to fit shorter screens instead of pushing
   // the buttons off the bottom. 70vw keeps a lone big horse off the edges.
   card.style.width = `min(calc(var(--horse-unit) * ${scale}), 70vw)`;
-  card.style.fontSize = `calc(var(--horse-unit) * ${scale} / 13.5)`;
+  card.style.fontSize = `calc(var(--horse-unit) * ${scale} / 10.5)`;
   card.dataset.horseId = horse.id;
   card.setAttribute('role', 'button');
   card.setAttribute('tabindex', '0');

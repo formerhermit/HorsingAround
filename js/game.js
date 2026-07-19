@@ -249,9 +249,10 @@ export function rescueHorse() {
 }
 
 // ---- rehoming ----
-// Once the herd is comfortably large, thriving horses are occasionally offered
-// a forever home for a small adoption fee (roughly 10% of the next rescue cost).
-const REHOME_MIN_HERD = 5;            // need MORE than this many horses
+// Thriving horses are occasionally offered a forever home for a small adoption
+// fee (roughly 10% of the next rescue cost). Offers stop once only two horses
+// are left, so the paddock is never emptied out.
+const REHOME_MIN_HERD = 2;            // need MORE than this many horses (stop at 2)
 const REHOME_GAP_MIN = 40;            // seconds between offers (min)
 const REHOME_GAP_MAX = 95;            // ...and max
 let rehomeCountdown = randomBetween(REHOME_GAP_MIN, REHOME_GAP_MAX);

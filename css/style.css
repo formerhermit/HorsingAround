@@ -348,7 +348,10 @@ main {
    applied to .horse-figure so image and costume move together. */
 .horse-figure {
   position: relative;
-  width: 100%;
+  /* Slightly narrower than the card so the enlarged name/status text can grow
+     into the freed height without making the card -- and paddock -- any taller. */
+  width: 84%;
+  margin: 0 auto;
   aspect-ratio: 500 / 480;
 }
 
@@ -381,25 +384,25 @@ main {
    which renderPaddock sets per depth rank. Names are bigger now that the
    personality trait line is gone. */
 .horse-name {
-  margin: 0.45em 0 0.3em;
+  margin: 0.35em 0 0.25em;
   font-weight: 700;
-  font-size: 1.3em;
+  font-size: 1.35em;
 }
 
 .horse-condition {
-  font-size: 0.82em;
+  font-size: 0.95em;
   color: #5c5344;
-  margin: 0 0 0.5em;
+  margin: 0 0 0.45em;
 }
 
 /* The sponsor line always occupies its line of space; the "shown" class only
    flips visibility. This keeps card height constant, so a sponsorship reveal
    never makes the paddock jump. */
 .horse-sponsor {
-  font-size: 0.75em;
+  font-size: 0.88em;
   color: #a3763a;
-  margin: -0.35em 0 0.5em;
-  min-height: 1.4em;
+  margin: -0.25em 0 0.45em;
+  min-height: 1.3em;
   visibility: hidden;
 }
 
