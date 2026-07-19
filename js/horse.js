@@ -102,7 +102,7 @@ export function horseFigureHTML(horse, wardrobe = []) {
 
 /** Short human-readable condition for the nameplate. */
 export function wellbeingLabel(wellbeing) {
-  if (wellbeing < 20) return 'just arrived — needs a lot of care';
+  if (wellbeing < 20) return 'just arrived, needs a lot of care';
   if (wellbeing < 40) return 'in rough shape';
   if (wellbeing < 60) return 'recovering';
   if (wellbeing < 80) return 'doing well';
