@@ -318,12 +318,109 @@ export function acceptRehome() {
   const [horse] = gameState.horses.splice(idx, 1);
   gameState.coins += income;
   gameState.stats.horsesRehomed += 1;
+  schedulePostcard(horse); // a keepsake note will arrive from its new home later
   return { horse, income };
 }
 
 /** Decline the pending offer: the horse stays, no money changes hands. */
 export function declineRehome() {
   pendingRehome = null;
+}
+
+// ---- postcards ----
+// A while after a horse is rehomed, a keepsake postcard arrives saying it has
+// settled in. The delay varies for surprise: some horses write the same visit,
+// some take a few hours, some a day. Times are seconds; weights are relative.
+const POSTCARD_BUCKETS = [
+  { weight: 30, min: 5, max: 25 },                 // same visit
+  { weight: 35, min: 1 * 3600, max: 4 * 3600 },    // a few hours
+  { weight: 35, min: 12 * 3600, max: 36 * 3600 },  // next day
+];
+
+// Warm, regional homes a rehomed horse might go to (shown on the postcard).
+const ADOPTERS = [
+  'the García family', 'the Morales family', 'the Ruiz family',
+  'the Fernández family', 'the Cabrera family', 'Abuela Rosa',
+  'Don Emilio', 'a young couple in Ronda', 'a riding school near Sevilla',
+  'a little farm outside Málaga',
+];
+
+// Settling-in notes. {name}, {adopter}, {trait} are filled per horse; the trait
+// callback ("still {trait}") is what makes each card feel like your own horse.
+const POSTCARD_TEMPLATES = [
+  '{name} has settled right in with {adopter}. Still {trait}, of course, but happier than ever 💛',
+  'A little note to say {name} is thriving with {adopter}. Still {trait}, naturally! 🐴',
+  '{name} sends a happy nicker from a new paddock with {adopter}. Still {trait}: some things never change 💛',
+  'Word from {adopter}: {name} has fit right in. Still {trait}, but loving the new home 🌼',
+  'Greetings from {name}, now living the good life with {adopter}. Still {trait}, we hear! 🥕',
+  '{name} is doing wonderfully with {adopter}. Still {trait}, and that came along for the ride 💛',
+];
+// Fallback for the rare horse rehomed without a revealed trait.
+const POSTCARD_TEMPLATES_NOTRAIT = [
+  '{name} has settled right in with {adopter}, and could not be happier 💛',
+  'A little note to say {name} is thriving with {adopter}. Thank you for everything 🐴',
+];
+
+function weightedPick(buckets) {
+  const total = buckets.reduce((sum, b) => sum + b.weight, 0);
+  let roll = Math.random() * total;
+  for (const b of buckets) {
+    roll -= b.weight;
+    if (roll < 0) return b;
+  }
+  return buckets[buckets.length - 1];
+}
+
+/** Queue a postcard from a just-rehomed horse. Snapshots the horse (name, coat,
+ *  outfit, trait) since it's about to leave the herd, and resolves the message
+ *  and adopter now so the card is stable. */
+function schedulePostcard(horse) {
+  const bucket = weightedPick(POSTCARD_BUCKETS);
+  const delaySec = randomBetween(bucket.min, bucket.max);
+  const adopter = randomFrom(ADOPTERS);
+  const templates = horse.trait ? POSTCARD_TEMPLATES : POSTCARD_TEMPLATES_NOTRAIT;
+  const message = randomFrom(templates)
+    .replaceAll('{name}', horse.name)
+    .replaceAll('{adopter}', adopter)
+    .replaceAll('{trait}', horse.trait ?? '');
+  gameState.pendingPostcards.push({
+    id: `pc-${horse.id}-${Date.now().toString(36)}`,
+    name: horse.name,
+    paletteKey: horse.paletteKey,
+    wardrobe: [...(horse.wardrobe ?? [])],
+    adopter,
+    message,
+    dueAt: Date.now() + delaySec * 1000,
+    deliveredAt: null,
+    read: false,
+  });
+}
+
+/** Move any pending postcards that have come due into the collection and return
+ *  them (for the delivery toast). Runs on the tick and on load, so cards that
+ *  came due while the game was closed are waiting on return. */
+export function collectDuePostcards(now = Date.now()) {
+  const pending = gameState.pendingPostcards ?? [];
+  if (!pending.length) return [];
+  const due = [];
+  const stillPending = [];
+  for (const pc of pending) {
+    if (pc.dueAt <= now) {
+      pc.deliveredAt = now;
+      pc.read = false;
+      gameState.postcards.push(pc);
+      due.push(pc);
+    } else {
+      stillPending.push(pc);
+    }
+  }
+  gameState.pendingPostcards = stillPending;
+  return due;
+}
+
+/** Mark every collected postcard as read (called when the album is opened). */
+export function markPostcardsRead(state = gameState) {
+  for (const pc of state.postcards) pc.read = true;
 }
 
 // Not persisted: restarting the wait after a reload is harmless.

@@ -118,6 +118,49 @@ body {
   display: none;
 }
 
+.album-btn {
+  position: relative;
+  font: inherit;
+  font-size: 1.1rem;
+  line-height: 1;
+  color: #6b5c44;
+  background: #fffdf7;
+  border: 1px solid #e6dcc6;
+  border-radius: 999px;
+  width: 2.3rem;
+  height: 2.3rem;
+  cursor: pointer;
+}
+
+.album-btn:hover {
+  border-color: #d8c39a;
+}
+
+.album-btn[hidden] {
+  display: none;
+}
+
+/* Unread count bubble on the album button. */
+.album-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: #d9534f;
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 800;
+  line-height: 16px;
+  text-align: center;
+}
+
+.album-badge[hidden] {
+  display: none;
+}
+
 .sound-btn {
   font: inherit;
   font-size: 1rem;
@@ -892,6 +935,109 @@ main {
 
 @media (max-width: 480px) {
   .shop-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ---------- postcard album ---------- */
+
+.album-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(61, 52, 40, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  z-index: 100;
+}
+
+.album-overlay[hidden] {
+  display: none;
+}
+
+.album-modal {
+  background: #faf6ee;
+  border: 1px solid #e6dcc6;
+  border-radius: 18px;
+  box-shadow: 0 8px 24px rgba(61, 52, 40, 0.2);
+  padding: 1.25rem 1.5rem 1.5rem;
+  width: 100%;
+  max-width: 560px;
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
+.album-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.9rem;
+}
+
+.album-empty {
+  grid-column: 1 / -1;
+  text-align: center;
+  color: #8a7d68;
+  font-size: 0.9rem;
+  padding: 1.5rem 0.5rem;
+}
+
+/* A polaroid: portrait in a soft frame, name + note + date below. */
+.postcard {
+  margin: 0;
+  background: #fffdf7;
+  border: 1px solid #ece3cf;
+  border-radius: 10px;
+  box-shadow: 0 3px 10px rgba(61, 52, 40, 0.12);
+  padding: 0.5rem 0.5rem 0.7rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.postcard-photo {
+  background: linear-gradient(#eaf3dd, #dcecc9);
+  border-radius: 6px;
+  padding: 0.4rem;
+  aspect-ratio: 5 / 4;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.postcard-photo .horse-figure {
+  width: 80%;
+  margin: 0 auto;
+}
+
+.postcard-caption {
+  padding: 0.5rem 0.35rem 0;
+  text-align: center;
+}
+
+.postcard-name {
+  margin: 0 0 0.25rem;
+  font-weight: 800;
+  font-size: 1rem;
+  color: #3d3428;
+}
+
+.postcard-msg {
+  margin: 0 0 0.4rem;
+  font-size: 0.8rem;
+  line-height: 1.35;
+  color: #5c5344;
+}
+
+.postcard-date {
+  margin: 0;
+  font-size: 0.7rem;
+  letter-spacing: 0.02em;
+  color: #a99f89;
+}
+
+@media (max-width: 480px) {
+  .album-grid {
     grid-template-columns: 1fr;
   }
 }

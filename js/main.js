@@ -1,12 +1,13 @@
 // main.js — boot the game: load state, render, wire input and persistence.
 
 import { initState, save, gameState } from './state.js';
-import { careFor, tick, rescueHorse, shareUpdate, rescueCost, acceptRehome, declineRehome, collectOfflineEarnings } from './game.js';
+import { careFor, tick, rescueHorse, shareUpdate, rescueCost, acceptRehome, declineRehome, collectOfflineEarnings, collectDuePostcards, markPostcardsRead } from './game.js';
 import {
   renderAll, renderHUD, renderActions, updateHorseCard,
   showCareFeedback, showTipPop, showToast, showMoneyPop, changePaddock, resetPaddockView,
   showDonateBanner, hideDonateBanner, showNudgePopup, hideNudgePopup, showDialog,
   renderShopButton, openShopModal, closeShopModal, renderShopModal, shopDecorPaddock,
+  renderPostcardButton, openPostcardAlbum, closePostcardAlbum,
 } from './render.js';
 import { buyDecorIn, buyWardrobe, hasNewAffordableItem } from './shop.js';
 import { syncOnLoad, pushCloudSave } from './cloud.js';
@@ -198,6 +199,27 @@ function showWelcomeBack(summary) {
 
 if (offlineSummary) showWelcomeBack(offlineSummary);
 
+// ---- postcards ----
+// Deliver any postcards that have come due (checked on load and each tick, so
+// ones that matured while the game was closed are waiting on return) and toast
+// them. The first one explains the album; later ones just announce themselves.
+function deliverPostcards(due) {
+  if (!due.length) return;
+  const first = !state.milestones.firstPostcardShown;
+  state.milestones.firstPostcardShown = true;
+  if (due.length === 1) {
+    showToast(first
+      ? `💌 ${due[0].name} sent a postcard from their new home. Find it in your album up top!`
+      : `💌 A postcard arrived from ${due[0].name}!`);
+  } else {
+    showToast(`💌 ${due.length} postcards arrived from horses you've rehomed!`);
+  }
+  renderPostcardButton(state);
+  persist();
+}
+
+deliverPostcards(collectDuePostcards());
+
 const DONATE_URL = 'https://donorbox.org/donate-to-arch?amount=10';
 
 /** Turn one event into either a toast or a queued modal dialog. */
@@ -311,7 +333,22 @@ document.getElementById('shop-overlay').addEventListener('click', (event) => {
   if (event.target.id === 'shop-overlay') closeShopModal();
 });
 document.addEventListener('keydown', (event) => {
-  if (event.key === 'Escape' && !document.getElementById('shop-overlay').hidden) closeShopModal();
+  if (event.key !== 'Escape') return;
+  if (!document.getElementById('shop-overlay').hidden) closeShopModal();
+  if (!document.getElementById('album-overlay').hidden) closePostcardAlbum();
+});
+
+// ---- postcard album ----
+
+document.getElementById('album-btn').addEventListener('click', () => {
+  markPostcardsRead(state);   // opening the album clears the unread badge
+  openPostcardAlbum(state);
+  renderPostcardButton(state);
+  persist();
+});
+document.getElementById('album-close').addEventListener('click', closePostcardAlbum);
+document.getElementById('album-overlay').addEventListener('click', (event) => {
+  if (event.target.id === 'album-overlay') closePostcardAlbum();
 });
 
 document.getElementById('shop-modal').addEventListener('click', (event) => {
@@ -355,6 +392,7 @@ setInterval(() => {
   state.horses.forEach(updateHorseCard); // tick can change sponsor lines (and later, wellbeing)
   refreshUI();
   processEvents(events);
+  deliverPostcards(collectDuePostcards(now)); // same-visit postcards land here
 }, 1000);
 
 // ---- persistence ----

@@ -22,6 +22,7 @@ export function renderAll(state) {
   renderActions(state);
   renderPaddock(state);
   renderShopButton(state);
+  renderPostcardButton(state);
 }
 
 export function renderHUD(state) {
@@ -89,6 +90,55 @@ export function renderShopButton(state) {
   const btn = document.getElementById('shop-btn');
   btn.hidden = !state.unlocks.moneyUI;
   document.getElementById('shop-badge').hidden = !hasNewAffordableItem(state);
+}
+
+// ---- postcard album ----
+
+/** The album button appears once the first postcard exists; its badge counts
+ *  unread ones. */
+export function renderPostcardButton(state) {
+  const btn = document.getElementById('album-btn');
+  if (!btn) return;
+  btn.hidden = state.postcards.length === 0;
+  const unread = state.postcards.filter((p) => !p.read).length;
+  const badge = document.getElementById('album-badge');
+  badge.hidden = unread === 0;
+  badge.textContent = unread > 0 ? String(unread) : '';
+}
+
+/** One polaroid: the horse's happy portrait (in the outfit it wore), its name,
+ *  the settling-in note, and the date the card arrived. */
+function postcardHTML(pc) {
+  const horse = { name: pc.name, paletteKey: pc.paletteKey, wellbeing: 100 };
+  const date = new Date(pc.deliveredAt).toLocaleDateString(undefined, {
+    day: 'numeric', month: 'short', year: 'numeric',
+  });
+  return `
+<figure class="postcard">
+  <div class="postcard-photo">${horseFigureHTML(horse, pc.wardrobe)}</div>
+  <figcaption class="postcard-caption">
+    <p class="postcard-name">${pc.name}</p>
+    <p class="postcard-msg">${pc.message}</p>
+    <p class="postcard-date">${date}</p>
+  </figcaption>
+</figure>`;
+}
+
+export function renderPostcardAlbum(state) {
+  const grid = document.getElementById('album-grid');
+  const cards = [...state.postcards].sort((a, b) => b.deliveredAt - a.deliveredAt);
+  grid.innerHTML = cards.length
+    ? cards.map(postcardHTML).join('')
+    : '<p class="album-empty">No postcards yet. Rehome a thriving horse and one will find its way back to you 💛</p>';
+}
+
+export function openPostcardAlbum(state) {
+  renderPostcardAlbum(state);
+  document.getElementById('album-overlay').hidden = false;
+}
+
+export function closePostcardAlbum() {
+  document.getElementById('album-overlay').hidden = true;
 }
 
 // The shop is target-first: pick one horse / one paddock at the top of each
