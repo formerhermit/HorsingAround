@@ -202,6 +202,23 @@ main {
   padding: 48px 1.25rem 1.75rem;
 }
 
+/* Butterflies span the full paddock as an ambient scatter behind the horses. */
+.paddock-butterflies {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: url('../assets/decor/butterflies.png') center / cover no-repeat;
+}
+
+/* Rows sit above the butterfly layer. */
+.horses-back,
+.horses-front,
+.ground-decor {
+  position: relative;
+  z-index: 1;
+}
+
 .horses-back {
   display: flex;
   align-items: flex-end;

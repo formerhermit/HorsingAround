@@ -261,7 +261,10 @@ function renderPaddock(state) {
     frontRow.append(horseCard(h, FRONT_SCALES[rank] ?? BACK_SCALE, false, h.wardrobe));
   });
 
-  document.getElementById('horses').replaceChildren(backRow, groundDecorRow(state, currentPaddock), frontRow);
+  const children = [backRow, groundDecorRow(state, currentPaddock), frontRow];
+  const butterflies = butterfliesOverlay(state, currentPaddock);
+  if (butterflies) children.unshift(butterflies); // behind the horses
+  document.getElementById('horses').replaceChildren(...children);
   renderPaddockDecor(state, currentPaddock);
 
   // edge arrows + label, only when there is more than one paddock
@@ -278,16 +281,17 @@ function renderPaddock(state) {
 
 // Fence-line decor: stays on the fixed overlay near the actual fence rails.
 // Positioned in a 900x130 space so items never collide even all owned at once.
-// Flower garland repeats along the fence line (top, not in grass).
+// Flower garland repeats along the whole fence, resting on the upper rail.
+const GARLAND_RAIL_Y = 35; // SVG-y the garland subject centres on (the top plank)
 function fenceGarlandImages() {
   const garland = { aspect: 1.500, fw: 0.635, fh: 0.287, subjH: 16 }; // half size
   const hImg = garland.subjH / garland.fh;
   const wImg = hImg * garland.aspect;
-  const y = 8 - hImg / 2; // top of fence, centered vertically
+  const y = GARLAND_RAIL_Y - hImg / 2; // subject centred on the rail
   const images = [];
-  const spacing = wImg + 20; // repeat with small gap
-  // Repeat along entire fence width starting from left
-  for (let cx = wImg / 2 + 10; cx < 900; cx += spacing) {
+  const spacing = wImg * garland.fw + 6; // tile the solid subject edge-to-edge
+  // Repeat from the very start of the fence (subject left edge at x=0).
+  for (let cx = wImg / 2; cx < 900 + wImg; cx += spacing) {
     const x = cx - wImg / 2;
     images.push(`<image href="assets/decor/flower-garland.png" x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${wImg.toFixed(1)}" height="${hImg.toFixed(1)}"/>`);
   }
@@ -325,13 +329,11 @@ const GROUND_BASELINE = 128; // subject bottoms rest near here
 // height. The horizontal slot is assigned dynamically so any mix of props
 // spreads evenly across the row. Butterflies are overlay-only (no ground slot).
 const GROUND_IMAGES = {
-  'flower-garland': { aspect: 1.500, fw: 0.635, fh: 0.287, subjH: 52 },
   'flower-buckets': { aspect: 1.465, fw: 0.551, fh: 0.819, subjH: 84 },
   'apple-barrel':   { aspect: 1.465, fw: 0.382, fh: 0.612, subjH: 80 },
   trough:           { aspect: 1.485, fw: 0.747, fh: 0.343, subjH: 42 },
   'hay-bales':      { aspect: 1.476, fw: 0.584, fh: 0.686, subjH: 72 },
   'play-balls':     { aspect: 1.500, fw: 0.477, fh: 0.331, subjH: 46 },
-  butterflies:      { aspect: 1.500, fw: 0.905, fh: 1.000, subjH: 130 },
   muffin:           { aspect: 1.500, fw: 0.502, fh: 0.541, subjH: 66 },
   joya:             { aspect: 1.500, fw: 0.581, fh: 0.645, subjH: 78 },
   marmalade:        { aspect: 1.465, fw: 0.509, fh: 0.532, subjH: 62 },
@@ -348,20 +350,27 @@ function groundImage(id, cx) {
 
 /** Build the ground-props row for one paddock. Always present (even empty) so
  *  its height is reserved from the first render -- buying the first ground prop
- *  must never make the paddock grow. Butterflies render first (behind other props)
- *  if owned; grounded props spread evenly across the row on top. */
+ *  must never make the paddock grow. Grounded props spread evenly across the
+ *  row. Fence decor (garland/bunting) and butterflies are drawn elsewhere. */
 function groundDecorRow(state, paddock) {
-  const owned = paddockDecor(state, paddock);
-  const props = owned.filter((id) => GROUND_IMAGES[id] && id !== 'butterflies');
+  const props = paddockDecor(state, paddock).filter((id) => GROUND_IMAGES[id]);
   const images = props
     .map((id, i) => groundImage(id, (900 * (i + 1)) / (props.length + 1)))
     .join('');
-  // Butterflies render first (SVG order = behind) if owned; placed at center
-  const butterflies = owned.includes('butterflies') ? groundImage('butterflies', 450) : '';
   const row = document.createElement('div');
   row.className = 'ground-decor';
-  row.innerHTML = `<svg viewBox="0 0 900 140" preserveAspectRatio="xMidYMid meet" aria-hidden="true">${butterflies}${images}</svg>`;
+  row.innerHTML = `<svg viewBox="0 0 900 140" preserveAspectRatio="xMidYMid meet" aria-hidden="true">${images}</svg>`;
   return row;
+}
+
+/** Full-paddock butterfly layer -- a scatter that spans the whole grass, behind
+ *  the horses. Only present when the paddock owns the butterflies decor. */
+function butterfliesOverlay(state, paddock) {
+  if (!paddockDecor(state, paddock).includes('butterflies')) return null;
+  const layer = document.createElement('div');
+  layer.className = 'paddock-butterflies';
+  layer.setAttribute('aria-hidden', 'true');
+  return layer;
 }
 
 function horseCard(horse, scale = 1, isBack = false, wardrobe = []) {
