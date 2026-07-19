@@ -21,13 +21,15 @@ export const SHOP_ITEMS = [
   // tier 3 — 5 horses rescued
   { id: 'leg-wraps', name: 'Leg wraps', category: 'wardrobe', price: 900, requiresHorses: 5, attractionBonus: 0.014 },
   { id: 'forelock-bow', name: 'Forelock bow', category: 'wardrobe', price: 1000, requiresHorses: 5, attractionBonus: 0.014 },
-  { id: 'flower-buckets', name: 'Flower buckets', category: 'decor', price: 1800, requiresHorses: 5, shareBonus: 0.06 },
-  { id: 'butterflies', name: 'Butterflies', category: 'decor', price: 1900, requiresHorses: 5, shareBonus: 0.06 },
+  { id: 'flower-buckets', name: 'Flower buckets', category: 'decor', price: 3000, requiresHorses: 5, shareBonus: 0.06 },
+  { id: 'butterflies', name: 'Butterflies', category: 'decor', price: 3600, requiresHorses: 5, shareBonus: 0.06 },
 
-  // tier 4 — 8 horses rescued (matches the paddock-paging threshold)
+  // tier 4 — 8 horses rescued (matches the paddock-paging threshold). The
+  // grandest props are deliberately steep: long-haul goals a maxed-out
+  // supporter base funds only well into the late game.
   { id: 'saddle-blanket', name: 'Saddle blanket', category: 'wardrobe', price: 2000, requiresHorses: 8, attractionBonus: 0.020 },
-  { id: 'hay-bales', name: 'Hay bales', category: 'decor', price: 4400, requiresHorses: 8, shareBonus: 0.08 },
-  { id: 'play-balls', name: 'Play balls', category: 'decor', price: 4400, requiresHorses: 8, shareBonus: 0.08 },
+  { id: 'hay-bales', name: 'Hay bales', category: 'decor', price: 9000, requiresHorses: 8, shareBonus: 0.08 },
+  { id: 'play-balls', name: 'Play balls', category: 'decor', price: 15000, requiresHorses: 8, shareBonus: 0.08 },
 ];
 
 export function isUnlocked(item, state) {

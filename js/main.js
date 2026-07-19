@@ -5,7 +5,7 @@ import { careFor, tick, rescueHorse, shareUpdate } from './game.js';
 import {
   renderAll, renderHUD, renderActions, updateHorseCard,
   showCareFeedback, showToast, showMoneyPop, changePaddock, resetPaddockView,
-  showDonateBanner, hideDonateBanner,
+  showDonateBanner, hideDonateBanner, showStickyToast, dismissStickyToast,
   renderShopButton, openShopModal, closeShopModal, renderShopModal,
 } from './render.js';
 import { buyDecor, buyWardrobe } from './shop.js';
@@ -31,6 +31,10 @@ if (!state.milestones.introToastShown) {
   setTimeout(() => showToast('👋 Tap Biscuit to give him some care!', 'intro'), 1200);
   save();
 }
+
+// Re-assert the onboarding nudges on load: a player who unlocked money but
+// never shared (or found the shop) should still see the prompt on return.
+updateOnboardingNudges();
 
 // ---- real-donation banner ----
 // One quiet story moment (after the first sponsorship, when the game has
@@ -68,6 +72,24 @@ function refreshUI() {
   renderHUD(state);
   renderActions(state);
   renderShopButton(state);
+  updateOnboardingNudges();
+}
+
+// Two sequenced call-to-action nudges that teach the money loop. They persist
+// until acted on (share / open shop), and are sequenced -- the shop prompt
+// waits for the share prompt to be resolved -- so they never crowd together.
+function updateOnboardingNudges() {
+  const m = state.milestones;
+  if (state.unlocks.moneyUI && !m.hasSharedUpdate) {
+    showStickyToast('share', '💛 Did you know you can raise money for the rescue? Share an update below.', 'cta');
+  } else {
+    dismissStickyToast('share');
+  }
+  if (state.unlocks.moneyUI && m.hasSharedUpdate && !m.shopIntroDone) {
+    showStickyToast('shop', '🛍️ You can now buy accessories at the shop.', 'cta');
+  } else {
+    dismissStickyToast('shop');
+  }
 }
 
 function persist() {
@@ -103,7 +125,11 @@ document.getElementById('actions').addEventListener('click', (event) => {
   if (event.target.closest('#share-btn')) {
     const { amount } = shareUpdate();
     showMoneyPop(amount);
-    refreshUI();
+    if (!state.milestones.hasSharedUpdate) {
+      state.milestones.hasSharedUpdate = true;
+      save();
+    }
+    refreshUI(); // dismisses the share nudge, then surfaces the shop nudge
     return;
   }
   if (event.target.closest('#rescue-btn')) {
@@ -121,7 +147,14 @@ document.getElementById('nav-newer').addEventListener('click', () => changePaddo
 
 // ---- shop ----
 
-document.getElementById('shop-btn').addEventListener('click', () => openShopModal(state));
+document.getElementById('shop-btn').addEventListener('click', () => {
+  if (!state.milestones.shopIntroDone) {
+    state.milestones.shopIntroDone = true;
+    save();
+  }
+  dismissStickyToast('shop');
+  openShopModal(state);
+});
 document.getElementById('shop-close').addEventListener('click', closeShopModal);
 document.getElementById('shop-overlay').addEventListener('click', (event) => {
   if (event.target.id === 'shop-overlay') closeShopModal();

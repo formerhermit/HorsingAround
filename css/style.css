@@ -831,6 +831,24 @@ main {
   100% { opacity: 0; translate: 0 -6px; }
 }
 
+/* Persistent onboarding prompts: fade in, then hold until code dismisses them
+   (no toast-life fade-out). Warm + bold so a new player's eye lands on them. */
+.toast-sticky {
+  animation: toast-in 0.5s ease forwards;
+}
+
+.toast-cta {
+  background: #ffe8a3;
+  border: 2px solid #f0c955;
+  color: #7a5a0f;
+  font-weight: 700;
+}
+
+@keyframes toast-in {
+  0%   { opacity: 0; translate: 0 -8px; }
+  100% { opacity: 1; translate: 0 0; }
+}
+
 .chip-reveal {
   animation: chip-pop 0.45s ease;
 }

@@ -419,11 +419,42 @@ export function hideDonateBanner() {
  */
 export function showToast(message, variant = null) {
   const container = document.getElementById('toasts');
-  // never stack more than 3 — the horses are the point, not the messages
-  while (container.children.length >= 3) container.firstChild.remove();
+  // never stack more than 3 — the horses are the point, not the messages.
+  // Sticky call-to-action nudges are exempt: a transient beat must never evict
+  // the "share to raise money" / "shop is open" prompt out from under a player.
+  while (container.children.length >= 3) {
+    const victim = [...container.children].find((c) => !c.dataset.sticky) ?? container.firstChild;
+    victim.remove();
+  }
   const toast = document.createElement('div');
   toast.className = variant ? `toast toast-${variant}` : 'toast';
   toast.textContent = message;
   container.appendChild(toast);
   toast.addEventListener('animationend', () => toast.remove());
+}
+
+/**
+ * A persistent call-to-action toast that stays until dismissed by code (e.g.
+ * once the player shares an update, or opens the shop). Idempotent per id, so
+ * calling it every refresh just keeps the one prompt on screen. Pinned above
+ * transient toasts so story beats slot in beneath it.
+ */
+export function showStickyToast(id, message, variant = null) {
+  const container = document.getElementById('toasts');
+  if (container.querySelector(`[data-sticky="${id}"]`)) return; // already up
+  while (container.children.length >= 3) {
+    const victim = [...container.children].find((c) => !c.dataset.sticky);
+    if (!victim) break;
+    victim.remove();
+  }
+  const toast = document.createElement('div');
+  toast.className = `toast toast-sticky${variant ? ` toast-${variant}` : ''}`;
+  toast.dataset.sticky = id;
+  toast.textContent = message;
+  container.prepend(toast);
+}
+
+export function dismissStickyToast(id) {
+  const el = document.getElementById('toasts').querySelector(`[data-sticky="${id}"]`);
+  if (el) el.remove();
 }
