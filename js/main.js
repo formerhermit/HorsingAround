@@ -8,7 +8,7 @@ import {
   showDonateBanner, hideDonateBanner, showStickyToast, dismissStickyToast,
   renderShopButton, openShopModal, closeShopModal, renderShopModal,
 } from './render.js';
-import { buyDecor, buyWardrobe } from './shop.js';
+import { buyDecorIn, buyWardrobe } from './shop.js';
 import { syncOnLoad, pushCloudSave } from './cloud.js';
 import './audio.js';
 
@@ -167,10 +167,15 @@ document.getElementById('shop-modal').addEventListener('click', (event) => {
   const btn = event.target.closest('.shop-buy-btn');
   if (!btn) return;
   const itemId = btn.dataset.itemId;
-  const picker = btn.closest('.shop-item').querySelector('.shop-horse-picker');
-  const { ok } = picker
-    ? buyWardrobe(itemId, picker.value, state)
-    : buyDecor(itemId, state);
+  const card = btn.closest('.shop-item');
+  let ok;
+  if (btn.dataset.decor) {
+    const paddockPicker = card.querySelector('.shop-paddock-picker');
+    ({ ok } = buyDecorIn(itemId, paddockPicker ? paddockPicker.value : 0, state));
+  } else {
+    const horsePicker = card.querySelector('.shop-horse-picker');
+    ({ ok } = buyWardrobe(itemId, horsePicker.value, state));
+  }
   if (!ok) return;
   renderShopModal(state); // refresh owned/afford states within the open modal
   renderAll(state); // new wardrobe/decor shows up on the horses/paddock immediately

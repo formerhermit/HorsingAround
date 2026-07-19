@@ -66,9 +66,10 @@ export function defaultState() {
     // this map; the upgrade definitions themselves live in game data, not state.
     upgrades: {},
 
-    // permanent wardrobe/decor purchases; item definitions live in shop.js
+    // permanent decor purchases, keyed by paddock slot index (0 = home).
+    // Wardrobe lives on each horse; item definitions live in shop.js.
     shop: {
-      owned: [],
+      decorByPaddock: {},
     },
 
     // one-way feature gates flipped by progression
@@ -162,7 +163,7 @@ function repair(save) {
     horse.facing ??= Math.random() < 0.5 ? 'left' : 'right';
     horse.sizeJitter ??= 0.92 + Math.random() * 0.16;
   }
-  save.shop ??= { owned: [] };
+  save.shop ??= {};
   // Existing saves belong to players who've already figured out how to
   // play -- only a brand-new defaultState() should get the onboarding nudges.
   save.milestones.introToastShown ??= true;
@@ -172,14 +173,26 @@ function repair(save) {
   // Wardrobe used to be a global purchase that dressed every horse at once.
   // Anyone who bought one under that system keeps it -- migrate those ids
   // onto every horse that already exists, then drop them from the global list.
-  const staleWardrobeIds = save.shop.owned.filter((id) => WARDROBE_IDS.has(id));
+  const legacyOwned = save.shop.owned ?? [];
+  const staleWardrobeIds = legacyOwned.filter((id) => WARDROBE_IDS.has(id));
   if (staleWardrobeIds.length) {
     for (const horse of save.horses ?? []) {
       for (const id of staleWardrobeIds) {
         if (!horse.wardrobe.includes(id)) horse.wardrobe.push(id);
       }
     }
-    save.shop.owned = save.shop.owned.filter((id) => !WARDROBE_IDS.has(id));
+  }
+
+  // Decor used to be a single global list; it now lives per paddock. Anything
+  // previously owned moves onto the home paddock (slot 0).
+  save.shop.decorByPaddock ??= {};
+  if (save.shop.owned) {
+    const decor = legacyOwned.filter((id) => !WARDROBE_IDS.has(id));
+    if (decor.length) {
+      const home = (save.shop.decorByPaddock[0] ??= []);
+      for (const id of decor) if (!home.includes(id)) home.push(id);
+    }
+    delete save.shop.owned;
   }
 
   return save;

@@ -3,8 +3,8 @@
 import { horseFigureHTML, horseImageSrc, wellbeingLabel, wellbeingColor } from './horse.js';
 import { rescueCost, shareValue, TRAIT_REVEAL_AT } from './game.js';
 import {
-  SHOP_ITEMS, isUnlocked, isAffordable, hasNewAffordableItem,
-  isDecorOwned, eligibleHorses,
+  SHOP_ITEMS, isUnlocked, isAffordable, hasNewAffordableItem, eligibleHorses,
+  PADDOCK_CAP, paddockCount, paddockDecor, paddocksOpenFor,
 } from './shop.js';
 
 export function renderAll(state) {
@@ -70,7 +70,8 @@ const ITEM_EMOJI = {
   scarf: '🧣', 'ear-flower': '🌸', boots: '👢', 'leg-wraps': '🩹',
   'forelock-bow': '🎀', 'saddle-blanket': '🟦',
   'flower-garland': '🌼', bunting: '🎏', trough: '💧',
-  'flower-buckets': '🪣', 'hay-bales': '🌾', 'play-balls': '🎾', butterflies: '🦋',
+  'flower-buckets': '🪣', 'apple-barrel': '🍎', 'hay-bales': '🌾',
+  'play-balls': '🎾', butterflies: '🦋', joya: '🐶', marmalade: '🐱',
 };
 
 /** Shop button: visible once funds exist, badged when something new is worth a look. */
@@ -80,17 +81,46 @@ export function renderShopButton(state) {
   document.getElementById('shop-badge').hidden = !hasNewAffordableItem(state);
 }
 
+/** Decor cards place one item in a chosen paddock. With a single paddock it's a
+ *  plain buy button; with several, a paddock picker (like the wardrobe horse
+ *  picker). Paddocks that already have the item — or are at their decoration
+ *  limit — drop out of the options. */
 function decorItemCard(item, state) {
-  const owned = isDecorOwned(item, state);
-  const afford = isAffordable(item, state);
+  const open = paddocksOpenFor(item, state); // paddock indices with room
+  const total = paddockCount(state);
   const card = document.createElement('div');
-  card.className = `shop-item${owned ? ' owned' : ''}`;
+
+  if (open.length === 0) {
+    // Nowhere left to put it: every paddock either has it or is full.
+    const full = state.horses.length > 0
+      && Array.from({ length: total }, (_, p) => p).some((p) => paddockDecor(state, p).includes(item.id));
+    card.className = 'shop-item shop-item-decor owned';
+    card.innerHTML = `
+      <div class="shop-item-top">
+        <span class="shop-item-icon">${ITEM_EMOJI[item.id] ?? '✨'}</span>
+        <span class="shop-item-name">${item.name}</span>
+      </div>
+      <span class="shop-item-owned">${full && total === 1 ? 'In your paddock' : 'Every paddock is set'}</span>
+    `;
+    return card;
+  }
+
+  const afford = isAffordable(item, state);
+  card.className = 'shop-item shop-item-decor';
+  const picker = total > 1
+    ? `<select class="shop-paddock-picker" data-item-id="${item.id}" aria-label="Paddock to decorate with ${item.name}">${
+        open.map((p) => `<option value="${p}">${paddockLabel(p)}</option>`).join('')
+      }</select>`
+    : '';
   card.innerHTML = `
-    <span class="shop-item-icon">${ITEM_EMOJI[item.id] ?? '✨'}</span>
-    <span class="shop-item-name">${item.name}</span>
-    ${owned
-      ? '<span class="shop-item-owned">Owned</span>'
-      : `<button class="shop-buy-btn" data-item-id="${item.id}" ${afford ? '' : 'disabled'}>€${item.price}</button>`}
+    <div class="shop-item-top">
+      <span class="shop-item-icon">${ITEM_EMOJI[item.id] ?? '✨'}</span>
+      <span class="shop-item-name">${item.name}</span>
+    </div>
+    <div class="shop-item-buy-row">
+      ${picker}
+      <button class="shop-buy-btn" data-item-id="${item.id}" data-decor="1" ${afford ? '' : 'disabled'}>€${item.price}</button>
+    </div>
   `;
   return card;
 }
@@ -174,10 +204,13 @@ const FRONT_SCALES = [1, 0.82, 0.68]; // newest first
 const BACK_SCALE = 0.48;
 const BASE_WIDTH = 220; // px card width at scale 1
 
-// A paddock holds at most front row + one fence line; beyond that, older
-// horses move to the next paddock over (navigated with the edge arrows) so
-// the game never scrolls.
-const PADDOCK_CAP = 8;
+// PADDOCK_CAP (how many horses fill a paddock before older ones roll over)
+// lives in shop.js so decor rules can count paddocks; imported above.
+
+/** Human label for a paddock slot, matching the on-scene label wording. */
+function paddockLabel(index) {
+  return index === 0 ? 'Home paddock' : `Paddock ${index + 1}`;
+}
 
 // Which paddock is on screen. 0 = home paddock (newest arrivals). Not
 // persisted: every session starts at home.
@@ -228,8 +261,8 @@ function renderPaddock(state) {
     frontRow.append(horseCard(h, FRONT_SCALES[rank] ?? BACK_SCALE, false, h.wardrobe));
   });
 
-  document.getElementById('horses').replaceChildren(backRow, groundDecorRow(state), frontRow);
-  renderPaddockDecor(state);
+  document.getElementById('horses').replaceChildren(backRow, groundDecorRow(state, currentPaddock), frontRow);
+  renderPaddockDecor(state, currentPaddock);
 
   // edge arrows + label, only when there is more than one paddock
   const older = document.getElementById('nav-older');
@@ -261,10 +294,10 @@ const FENCE_DECOR_MARKUP = {
     <path d="M681,34.4 L691,34.4 L686,47.4 Z" fill="#E8917A"/><path d="M707,38 L717,38 L712,51 Z" fill="#8FC0E8"/><path d="M733,38 L743,38 L738,51 Z" fill="#F5D949"/><path d="M759,34.4 L769,34.4 L764,47.4 Z" fill="#A6D8A0"/>`,
 };
 
-/** Draw whatever fence-line decor the player has bought. */
-function renderPaddockDecor(state) {
+/** Draw the fence-line decor placed in the on-screen paddock. */
+function renderPaddockDecor(state, paddock) {
   const layer = document.getElementById('paddock-decor');
-  const markup = state.shop.owned.map((id) => FENCE_DECOR_MARKUP[id] ?? '').join('');
+  const markup = paddockDecor(state, paddock).map((id) => FENCE_DECOR_MARKUP[id] ?? '').join('');
   layer.innerHTML = markup;
 }
 
@@ -276,44 +309,49 @@ function renderPaddockDecor(state) {
 // frame the subject fills; the subject is centred in the frame, so we size the
 // image from the wanted subject height and centre it on (cx, baseline).
 const GROUND_BASELINE = 128; // subject bottoms rest near here
+// Each prop is a transparent PNG; aspect + fw/fh (fraction of the trimmed frame
+// its solid subject fills, glow ignored) let us size from a target subject
+// height. The horizontal slot is assigned dynamically so any mix of props
+// spreads evenly across the row.
 const GROUND_IMAGES = {
-  'flower-buckets': { aspect: 1.465, fw: 0.55, fh: 0.82, cx: 120, subjH: 84 },
-  trough:           { aspect: 1.479, fw: 0.67, fh: 0.32, cx: 300, subjH: 40 },
-  'hay-bales':      { aspect: 1.460, fw: 0.62, fh: 0.65, cx: 470, subjH: 72 },
-  'play-balls':     { aspect: 1.465, fw: 0.77, fh: 0.55, cx: 640, subjH: 52 },
+  'flower-buckets': { aspect: 1.465, fw: 0.551, fh: 0.819, subjH: 84 },
+  'apple-barrel':   { aspect: 1.465, fw: 0.382, fh: 0.612, subjH: 80 },
+  trough:           { aspect: 1.485, fw: 0.747, fh: 0.343, subjH: 42 },
+  'hay-bales':      { aspect: 1.476, fw: 0.584, fh: 0.686, subjH: 72 },
+  'play-balls':     { aspect: 1.500, fw: 0.477, fh: 0.331, subjH: 46 },
+  joya:             { aspect: 1.477, fw: 0.510, fh: 0.542, subjH: 74 },
+  marmalade:        { aspect: 1.465, fw: 0.509, fh: 0.532, subjH: 62 },
 };
 
-function groundImage(id) {
+function groundImage(id, cx) {
   const p = GROUND_IMAGES[id];
   const hImg = p.subjH / p.fh;
   const wImg = hImg * p.aspect;
-  const x = p.cx - wImg / 2;
+  const x = cx - wImg / 2;
   const y = (GROUND_BASELINE - p.subjH / 2) - hImg / 2;
   return `<image href="assets/decor/${id}.png" x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${wImg.toFixed(1)}" height="${hImg.toFixed(1)}"/>`;
 }
 
-const GROUND_DECOR_MARKUP = {
-  butterflies: `
+// Butterflies stay hand-drawn: an ambient scatter, not a grounded prop.
+const BUTTERFLIES_MARKUP = `
     <g transform="translate(260,15)"><path d="M0,0 Q-7,-7 -7,0 Q-7,7 0,0" fill="#F2A6C6"/><path d="M0,0 Q7,-7 7,0 Q7,7 0,0" fill="#F5D949"/></g>
     <g transform="translate(490,20) scale(0.85)"><path d="M0,0 Q-7,-7 -7,0 Q-7,7 0,0" fill="#8FC0E8"/><path d="M0,0 Q7,-7 7,0 Q7,7 0,0" fill="#A6D8A0"/></g>
-    <g transform="translate(680,12) scale(0.75)"><path d="M0,0 Q-7,-7 -7,0 Q-7,7 0,0" fill="#F2A6C6"/><path d="M0,0 Q7,-7 7,0 Q7,7 0,0" fill="#F5D949"/></g>`,
-};
+    <g transform="translate(680,12) scale(0.75)"><path d="M0,0 Q-7,-7 -7,0 Q-7,7 0,0" fill="#F2A6C6"/><path d="M0,0 Q7,-7 7,0 Q7,7 0,0" fill="#F5D949"/></g>`;
 
-/** Markup for one ground-decor id: an <image> for the photo props, inline SVG
- *  for the rest. */
-function groundDecorFor(id) {
-  if (GROUND_IMAGES[id]) return groundImage(id);
-  return GROUND_DECOR_MARKUP[id] ?? '';
-}
-
-/** Build the ground-props row. Always present (even empty) so its height is
- *  reserved from the very first render -- buying the first ground prop must
- *  never make the paddock grow. */
-function groundDecorRow(state) {
-  const markup = state.shop.owned.map((id) => groundDecorFor(id)).join('');
+/** Build the ground-props row for one paddock. Always present (even empty) so
+ *  its height is reserved from the first render -- buying the first ground prop
+ *  must never make the paddock grow. Grounded props spread evenly across the
+ *  row; butterflies overlay as an ambient scatter. */
+function groundDecorRow(state, paddock) {
+  const owned = paddockDecor(state, paddock);
+  const props = owned.filter((id) => GROUND_IMAGES[id]);
+  const images = props
+    .map((id, i) => groundImage(id, (900 * (i + 1)) / (props.length + 1)))
+    .join('');
+  const butterflies = owned.includes('butterflies') ? BUTTERFLIES_MARKUP : '';
   const row = document.createElement('div');
   row.className = 'ground-decor';
-  row.innerHTML = `<svg viewBox="0 0 900 140" preserveAspectRatio="xMidYMid meet" aria-hidden="true">${markup}</svg>`;
+  row.innerHTML = `<svg viewBox="0 0 900 140" preserveAspectRatio="xMidYMid meet" aria-hidden="true">${images}${butterflies}</svg>`;
   return row;
 }
 
