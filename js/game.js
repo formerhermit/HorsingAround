@@ -13,6 +13,8 @@ import { attractionBonus, shareMultiplier } from './shop.js';
 
 // ---- tuning ----
 export const CARE_GAIN = 2;          // wellbeing per care click
+export const CRIT_CHANCE = 0.08;     // ~1 in 12 care clicks lands especially well
+export const CRIT_GAIN = 6;          // wellbeing from one of those (vs CARE_GAIN)
 export const WELLBEING_MAX = 100;
 export const CONTENT_AT = 80;        // "content" — triggers the first donation
 export const FIRST_DONATION = 12;    // € from the very first supporter
@@ -25,6 +27,9 @@ export const FIRST_SPONSOR_AT = 88;  // Biscuit sponsors a touch earlier, as its
 export const SPONSOR_RATE = 0.4;     // € per sponsored horse per second
 export const SHARE_BASE = 1;         // € per shared update...
 export const SHARE_PER_SUPPORTER = 0.3; // ...plus this per supporter
+export const TIP_CHANCE = 0.02;      // ~1 in 50 care clicks draws a spontaneous tip
+export const TIP_MIN = 2;            // € range a watching supporter chips in on the spot
+export const TIP_MAX = 5;
 export const THRIVING_AT = 95;       // wellbeing for "thriving" (matches wellbeingLabel)
 export const FRONT_ROW = 3;          // horses shown up close; the rest fall to the back row (matches render.js)
 const LONELY_DELAY = 14;             // seconds after first donation before the loneliness beat
@@ -121,6 +126,17 @@ const CARE_MESSAGES = [
   '🧽 a good scrub',
 ];
 
+// Shown on a crit care click (see CRIT_CHANCE) — a shade more delighted than the
+// everyday brush/scratch, to mark that the click landed especially well.
+const CRIT_MESSAGES = [
+  '✨ a real breakthrough!',
+  '💫 melts into the brush',
+  '🌟 leans in, totally trusting',
+  '💛 tail swishing with joy',
+  '✨ the happiest little nicker',
+  '🌼 a proper cuddle',
+];
+
 function randomFrom(list) {
   return list[Math.floor(Math.random() * list.length)];
 }
@@ -139,12 +155,17 @@ function randomUnused(list, usedValues) {
 export function careFor(horse) {
   gameState.stats.clicks += 1;
 
-  if (horse.wellbeing >= WELLBEING_MAX) {
-    return { gain: 0, message: `${horse.name} is thriving ♥`, events: [] };
-  }
+  // A thriving horse can't recover further, but clicking it should still feel
+  // alive — a watching supporter can still leave a tip (rolled below).
+  const maxed = horse.wellbeing >= WELLBEING_MAX;
+  const crit = !maxed && Math.random() < CRIT_CHANCE;
+  const gain = maxed ? 0 : (crit ? CRIT_GAIN : CARE_GAIN);
+  // Captured before the first-supporter unlock flips it: the click that first
+  // unlocks the money side shouldn't also roll a tip on the same tap.
+  const moneyUnlocked = gameState.unlocks.moneyUI;
 
   const before = horse.wellbeing;
-  horse.wellbeing = Math.min(WELLBEING_MAX, horse.wellbeing + CARE_GAIN);
+  horse.wellbeing = Math.min(WELLBEING_MAX, horse.wellbeing + gain);
 
   const events = [];
   // Personality emerges as a horse recovers enough to relax. Assign one here
@@ -170,7 +191,21 @@ export function careFor(horse) {
     });
   }
 
-  return { gain: CARE_GAIN, message: randomFrom(CARE_MESSAGES), events };
+  // A spontaneous tip: rarely, a supporter who's watching chips in a few euros
+  // on the spot. Only once the money side exists (before that, no supporters).
+  let tip = null;
+  if (moneyUnlocked && Math.random() < TIP_CHANCE) {
+    const amount = TIP_MIN + Math.floor(Math.random() * (TIP_MAX - TIP_MIN + 1));
+    gameState.coins += amount;
+    gameState.stats.totalDonated += amount;
+    tip = { amount, supporter: randomFrom(SUPPORTER_NAMES) };
+  }
+
+  const message = maxed
+    ? `${horse.name} is thriving ♥`
+    : (crit ? randomFrom(CRIT_MESSAGES) : randomFrom(CARE_MESSAGES));
+
+  return { gain, crit, message, tip, events };
 }
 
 /** € one shared update brings in at current supporter count. A nicer-looking

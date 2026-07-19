@@ -4,7 +4,7 @@ import { initState, save, gameState } from './state.js';
 import { careFor, tick, rescueHorse, shareUpdate, rescueCost, acceptRehome, declineRehome, collectOfflineEarnings } from './game.js';
 import {
   renderAll, renderHUD, renderActions, updateHorseCard,
-  showCareFeedback, showToast, showMoneyPop, changePaddock, resetPaddockView,
+  showCareFeedback, showTipPop, showToast, showMoneyPop, changePaddock, resetPaddockView,
   showDonateBanner, hideDonateBanner, showNudgePopup, hideNudgePopup, showDialog,
   renderShopButton, openShopModal, closeShopModal, renderShopModal, shopDecorPaddock,
 } from './render.js';
@@ -251,9 +251,14 @@ function processEvents(events) {
 function handleCare(card, event) {
   const horse = state.horses.find((h) => h.id === card.dataset.horseId);
   if (!horse) return;
-  const { message, events } = careFor(horse);
+  const { message, crit, tip, events } = careFor(horse);
   updateHorseCard(horse);
-  showCareFeedback(card, message, event);
+  showCareFeedback(card, message, event, { crit });
+  if (tip) {
+    showTipPop(card, tip);
+    renderHUD(state); // the tip lands in the fund right away
+    persist();        // money changed — tips are rare enough to save on the spot
+  }
   processEvents(events);
 }
 
