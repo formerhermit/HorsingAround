@@ -270,38 +270,50 @@ function renderPaddockDecor(state) {
 
 // Ground props: rendered as a real flex row between the back and front horse
 // rows, not an absolute overlay -- so they always land in the visible gap
-// between the two rows regardless of herd size or viewport width.
+// between the two rows regardless of herd size or viewport width. Each prop is
+// a transparent PNG; the numbers below place its *solid subject* (glow ignored)
+// at a footprint in the 900x140 row. fw/fh are the fraction of the trimmed
+// frame the subject fills; the subject is centred in the frame, so we size the
+// image from the wanted subject height and centre it on (cx, baseline).
+const GROUND_BASELINE = 128; // subject bottoms rest near here
+const GROUND_IMAGES = {
+  'flower-buckets': { aspect: 1.465, fw: 0.55, fh: 0.82, cx: 120, subjH: 84 },
+  trough:           { aspect: 1.479, fw: 0.67, fh: 0.32, cx: 300, subjH: 40 },
+  'hay-bales':      { aspect: 1.460, fw: 0.62, fh: 0.65, cx: 470, subjH: 72 },
+  'play-balls':     { aspect: 1.465, fw: 0.77, fh: 0.55, cx: 640, subjH: 52 },
+};
+
+function groundImage(id) {
+  const p = GROUND_IMAGES[id];
+  const hImg = p.subjH / p.fh;
+  const wImg = hImg * p.aspect;
+  const x = p.cx - wImg / 2;
+  const y = (GROUND_BASELINE - p.subjH / 2) - hImg / 2;
+  return `<image href="assets/decor/${id}.png" x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${wImg.toFixed(1)}" height="${hImg.toFixed(1)}"/>`;
+}
+
 const GROUND_DECOR_MARKUP = {
-  trough: `
-    <path d="M140,25 L200,25 L192,50 L148,50 Z" fill="#8A97A0"/>
-    <path d="M144,25 L196,25 L196,30 L144,30 Z" fill="#B9D4E8"/>
-    <path d="M140,25 L148,50" stroke="#6B7680" stroke-width="1.5"/><path d="M200,25 L192,50" stroke="#6B7680" stroke-width="1.5"/>`,
-  'flower-buckets': `
-    <path d="M45,30 L67,30 L63,55 L49,55 Z" fill="#B0823F"/>
-    <circle cx="47" cy="27" r="3.5" fill="#F2A6C6"/><circle cx="52" cy="25" r="3.5" fill="#F5D949"/><circle cx="57" cy="26" r="3.5" fill="#8FC0E8"/><circle cx="62" cy="27" r="3.5" fill="#F2A6C6"/><circle cx="50" cy="29.5" r="3.5" fill="#A6D8A0"/><circle cx="59" cy="29.5" r="3.5" fill="#F5D949"/><circle cx="54.5" cy="22.5" r="3.5" fill="#8FC0E8"/>
-    <path d="M735,32 L757,32 L753,57 L739,57 Z" fill="#B0823F"/>
-    <circle cx="737" cy="29" r="3.5" fill="#8FC0E8"/><circle cx="742" cy="27" r="3.5" fill="#F2A6C6"/><circle cx="747" cy="28" r="3.5" fill="#F5D949"/><circle cx="752" cy="29" r="3.5" fill="#8FC0E8"/><circle cx="740" cy="31.5" r="3.5" fill="#F5D949"/><circle cx="749" cy="31.5" r="3.5" fill="#A6D8A0"/><circle cx="744.5" cy="24.5" r="3.5" fill="#F2A6C6"/>`,
-  'hay-bales': `
-    <rect x="390" y="18" width="34" height="24" rx="2" fill="#D9B25C"/><rect x="390" y="18" width="34" height="24" rx="2" fill="none" stroke="#B4903E" stroke-width="2"/><line x1="390" y1="26" x2="424" y2="26" stroke="#B4903E" stroke-width="1.5"/><line x1="390" y1="34" x2="424" y2="34" stroke="#B4903E" stroke-width="1.5"/>
-    <rect x="414" y="30" width="30" height="18" rx="2" fill="#D9B25C"/><rect x="414" y="30" width="30" height="18" rx="2" fill="none" stroke="#B4903E" stroke-width="2"/><line x1="414" y1="36" x2="444" y2="36" stroke="#B4903E" stroke-width="1.5"/><line x1="414" y1="42" x2="444" y2="42" stroke="#B4903E" stroke-width="1.5"/>`,
-  'play-balls': `
-    <circle cx="570" cy="35" r="13" fill="#E85D75"/><circle cx="566" cy="30" r="3.5" fill="#F5A8B8"/>
-    <circle cx="610" cy="40" r="11" fill="#4FA8D8"/><circle cx="606" cy="36" r="3" fill="#A8D8ED"/>
-    <circle cx="640" cy="34" r="12" fill="#F5C242"/><circle cx="636" cy="29" r="3.2" fill="#FADD8C"/>`,
   butterflies: `
     <g transform="translate(260,15)"><path d="M0,0 Q-7,-7 -7,0 Q-7,7 0,0" fill="#F2A6C6"/><path d="M0,0 Q7,-7 7,0 Q7,7 0,0" fill="#F5D949"/></g>
     <g transform="translate(490,20) scale(0.85)"><path d="M0,0 Q-7,-7 -7,0 Q-7,7 0,0" fill="#8FC0E8"/><path d="M0,0 Q7,-7 7,0 Q7,7 0,0" fill="#A6D8A0"/></g>
     <g transform="translate(680,12) scale(0.75)"><path d="M0,0 Q-7,-7 -7,0 Q-7,7 0,0" fill="#F2A6C6"/><path d="M0,0 Q7,-7 7,0 Q7,7 0,0" fill="#F5D949"/></g>`,
 };
 
+/** Markup for one ground-decor id: an <image> for the photo props, inline SVG
+ *  for the rest. */
+function groundDecorFor(id) {
+  if (GROUND_IMAGES[id]) return groundImage(id);
+  return GROUND_DECOR_MARKUP[id] ?? '';
+}
+
 /** Build the ground-props row. Always present (even empty) so its height is
  *  reserved from the very first render -- buying the first ground prop must
  *  never make the paddock grow. */
 function groundDecorRow(state) {
-  const markup = state.shop.owned.map((id) => GROUND_DECOR_MARKUP[id] ?? '').join('');
+  const markup = state.shop.owned.map((id) => groundDecorFor(id)).join('');
   const row = document.createElement('div');
   row.className = 'ground-decor';
-  row.innerHTML = `<svg viewBox="0 0 900 62" preserveAspectRatio="xMidYMid meet" aria-hidden="true">${markup}</svg>`;
+  row.innerHTML = `<svg viewBox="0 0 900 140" preserveAspectRatio="xMidYMid meet" aria-hidden="true">${markup}</svg>`;
   return row;
 }
 
