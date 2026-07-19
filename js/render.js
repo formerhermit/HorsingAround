@@ -278,17 +278,19 @@ function renderPaddock(state) {
 
 // Fence-line decor: stays on the fixed overlay near the actual fence rails.
 // Positioned in a 900x130 space so items never collide even all owned at once.
-// Flower garland is now an image, placed at three evenly-spaced positions.
+// Flower garland repeats along the fence line (top, not in grass).
 function fenceGarlandImages() {
-  const garland = { aspect: 1.500, fw: 0.635, fh: 0.287, subjH: 32 };
+  const garland = { aspect: 1.500, fw: 0.635, fh: 0.287, subjH: 16 }; // half size
   const hImg = garland.subjH / garland.fh;
   const wImg = hImg * garland.aspect;
-  const y = 12 - hImg / 2; // top of fence area, centered
+  const y = 8 - hImg / 2; // top of fence, centered vertically
   const images = [];
-  [225, 450, 675].forEach(cx => {
+  const spacing = wImg + 20; // repeat with small gap
+  // Repeat along entire fence width starting from left
+  for (let cx = wImg / 2 + 10; cx < 900; cx += spacing) {
     const x = cx - wImg / 2;
     images.push(`<image href="assets/decor/flower-garland.png" x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${wImg.toFixed(1)}" height="${hImg.toFixed(1)}"/>`);
-  });
+  }
   return images.join('');
 }
 
@@ -329,7 +331,7 @@ const GROUND_IMAGES = {
   trough:           { aspect: 1.485, fw: 0.747, fh: 0.343, subjH: 42 },
   'hay-bales':      { aspect: 1.476, fw: 0.584, fh: 0.686, subjH: 72 },
   'play-balls':     { aspect: 1.500, fw: 0.477, fh: 0.331, subjH: 46 },
-  butterflies:      { aspect: 1.500, fw: 0.905, fh: 1.000, subjH: 80 },
+  butterflies:      { aspect: 1.500, fw: 0.905, fh: 1.000, subjH: 130 },
   muffin:           { aspect: 1.500, fw: 0.502, fh: 0.541, subjH: 66 },
   joya:             { aspect: 1.500, fw: 0.581, fh: 0.645, subjH: 78 },
   marmalade:        { aspect: 1.465, fw: 0.509, fh: 0.532, subjH: 62 },
