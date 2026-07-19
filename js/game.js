@@ -4,7 +4,10 @@
 // well-cared-for horses attract supporters, supporters donate money,
 // and money pays for real costs. Care never generates money directly.
 
-import { gameState, createHorse } from './state.js';
+import {
+  gameState, createHorse,
+  RESCUE_MILESTONES, REHOME_MILESTONES, DONATE_MILESTONE,
+} from './state.js';
 import { PALETTE_KEYS } from './horse.js';
 import { attractionBonus, shareMultiplier } from './shop.js';
 
@@ -245,6 +248,48 @@ export function rescueHorse() {
   };
 }
 
+// ---- rehoming ----
+// Once the herd is comfortably large, thriving horses are occasionally offered
+// a forever home for a small adoption fee (roughly 10% of the next rescue cost).
+const REHOME_MIN_HERD = 5;            // need MORE than this many horses
+const REHOME_GAP_MIN = 40;            // seconds between offers (min)
+const REHOME_GAP_MAX = 95;            // ...and max
+let rehomeCountdown = randomBetween(REHOME_GAP_MIN, REHOME_GAP_MAX);
+let pendingRehome = null;             // { horseId, income } while an offer is on screen (not persisted)
+
+function randomBetween(min, max) {
+  return min + Math.random() * (max - min);
+}
+
+/** Income offered for rehoming a horse: ~10% of the next rescue's cost. */
+function rehomeIncome(state = gameState) {
+  return Math.max(1, Math.round(rescueCost(state) * 0.1));
+}
+
+/** A reward-milestone bonus: 25% of the next rescue's cost, into the fund. */
+function milestoneBonus(state = gameState) {
+  return Math.max(1, Math.round(rescueCost(state) * 0.25));
+}
+
+/** Accept the pending rehoming offer: the horse leaves for its forever home and
+ *  the adoption fee lands in the rescue fund. Returns { horse, income } or null. */
+export function acceptRehome() {
+  if (!pendingRehome) return null;
+  const { horseId, income } = pendingRehome;
+  pendingRehome = null;
+  const idx = gameState.horses.findIndex((h) => h.id === horseId);
+  if (idx === -1) return null;
+  const [horse] = gameState.horses.splice(idx, 1);
+  gameState.coins += income;
+  gameState.stats.horsesRehomed += 1;
+  return { horse, income };
+}
+
+/** Decline the pending offer: the horse stays, no money changes hands. */
+export function declineRehome() {
+  pendingRehome = null;
+}
+
 // Not persisted: restarting the wait after a reload is harmless.
 let lonelyCountdown = LONELY_DELAY;
 
@@ -318,5 +363,49 @@ export function tick(dt) {
     supporterToastCooldown = SUPPORTER_TOAST_EVERY;
   }
 
+  maybeOfferRehome(dt, events);
+  checkMilestones(events);
+
   return events;
+}
+
+/** Occasionally offer a thriving horse a forever home, once the herd is large
+ *  enough that one can be spared. One offer at a time. */
+function maybeOfferRehome(dt, events) {
+  if (pendingRehome || gameState.horses.length <= REHOME_MIN_HERD) return;
+  rehomeCountdown -= dt;
+  if (rehomeCountdown > 0) return;
+  rehomeCountdown = randomBetween(REHOME_GAP_MIN, REHOME_GAP_MAX);
+  const thriving = gameState.horses.filter((h) => h.wellbeing >= THRIVING_AT);
+  if (!thriving.length) return; // no one ready; try again next interval
+  const horse = randomFrom(thriving);
+  const income = rehomeIncome();
+  pendingRehome = { horseId: horse.id, income };
+  events.push({ type: 'rehome-offer', horseName: horse.name, income });
+}
+
+/** Reward + donate milestones for the rescue and rehome counters. Bonuses land
+ *  in the fund immediately; the popup just announces them. */
+function checkMilestones(events) {
+  const m = gameState.milestones;
+  for (const n of RESCUE_MILESTONES) {
+    if (gameState.stats.horsesRescued >= n && !m.rescueRewardsGiven.includes(n)) {
+      m.rescueRewardsGiven.push(n);
+      const bonus = milestoneBonus();
+      gameState.coins += bonus;
+      events.push({ type: 'rescue-milestone', count: n, bonus });
+    }
+  }
+  if (gameState.stats.horsesRescued >= DONATE_MILESTONE && !m.donateMilestoneShown && !m.donateOptOut) {
+    m.donateMilestoneShown = true;
+    events.push({ type: 'donate-milestone', count: DONATE_MILESTONE });
+  }
+  for (const n of REHOME_MILESTONES) {
+    if (gameState.stats.horsesRehomed >= n && !m.rehomeRewardsGiven.includes(n)) {
+      m.rehomeRewardsGiven.push(n);
+      const bonus = milestoneBonus();
+      gameState.coins += bonus;
+      events.push({ type: 'rehome-milestone', count: n, bonus });
+    }
+  }
 }

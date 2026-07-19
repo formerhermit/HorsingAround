@@ -1,11 +1,11 @@
 // main.js — boot the game: load state, render, wire input and persistence.
 
 import { initState, save, gameState } from './state.js';
-import { careFor, tick, rescueHorse, shareUpdate, rescueCost } from './game.js';
+import { careFor, tick, rescueHorse, shareUpdate, rescueCost, acceptRehome, declineRehome } from './game.js';
 import {
   renderAll, renderHUD, renderActions, updateHorseCard,
   showCareFeedback, showToast, showMoneyPop, changePaddock, resetPaddockView,
-  showDonateBanner, hideDonateBanner, showNudgePopup, hideNudgePopup,
+  showDonateBanner, hideDonateBanner, showNudgePopup, hideNudgePopup, showDialog,
   renderShopButton, openShopModal, closeShopModal, renderShopModal, shopDecorPaddock,
 } from './render.js';
 import { buyDecorIn, buyWardrobe, hasNewAffordableItem } from './shop.js';
@@ -138,9 +138,73 @@ function persist() {
   pushCloudSave();
 }
 
+// Modal event dialogs (rehoming offers, milestone rewards) show one at a time.
+const dialogQueue = [];
+let dialogActive = false;
+
+function enqueueDialog(spec) {
+  dialogQueue.push(spec);
+  pumpDialogs();
+}
+
+function pumpDialogs() {
+  if (dialogActive || dialogQueue.length === 0) return;
+  dialogActive = true;
+  const spec = dialogQueue.shift();
+  showDialog({
+    ...spec,
+    buttons: spec.buttons.map((b) => ({
+      ...b,
+      onClick: () => { b.onClick?.(); dialogActive = false; pumpDialogs(); },
+    })),
+  });
+}
+
+const DONATE_URL = 'https://donorbox.org/donate-to-arch?amount=10';
+
+/** Turn one event into either a toast or a queued modal dialog. */
+function handleEvent(e) {
+  if (e.type === 'rehome-offer') {
+    enqueueDialog({
+      emoji: '🏡',
+      text: `${e.horseName} is ready for rehoming. Agree to adoption for €${e.income}?`,
+      buttons: [
+        { label: 'Yes please!', variant: 'primary', onClick: () => {
+          const res = acceptRehome();
+          if (res) { resetPaddockView(); renderAll(state); refreshUI(); persist(); }
+        } },
+        { label: 'Not now', variant: 'ghost', onClick: () => declineRehome() },
+      ],
+    });
+  } else if (e.type === 'rescue-milestone') {
+    enqueueDialog({
+      emoji: '🎉',
+      text: `You have rescued ${e.count} horses. What an amazing job you're doing! Have a little extra cash to keep up the good work.`,
+      buttons: [{ label: 'Collect', variant: 'primary' }],
+    });
+  } else if (e.type === 'rehome-milestone') {
+    enqueueDialog({
+      emoji: '🎉',
+      text: `You have re-homed ${e.count} horses. What an amazing job you're doing! Have a little extra cash to keep up the good work.`,
+      buttons: [{ label: 'Collect', variant: 'primary' }],
+    });
+  } else if (e.type === 'donate-milestone') {
+    enqueueDialog({
+      emoji: '💛', confetti: true,
+      text: `You have rescued ${e.count} horses. If you're enjoying this game, why not donate to ARCH to help our real horses too?`,
+      buttons: [
+        { label: 'Donate', variant: 'primary', onClick: () => window.open(DONATE_URL, '_blank', 'noopener') },
+        { label: "Don't ask again", variant: 'ghost', onClick: () => { state.milestones.donateOptOut = true; save(); } },
+      ],
+    });
+  } else {
+    showToast(e.message);
+  }
+}
+
 function processEvents(events) {
   if (!events.length) return;
-  events.forEach((e) => showToast(e.message));
+  events.forEach(handleEvent);
   maybeOfferDonation(); // fires once, on the first sponsorship beat
   refreshUI();
   persist(); // story beats are worth persisting immediately

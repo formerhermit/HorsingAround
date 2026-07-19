@@ -586,3 +586,47 @@ export function hideNudgePopup() {
   overlay.hidden = true;
   overlay.dataset.nudge = '';
 }
+
+/**
+ * A modal event dialog (shop-card styling) with an emoji, a message, and one or
+ * two buttons. Each button = { label, variant, onClick }; clicking it closes the
+ * dialog and runs onClick. Pass confetti:true for a celebratory burst.
+ */
+export function showDialog({ emoji = '', text, buttons = [], confetti = false }) {
+  const overlay = document.getElementById('dialog-overlay');
+  document.getElementById('dialog-emoji').textContent = emoji;
+  document.getElementById('dialog-text').textContent = text;
+  const row = document.getElementById('dialog-buttons');
+  row.replaceChildren();
+  for (const b of buttons) {
+    const btn = document.createElement('button');
+    btn.className = `dialog-btn${b.variant ? ` dialog-btn-${b.variant}` : ''}`;
+    btn.textContent = b.label;
+    btn.addEventListener('click', () => {
+      overlay.hidden = true;
+      b.onClick?.();
+    }, { once: true });
+    row.append(btn);
+  }
+  overlay.hidden = false;
+  if (confetti) burstConfetti();
+}
+
+const CONFETTI_COLORS = ['#F2A6C6', '#F5D949', '#8FC0E8', '#A6D8A0', '#E8917A', '#b0823f'];
+
+/** A one-off confetti burst from the top-centre of the screen. */
+function burstConfetti() {
+  const layer = document.getElementById('confetti');
+  if (!layer) return;
+  for (let i = 0; i < 70; i++) {
+    const bit = document.createElement('span');
+    bit.className = 'confetti-bit';
+    bit.style.background = CONFETTI_COLORS[i % CONFETTI_COLORS.length];
+    bit.style.setProperty('--x', (Math.random() * 2 - 1).toFixed(2));
+    bit.style.setProperty('--r', `${Math.round(Math.random() * 720 - 360)}deg`);
+    bit.style.setProperty('--d', `${(0.9 + Math.random() * 0.9).toFixed(2)}s`);
+    bit.style.setProperty('--delay', `${(Math.random() * 0.2).toFixed(2)}s`);
+    bit.addEventListener('animationend', () => bit.remove(), { once: true });
+    layer.append(bit);
+  }
+}

@@ -6,6 +6,13 @@ import { SHOP_ITEMS } from './shop.js';
 export const SAVE_KEY = 'horsing-around:save';
 export const SAVE_VERSION = 1;
 
+// Counts at which a celebratory reward popup fires (a cash bonus into the
+// rescue fund). Defined here -- the "lower" module -- so both state.js (save
+// migration) and game.js (the live checks) can share them without a cycle.
+export const RESCUE_MILESTONES = [5, 25, 50, 100, 150, 250, 500, 750, 1000, 1500];
+export const REHOME_MILESTONES = [5, 10, 25, 50, 100, 150, 250, 500, 1000];
+export const DONATE_MILESTONE = 10; // rescues -> the confetti / "donate to ARCH" popup
+
 const WARDROBE_IDS = new Set(SHOP_ITEMS.filter((i) => i.category === 'wardrobe').map((i) => i.id));
 
 // Live game state. Call initState() before using it.
@@ -90,12 +97,17 @@ export function defaultState() {
       hasRescuedAgain: false,   // resolves the "rescue another horse" onboarding popup
       shopIntroDone: false,     // resolves the "shop is open" onboarding popup
       realHorsesTriggered: [],  // rescueOrder values whose ARCH horse card has appeared
+      rescueRewardsGiven: [],   // rescue-count milestones already rewarded
+      rehomeRewardsGiven: [],   // rehome-count milestones already rewarded
+      donateMilestoneShown: false, // the 10-rescue confetti/donate popup fired
+      donateOptOut: false,      // player chose "Don't ask again" on the donate popup
     },
 
     stats: {
       clicks: 0,
       totalDonated: 0,
       horsesRescued: 1,  // Biscuit counts
+      horsesRehomed: 0,  // horses sent to a forever home
     },
 
     savedAt: Date.now(),
@@ -174,6 +186,16 @@ function repair(save) {
   save.milestones.hasSharedUpdate ??= true;
   save.milestones.hasRescuedAgain ??= true;
   save.milestones.shopIntroDone ??= true;
+
+  // Reward/donate milestones are new; backfill any the existing save has already
+  // passed so a returning player isn't hit with a flood of retroactive popups.
+  save.stats ??= {};
+  save.stats.horsesRescued ??= save.horses?.length ?? 1;
+  save.stats.horsesRehomed ??= 0;
+  save.milestones.rescueRewardsGiven ??= RESCUE_MILESTONES.filter((n) => save.stats.horsesRescued >= n);
+  save.milestones.rehomeRewardsGiven ??= REHOME_MILESTONES.filter((n) => save.stats.horsesRehomed >= n);
+  save.milestones.donateMilestoneShown ??= save.stats.horsesRescued >= DONATE_MILESTONE;
+  save.milestones.donateOptOut ??= false;
 
   // Wardrobe used to be a global purchase that dressed every horse at once.
   // Anyone who bought one under that system keeps it -- migrate those ids

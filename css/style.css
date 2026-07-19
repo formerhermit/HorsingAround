@@ -1009,6 +1009,111 @@ main {
   50%      { transform: rotate(38deg) translateY(-6px); }
 }
 
+/* ---------- event dialogs (rehoming offers, milestone rewards) ---------- */
+
+.dialog-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(61, 52, 40, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  z-index: 120;
+  animation: nudge-fade 0.25s ease;
+}
+
+.dialog-overlay[hidden] {
+  display: none;
+}
+
+.dialog-card {
+  background: #faf6ee;
+  border: 1px solid #e6dcc6;
+  border-radius: 22px;
+  box-shadow: 0 10px 30px rgba(61, 52, 40, 0.28);
+  padding: 1.9rem 1.6rem 1.6rem;
+  width: 100%;
+  max-width: 340px;
+  text-align: center;
+  animation: nudge-pop 0.3s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+}
+
+.dialog-emoji {
+  display: block;
+  font-size: 2.8rem;
+  line-height: 1;
+}
+
+.dialog-text {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #3d3428;
+  line-height: 1.4;
+  margin: 0.7rem 0 1.2rem;
+}
+
+.dialog-buttons {
+  display: flex;
+  gap: 0.6rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.dialog-btn {
+  font: inherit;
+  font-weight: 700;
+  font-size: 0.9rem;
+  border: none;
+  border-radius: 999px;
+  padding: 0.5rem 1.3rem;
+  cursor: pointer;
+}
+
+.dialog-btn-primary {
+  color: #fffdf7;
+  background: #6f8f4f;
+}
+
+.dialog-btn-primary:hover {
+  background: #5f7d42;
+}
+
+.dialog-btn-ghost {
+  color: #7a6f5c;
+  background: #efe8d8;
+}
+
+.dialog-btn-ghost:hover {
+  background: #e4dbc6;
+}
+
+/* ---------- confetti ---------- */
+
+.confetti-layer {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 200;
+}
+
+.confetti-bit {
+  position: absolute;
+  left: 50%;
+  top: 14%;
+  width: 10px;
+  height: 14px;
+  border-radius: 2px;
+  opacity: 0;
+  animation: confetti-fall var(--d, 1.2s) var(--delay, 0s) ease-out forwards;
+}
+
+@keyframes confetti-fall {
+  0%   { opacity: 1; transform: translate(-50%, -50%) rotate(0); }
+  100% { opacity: 0; transform: translate(calc(-50% + var(--x) * 46vw), 78vh) rotate(var(--r)); }
+}
+
 .chip-reveal {
   animation: chip-pop 0.45s ease;
 }
