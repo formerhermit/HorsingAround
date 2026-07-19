@@ -75,15 +75,16 @@ function refreshUI() {
 }
 
 // Three big centred call-to-action popups that teach the core loop, each with a
-// playful arrow pointing at its button. Shown one at a time in this order, and
-// snoozed for the session once dismissed so they never nag -- they reappear next
-// visit only while their goal is still outstanding.
+// playful arrow pointing at its button. Shown one at a time; each is snoozed
+// individually once dismissed (so it doesn't nag), but dismissing one never
+// hides the others -- the rescue and shop prompts still fire when their button
+// goes live. Snoozes reset next visit while a goal is still outstanding.
 /** The popup shown for a given onboarding goal. Rescue reads the first horse's
  *  name so it lands as "Biscuit wants a friend", not a generic prompt. */
 function nudgeConfig(id) {
   if (id === 'share') return {
     emoji: '💛', dir: 'down',
-    text: 'You can raise money for the rescue! Tap “Share an update” below to tell your supporters how the horses are doing.',
+    text: 'You can raise money for the rescue! Tap “Share an update” below to chat with your supporters on social media.',
   };
   if (id === 'rescue') {
     const first = state.horses[0]?.name ?? 'Your horse';
@@ -98,30 +99,33 @@ function nudgeConfig(id) {
   };
 }
 
-let onboardingSnoozed = false; // dismissed for this session
+const snoozedNudges = new Set(); // nudge ids dismissed this session
 
-/** The highest-priority onboarding goal still outstanding, or null. Rescue and
- *  shop only surface once they're actually actionable -- enough money for the
- *  first rescue, or an affordable item in the shop -- so their arrow always
- *  points at a button the player can use right now. */
+/** The highest-priority onboarding goal that's outstanding and not snoozed, or
+ *  null. Rescue and shop only surface once they're actually actionable -- enough
+ *  money for the first rescue, or an affordable item in the shop -- so their
+ *  arrow always points at a button the player can use right now. */
 function pendingNudge() {
   const m = state.milestones;
-  if (state.unlocks.moneyUI && !m.hasSharedUpdate) return 'share';
-  if (state.unlocks.rescue && !m.hasRescuedAgain && state.coins >= rescueCost(state)) return 'rescue';
-  if (state.unlocks.moneyUI && !m.shopIntroDone && hasNewAffordableItem(state)) return 'shop';
-  return null;
+  const candidates = [];
+  if (state.unlocks.moneyUI && !m.hasSharedUpdate) candidates.push('share');
+  if (state.unlocks.rescue && !m.hasRescuedAgain && state.coins >= rescueCost(state)) candidates.push('rescue');
+  if (state.unlocks.moneyUI && !m.shopIntroDone && hasNewAffordableItem(state)) candidates.push('shop');
+  return candidates.find((id) => !snoozedNudges.has(id)) ?? null;
 }
 
 function updateOnboardingNudges() {
-  const id = onboardingSnoozed ? null : pendingNudge();
+  const id = pendingNudge();
   if (id) showNudgePopup(id, nudgeConfig(id));
   else hideNudgePopup();
 }
 
 // Only the "Got it!" button dismisses -- clicking the dimmed background does
-// nothing, so a player can't skip past the prompt by accident.
+// nothing, so a player can't skip past the prompt by accident. Snoozes just the
+// popup that's showing, so a later prompt still fires when its button goes live.
 document.getElementById('nudge-dismiss').addEventListener('click', () => {
-  onboardingSnoozed = true;
+  const id = document.getElementById('nudge-overlay').dataset.nudge;
+  if (id) snoozedNudges.add(id);
   hideNudgePopup();
 });
 
