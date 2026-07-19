@@ -5,7 +5,7 @@ import { careFor, tick, rescueHorse, shareUpdate } from './game.js';
 import {
   renderAll, renderHUD, renderActions, updateHorseCard,
   showCareFeedback, showToast, showMoneyPop, changePaddock, resetPaddockView,
-  showDonateBanner, hideDonateBanner, showStickyToast, dismissStickyToast,
+  showDonateBanner, hideDonateBanner, showNudgePopup, hideNudgePopup,
   renderShopButton, openShopModal, closeShopModal, renderShopModal, shopDecorPaddock,
 } from './render.js';
 import { buyDecorIn, buyWardrobe } from './shop.js';
@@ -32,9 +32,8 @@ if (!state.milestones.introToastShown) {
   save();
 }
 
-// Re-assert the onboarding nudges on load: a player who unlocked money but
-// never shared (or found the shop) should still see the prompt on return.
-updateOnboardingNudges();
+// (Onboarding nudges are re-asserted on load once their definitions below have
+// run -- see the updateOnboardingNudges() call after the dismiss wiring.)
 
 // ---- real-donation banner ----
 // One quiet story moment (after the first sponsorship, when the game has
@@ -75,22 +74,53 @@ function refreshUI() {
   updateOnboardingNudges();
 }
 
-// Two sequenced call-to-action nudges that teach the money loop. They persist
-// until acted on (share / open shop), and are sequenced -- the shop prompt
-// waits for the share prompt to be resolved -- so they never crowd together.
-function updateOnboardingNudges() {
+// Three big centred call-to-action popups that teach the core loop, each with a
+// playful arrow pointing at its button. Shown one at a time in this order, and
+// snoozed for the session once dismissed so they never nag -- they reappear next
+// visit only while their goal is still outstanding.
+const NUDGES = {
+  share: {
+    emoji: '💛', dir: 'down',
+    text: 'You can raise money for the rescue! Tap “Share an update” below to tell your supporters how the horses are doing.',
+  },
+  rescue: {
+    emoji: '🐴', dir: 'down',
+    text: 'No horse should be alone. When you can afford it, tap “Rescue another horse” below to bring in a new friend.',
+  },
+  shop: {
+    emoji: '🛍️', dir: 'up',
+    text: 'The shop is open! Tap the Shop button up top to dress your horses and decorate the paddock.',
+  },
+};
+
+let onboardingSnoozed = false; // dismissed for this session
+
+/** The highest-priority onboarding goal still outstanding, or null. */
+function pendingNudge() {
   const m = state.milestones;
-  if (state.unlocks.moneyUI && !m.hasSharedUpdate) {
-    showStickyToast('share', '💛 Did you know you can raise money for the rescue? Share an update below.', 'cta');
-  } else {
-    dismissStickyToast('share');
-  }
-  if (state.unlocks.moneyUI && m.hasSharedUpdate && !m.shopIntroDone) {
-    showStickyToast('shop', '🛍️ You can now buy accessories at the shop.', 'cta');
-  } else {
-    dismissStickyToast('shop');
-  }
+  if (state.unlocks.moneyUI && !m.hasSharedUpdate) return 'share';
+  if (state.unlocks.rescue && !m.hasRescuedAgain) return 'rescue';
+  if (state.unlocks.moneyUI && m.hasSharedUpdate && !m.shopIntroDone) return 'shop';
+  return null;
 }
+
+function updateOnboardingNudges() {
+  const id = onboardingSnoozed ? null : pendingNudge();
+  if (id) showNudgePopup(id, NUDGES[id]);
+  else hideNudgePopup();
+}
+
+document.getElementById('nudge-dismiss').addEventListener('click', () => {
+  onboardingSnoozed = true;
+  hideNudgePopup();
+});
+document.getElementById('nudge-overlay').addEventListener('click', (event) => {
+  if (event.target.id === 'nudge-overlay') { onboardingSnoozed = true; hideNudgePopup(); }
+});
+
+// Re-assert the onboarding nudge on load: a player who unlocked money but never
+// shared (or found the shop, or grew the herd) still gets the prompt on return.
+updateOnboardingNudges();
 
 function persist() {
   save();
@@ -135,6 +165,7 @@ document.getElementById('actions').addEventListener('click', (event) => {
   if (event.target.closest('#rescue-btn')) {
     const { ok, events } = rescueHorse();
     if (ok) {
+      state.milestones.hasRescuedAgain = true; // resolves the rescue nudge
       resetPaddockView(); // always show the new arrival
       renderAll(state);
       processEvents(events);
@@ -152,7 +183,7 @@ document.getElementById('shop-btn').addEventListener('click', () => {
     state.milestones.shopIntroDone = true;
     save();
   }
-  dismissStickyToast('shop');
+  updateOnboardingNudges(); // clears the shop nudge if it was up
   openShopModal(state);
 });
 document.getElementById('shop-close').addEventListener('click', closeShopModal);

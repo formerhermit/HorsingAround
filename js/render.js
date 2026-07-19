@@ -552,12 +552,7 @@ export function hideDonateBanner() {
 export function showToast(message, variant = null) {
   const container = document.getElementById('toasts');
   // never stack more than 3 — the horses are the point, not the messages.
-  // Sticky call-to-action nudges are exempt: a transient beat must never evict
-  // the "share to raise money" / "shop is open" prompt out from under a player.
-  while (container.children.length >= 3) {
-    const victim = [...container.children].find((c) => !c.dataset.sticky) ?? container.firstChild;
-    victim.remove();
-  }
+  while (container.children.length >= 3) container.firstChild.remove();
   const toast = document.createElement('div');
   toast.className = variant ? `toast toast-${variant}` : 'toast';
   toast.textContent = message;
@@ -565,28 +560,32 @@ export function showToast(message, variant = null) {
   toast.addEventListener('animationend', () => toast.remove());
 }
 
-/**
- * A persistent call-to-action toast that stays until dismissed by code (e.g.
- * once the player shares an update, or opens the shop). Idempotent per id, so
- * calling it every refresh just keeps the one prompt on screen. Pinned above
- * transient toasts so story beats slot in beneath it.
- */
-export function showStickyToast(id, message, variant = null) {
-  const container = document.getElementById('toasts');
-  if (container.querySelector(`[data-sticky="${id}"]`)) return; // already up
-  while (container.children.length >= 3) {
-    const victim = [...container.children].find((c) => !c.dataset.sticky);
-    if (!victim) break;
-    victim.remove();
-  }
-  const toast = document.createElement('div');
-  toast.className = `toast toast-sticky${variant ? ` toast-${variant}` : ''}`;
-  toast.dataset.sticky = id;
-  toast.textContent = message;
-  container.prepend(toast);
+// Onboarding popups: a big centred card (shop-modal styling) with a playful
+// curved arrow pointing toward the button it's teaching. The arrow is hand-drawn
+// so it matches the flat, rounded look of the rest of the game.
+const NUDGE_ARROWS = {
+  down: `<path d="M35 8 C 14 26, 56 46, 35 70" fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="round"/>
+         <path d="M22 55 L35 74 L48 55" fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>`,
+  up: `<path d="M35 82 C 14 64, 56 44, 35 20" fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="round"/>
+       <path d="M22 35 L35 16 L48 35" fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>`,
+};
+
+/** Show the onboarding popup for `id`. Idempotent per id, so calling it every
+ *  refresh keeps the one popup up without restarting its entrance animation. */
+export function showNudgePopup(id, { emoji, text, dir }) {
+  const overlay = document.getElementById('nudge-overlay');
+  if (overlay.dataset.nudge === id && !overlay.hidden) return; // already up
+  overlay.dataset.nudge = id;
+  document.getElementById('nudge-emoji').textContent = emoji;
+  document.getElementById('nudge-text').textContent = text;
+  const arrow = document.getElementById('nudge-arrow');
+  arrow.setAttribute('class', `nudge-arrow nudge-arrow-${dir}`); // SVG className is read-only
+  arrow.innerHTML = NUDGE_ARROWS[dir];
+  overlay.hidden = false;
 }
 
-export function dismissStickyToast(id) {
-  const el = document.getElementById('toasts').querySelector(`[data-sticky="${id}"]`);
-  if (el) el.remove();
+export function hideNudgePopup() {
+  const overlay = document.getElementById('nudge-overlay');
+  overlay.hidden = true;
+  overlay.dataset.nudge = '';
 }

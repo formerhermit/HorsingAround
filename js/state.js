@@ -86,8 +86,9 @@ export function defaultState() {
       firstSponsorship: false,  // once true, sponsorship toasts go terse
       donateBannerShown: false, // real-donation banner fired its one story moment
       introToastShown: false,   // the "tap Biscuit" nudge new players get once
-      hasSharedUpdate: false,   // dismisses the "share to raise money" sticky nudge
-      shopIntroDone: false,     // dismisses the "shop is open" sticky nudge
+      hasSharedUpdate: false,   // resolves the "share to raise money" onboarding popup
+      hasRescuedAgain: false,   // resolves the "rescue another horse" onboarding popup
+      shopIntroDone: false,     // resolves the "shop is open" onboarding popup
       realHorsesTriggered: [],  // rescueOrder values whose ARCH horse card has appeared
     },
 
@@ -171,6 +172,7 @@ function repair(save) {
   // play -- only a brand-new defaultState() should get the onboarding nudges.
   save.milestones.introToastShown ??= true;
   save.milestones.hasSharedUpdate ??= true;
+  save.milestones.hasRescuedAgain ??= true;
   save.milestones.shopIntroDone ??= true;
 
   // Wardrobe used to be a global purchase that dressed every horse at once.
