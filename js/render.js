@@ -1,7 +1,7 @@
 // render.js — turns gameState into DOM. No game logic lives here.
 
 import { horseFigureHTML, horseImageSrc, wellbeingLabel, wellbeingColor } from './horse.js';
-import { rescueCost, shareValue, TRAIT_REVEAL_AT } from './game.js';
+import { rescueCost, shareValue, FRONT_ROW } from './game.js';
 import {
   SHOP_ITEMS, isUnlocked, isAffordable, hasNewAffordableItem,
   PADDOCK_CAP, paddockCount, paddockDecor,
@@ -255,9 +255,9 @@ export function showMoneyPop(amount) {
   pop.addEventListener('animationend', () => pop.remove());
 }
 
-// How many horses stand in the foreground row; older horses move to a
-// smaller background line along the fence, as if further away.
-const FRONT_COUNT = 3;
+// How many horses stand in the foreground row (FRONT_ROW, shared with game.js);
+// older horses move to a smaller background line along the fence, further away.
+const FRONT_COUNT = FRONT_ROW;
 const FRONT_SCALES = [1, 0.82, 0.68]; // newest first
 const BACK_SCALE = 0.48;
 // A scale-1 card is one --horse-unit wide (set in CSS, viewport-responsive).
@@ -461,14 +461,12 @@ function horseCard(horse, scale = 1, isBack = false, wardrobe = []) {
   card.setAttribute('role', 'button');
   card.setAttribute('tabindex', '0');
   card.setAttribute('aria-label', `Care for ${horse.name}`);
-  const showTrait = horse.trait && horse.wellbeing >= TRAIT_REVEAL_AT;
-  // trait/sponsor lines are always in the layout (visibility-toggled by the
-  // "shown" class) so revealing them never changes card height mid-game
+  // The sponsor line stays in the layout (visibility-toggled by the "shown"
+  // class) so a sponsorship reveal never changes card height mid-game.
   card.innerHTML = `
     ${horseFigureHTML(horse, wardrobe)}
     <p class="horse-name">${horse.name}</p>
     <p class="horse-condition">${wellbeingLabel(horse.wellbeing)}</p>
-    <p class="horse-trait${showTrait ? ' shown' : ''}">${showTrait ? horse.trait : ''}</p>
     <p class="horse-sponsor${horse.sponsor ? ' shown' : ''}">${horse.sponsor ? `sponsored by ${horse.sponsor} 💛` : ''}</p>
     <div class="wellbeing" role="meter" aria-label="${horse.name}'s wellbeing"
          aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(horse.wellbeing)}">
@@ -500,10 +498,6 @@ export function updateHorseCard(horse) {
   if (img.getAttribute('src') !== src) img.setAttribute('src', src);
 
   card.querySelector('.horse-condition').textContent = wellbeingLabel(horse.wellbeing);
-  const traitEl = card.querySelector('.horse-trait');
-  const showTrait = horse.trait && horse.wellbeing >= TRAIT_REVEAL_AT;
-  traitEl.classList.toggle('shown', !!showTrait);
-  traitEl.textContent = showTrait ? horse.trait : '';
   const sponsorEl = card.querySelector('.horse-sponsor');
   sponsorEl.classList.toggle('shown', !!horse.sponsor);
   sponsorEl.textContent = horse.sponsor ? `sponsored by ${horse.sponsor} 💛` : '';
@@ -583,7 +577,7 @@ export function showNudgePopup(id, { emoji, text, dir }) {
   document.getElementById('nudge-text').textContent = text;
   const arrow = document.getElementById('nudge-arrow');
   arrow.setAttribute('class', `nudge-arrow nudge-arrow-${dir}`); // SVG className is read-only
-  arrow.innerHTML = NUDGE_ARROWS[dir];
+  arrow.innerHTML = dir.startsWith('up') ? NUDGE_ARROWS.up : NUDGE_ARROWS.down;
   overlay.hidden = false;
 }
 

@@ -22,6 +22,8 @@ export const FIRST_SPONSOR_AT = 88;  // Biscuit sponsors a touch earlier, as its
 export const SPONSOR_RATE = 0.4;     // € per sponsored horse per second
 export const SHARE_BASE = 1;         // € per shared update...
 export const SHARE_PER_SUPPORTER = 0.3; // ...plus this per supporter
+export const THRIVING_AT = 95;       // wellbeing for "thriving" (matches wellbeingLabel)
+export const FRONT_ROW = 3;          // horses shown up close; the rest fall to the back row (matches render.js)
 const LONELY_DELAY = 14;             // seconds after first donation before the loneliness beat
 
 // Chance per second that a new supporter notices the rescue. Every horse
@@ -192,6 +194,22 @@ export function rescueCost(state = gameState) {
   return Math.round(RESCUE_BASE_COST * Math.pow(RESCUE_COST_FACTOR, state.horses.length - 1));
 }
 
+/** The horse a rescue would bump from the front row back to the back row (the
+ *  oldest of the current front row), or null while the herd is small enough
+ *  that nobody gets bumped. */
+export function horseBumpedByRescue(state = gameState) {
+  const n = state.horses.length;
+  if (n < FRONT_ROW) return null;
+  return state.horses[n - FRONT_ROW] ?? null;
+}
+
+/** A rescue is blocked while the horse it would relegate to the back row still
+ *  needs care -- no horse should be sent to the back before it's thriving. */
+export function rescueNeedsCareFirst(state = gameState) {
+  const bumped = horseBumpedByRescue(state);
+  return !!bumped && bumped.wellbeing < THRIVING_AT;
+}
+
 /**
  * Spend rescue funds to bring in a new horse, arriving in worse condition
  * than Biscuit did. Returns { ok, horse, events }.
@@ -199,6 +217,8 @@ export function rescueCost(state = gameState) {
 export function rescueHorse() {
   const cost = rescueCost();
   if (gameState.coins < cost) return { ok: false, horse: null, events: [] };
+  // Don't send a still-struggling horse to the back row to make space.
+  if (rescueNeedsCareFirst()) return { ok: false, horse: null, reason: 'needs-care', events: [] };
 
   gameState.coins -= cost;
   const herd = gameState.horses;

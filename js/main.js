@@ -87,14 +87,14 @@ function nudgeConfig(id) {
     text: 'You can raise money for the rescue! Tap “Share an update” below to chat with your supporters on social media.',
   };
   if (id === 'rescue') {
-    const first = state.horses[0]?.name ?? 'Your horse';
+    const first = state.horses[0]?.name ?? 'your horse';
     return {
       emoji: '🐴', dir: 'down',
-      text: `${first} keeps looking down the lane — no horse should be alone. You've saved enough to help: tap “Rescue another horse” below to bring home a friend.`,
+      text: `You've saved enough to help another horse: tap “Rescue another horse” below to get ${first} a friend.`,
     };
   }
   return {
-    emoji: '🛍️', dir: 'up',
+    emoji: '🛍️', dir: 'up-right',
     text: 'The shop is open! Tap the Shop button up top to dress your horses and decorate the paddock.',
   };
 }
@@ -174,12 +174,14 @@ document.getElementById('actions').addEventListener('click', (event) => {
     return;
   }
   if (event.target.closest('#rescue-btn')) {
-    const { ok, events } = rescueHorse();
+    const { ok, reason, events } = rescueHorse();
     if (ok) {
       state.milestones.hasRescuedAgain = true; // resolves the rescue nudge
       resetPaddockView(); // always show the new arrival
       renderAll(state);
       processEvents(events);
+    } else if (reason === 'needs-care') {
+      showToast('You still have horses which need help');
     }
   }
 });

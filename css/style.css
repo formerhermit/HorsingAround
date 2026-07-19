@@ -143,6 +143,11 @@ main {
   max-width: 960px;
   margin: 0 auto;
   padding: 0 1.5rem 1rem;
+  /* Centre the paddock + buttons in the leftover height so they drop down to
+     use the gap that would otherwise sit above the footer. */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 /* The horizon is fixed in px (not %) so hooves land on grass no matter how
@@ -268,7 +273,6 @@ main {
 }
 
 /* background horses: keep their cards quiet — just name and bar */
-.horse.is-back .horse-trait,
 .horse.is-back .horse-sponsor,
 .horse.is-back .horse-condition {
   display: none;
@@ -374,33 +378,23 @@ main {
 }
 
 /* Card text and bar use em so they scale with the card's font-size,
-   which renderPaddock sets per depth rank. */
+   which renderPaddock sets per depth rank. Names are bigger now that the
+   personality trait line is gone. */
 .horse-name {
-  margin: 0.4em 0 0.3em;
+  margin: 0.45em 0 0.3em;
   font-weight: 700;
-  font-size: 1.05em;
+  font-size: 1.3em;
 }
 
 .horse-condition {
-  font-size: 0.8em;
+  font-size: 0.82em;
   color: #5c5344;
   margin: 0 0 0.5em;
 }
 
-/* Trait and sponsor lines always occupy their line of space; the "shown"
-   class only flips visibility. This keeps card height constant, so reveals
-   never make the paddock jump. */
-.horse-trait {
-  font-size: 0.75em;
-  font-style: italic;
-  color: #8a7d68;
-  margin: -0.5em 0 0.4em;
-  /* Reserve one line; the paddock's overall min-height absorbs the rare
-     two-line trait so a reveal still doesn't jump the scene. */
-  min-height: 1.5em;
-  visibility: hidden;
-}
-
+/* The sponsor line always occupies its line of space; the "shown" class only
+   flips visibility. This keeps card height constant, so a sponsorship reveal
+   never makes the paddock jump. */
 .horse-sponsor {
   font-size: 0.75em;
   color: #a3763a;
@@ -409,7 +403,6 @@ main {
   visibility: hidden;
 }
 
-.horse-trait.shown,
 .horse-sponsor.shown {
   visibility: visible;
 }
@@ -982,6 +975,15 @@ main {
   animation: nudge-bob-up 1.2s ease-in-out infinite;
 }
 
+/* Diagonal variant: points up and to the right, toward the Shop button in the
+   top-right of the HUD. Sits at the card's top-right corner. */
+.nudge-arrow-up-right {
+  left: auto;
+  right: 4%;
+  bottom: calc(100% - 12px);
+  animation: nudge-bob-upright 1.2s ease-in-out infinite;
+}
+
 @keyframes nudge-fade {
   from { opacity: 0; }
   to   { opacity: 1; }
@@ -1000,6 +1002,11 @@ main {
 @keyframes nudge-bob-up {
   0%, 100% { transform: translate(-50%, 0); }
   50%      { transform: translate(-50%, -6px); }
+}
+
+@keyframes nudge-bob-upright {
+  0%, 100% { transform: rotate(38deg) translateY(0); }
+  50%      { transform: rotate(38deg) translateY(-6px); }
 }
 
 .chip-reveal {
