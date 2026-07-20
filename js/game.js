@@ -18,13 +18,13 @@ export const CRIT_GAIN = 6;          // wellbeing from one of those (vs CARE_GAI
 export const WELLBEING_MAX = 100;
 export const CONTENT_AT = 80;        // "content" — triggers the first donation
 export const FIRST_DONATION = 12;    // € from the very first supporter
-export const SUPPORTER_RATE = 0.15;  // € per supporter per second
+export const SUPPORTER_RATE = 0.04;  // € per supporter per second
 export const RESCUE_BASE_COST = 25;  // second horse; later rescues escalate
 export const RESCUE_COST_FACTOR = 1.8;
 export const TRAIT_REVEAL_AT = 40;   // wellbeing at which personality shows
 export const SPONSOR_AT = 95;        // "thriving" — earns the horse a sponsor
 export const FIRST_SPONSOR_AT = 88;  // Biscuit sponsors a touch earlier, as its own beat
-export const SPONSOR_RATE = 0.4;     // € per sponsored horse per second
+export const SPONSOR_RATE = 0.15;    // € per sponsored horse per second
 export const SHARE_BASE = 1;         // € per shared update...
 export const SHARE_PER_SUPPORTER = 0.3; // ...plus this per supporter
 export const TIP_CHANCE = 0.02;      // ~1 in 50 care clicks draws a spontaneous tip
@@ -38,7 +38,9 @@ const LONELY_DELAY = 14;             // seconds after first donation before the 
 // contributes according to its own wellbeing and the contributions add up,
 // so each recovered horse permanently speeds up supporter growth — and a
 // fresh scruffy arrival adds nothing, but no longer drags the rest down.
-function attractionPerSecond() {
+// The steady pull of the herd, in supporters/second, before any short-lived
+// glow boost. Also sets the following's carrying capacity (below).
+function herdPull() {
   const fromHorses = gameState.horses.reduce((sum, h) => {
     if (h.wellbeing >= 95) return sum + 0.025;
     if (h.wellbeing >= 70) return sum + 0.015;
@@ -50,9 +52,29 @@ function attractionPerSecond() {
   // A magical friend draws admirers: the unicorn adds a steady flat charm on top
   // of the pull it already gives as a thriving horse.
   if (hasUnicorn()) base += UNICORN_CHARM;
+  return base;
+}
+
+function attractionPerSecond() {
   // A freshly-tended horse makes the whole paddock buzz for a short while (see
   // the little-needs cycle below): attraction is boosted until glowUntil.
+  const base = herdPull();
   return Date.now() < glowUntil ? base * WANT_GLOW_MULT : base;
+}
+
+// A herd of a given quality can only sustain so large a following: new supporters
+// stop arriving as the count nears capacity, so income plateaus for a given herd
+// instead of climbing forever while a tab sits open. Growing or improving the
+// herd raises the ceiling.
+const SUPPORTER_CAP_PER_PULL = 450;
+function supporterCapacity() {
+  return herdPull() * SUPPORTER_CAP_PER_PULL;
+}
+/** How readily new supporters still arrive: 1 with an empty following, easing to
+ *  0 as it fills toward capacity. */
+function attractionFalloff() {
+  const cap = supporterCapacity();
+  return cap > 0 ? Math.max(0, 1 - gameState.supporters / cap) : 0;
 }
 
 const SUPPORTER_NAMES = [
@@ -624,9 +646,11 @@ export function collectOfflineEarnings(lastPlayedAt, now = Date.now()) {
   const seconds = Math.min(awaySeconds, OFFLINE_CAP_SECONDS) * OFFLINE_RATE;
   const sponsored = gameState.horses.filter((h) => h.sponsor).length;
   const income = (gameState.supporters * SUPPORTER_RATE + sponsored * SPONSOR_RATE) * seconds;
-  // New supporters arrive at the same per-second chance the live tick rolls.
-  // They only start donating from now on — we don't back-pay their giving.
-  const newSupporters = Math.floor(attractionPerSecond() * seconds);
+  // New supporters arrive at the same per-second chance the live tick rolls,
+  // but never past the herd's carrying capacity. They only start donating from
+  // now on — we don't back-pay their giving.
+  const room = Math.max(0, supporterCapacity() - gameState.supporters);
+  const newSupporters = Math.min(Math.floor(attractionPerSecond() * seconds), Math.floor(room));
 
   if (Math.floor(income) < 1 && newSupporters < 1) return null;
 
@@ -699,8 +723,9 @@ export function tick(dt) {
     sponsorToastCooldown = SPONSOR_TOAST_EVERY;
   }
 
-  // happy horses attract new supporters — each one adds pull
-  if (Math.random() < attractionPerSecond() * dt) {
+  // happy horses attract new supporters — but only up to the herd's capacity,
+  // so a following (and its income) plateaus rather than growing without bound.
+  if (Math.random() < attractionPerSecond() * attractionFalloff() * dt) {
     gameState.supporters += 1;
     pendingSupporters += 1;
   }

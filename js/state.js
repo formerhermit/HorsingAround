@@ -106,7 +106,7 @@ export function defaultState() {
     milestones: {
       firstDonation: false,
       firstSponsorship: false,  // once true, sponsorship toasts go terse
-      donateBannerShown: false, // real-donation banner fired its one story moment
+      donateBannerDismissed: false, // player dismissed the real-donation banner for good
       introToastShown: false,   // the "tap Biscuit" nudge new players get once
       hasSharedUpdate: false,   // resolves the "share to raise money" onboarding popup
       hasRescuedAgain: false,   // resolves the "rescue another horse" onboarding popup
@@ -215,6 +215,7 @@ function repair(save) {
   save.milestones.rehomeRewardsGiven ??= REHOME_MILESTONES.filter((n) => save.stats.horsesRehomed >= n);
   save.milestones.donateMilestoneShown ??= save.stats.horsesRescued >= DONATE_MILESTONE;
   save.milestones.donateOptOut ??= false;
+  save.milestones.donateBannerDismissed ??= false;
   // Supporter milestones are new; treat any already passed as shown so a
   // returning player isn't flooded with retroactive "you've grown!" toasts.
   save.milestones.supporterMilestonesShown ??= SUPPORTER_MILESTONES.filter((n) => (save.supporters ?? 0) >= n);
