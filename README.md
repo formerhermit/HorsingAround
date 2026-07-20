@@ -4,7 +4,7 @@ A little game about looking after rescue horses. It's here to raise a smile, and
 
 **[Play it live →](https://formerhermit.github.io/HorsingAround/)**
 
-![Horsing Around screenshot](horsing-around-screenshot.png)
+![Horsing Around Revamped](https://github.com/formerhermit/HorsingAround/blob/main/Horsing-Around-Revamped.png?raw=true)
 
 ## The idea
 
@@ -139,5 +139,4 @@ Every save is scoped to its own anonymous user, so players never see each other'
 
 ## What's next
 
-- Real ARCH horse stories, told inside the game
-- A pasture that slowly fills up to reward coming back
+- Leaderboard
