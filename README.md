@@ -4,7 +4,7 @@ A little game about looking after rescue horses. It's here to raise a smile, and
 
 **[Play it live →](https://formerhermit.github.io/HorsingAround/)**
 
-![Horsing Around screenshot](horsing-around-screenshot.png)
+![Horsing Around screenshot](horsing-around-revamped.png)
 
 ## The idea
 
