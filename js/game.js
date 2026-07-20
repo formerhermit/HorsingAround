@@ -233,9 +233,11 @@ export function shareUpdate() {
 }
 
 /** Cost of the next rescue. Escalates with herd size; phase 3 will add
- *  paddock-space and hay-budget gates on top. */
+ *  paddock-space and hay-budget gates on top. The unicorn is a gift, not a
+ *  rescue, so it doesn't count toward the escalation. */
 export function rescueCost(state = gameState) {
-  return Math.round(RESCUE_BASE_COST * Math.pow(RESCUE_COST_FACTOR, state.horses.length - 1));
+  const rescued = state.horses.filter((h) => h.paletteKey !== 'unicorn').length;
+  return Math.round(RESCUE_BASE_COST * Math.pow(RESCUE_COST_FACTOR, rescued - 1));
 }
 
 /** The horse a rescue would bump from the front row back to the back row (the
