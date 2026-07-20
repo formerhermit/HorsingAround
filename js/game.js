@@ -8,7 +8,7 @@ import {
   gameState, createHorse,
   RESCUE_MILESTONES, REHOME_MILESTONES, DONATE_MILESTONE, SUPPORTER_MILESTONES,
 } from './state.js';
-import { PALETTE_KEYS } from './horse.js';
+import { PALETTE_KEYS, isMagicalCoat } from './horse.js';
 import { attractionBonus, shareMultiplier, PADDOCK_CAP } from './shop.js';
 
 // ---- tuning ----
@@ -261,10 +261,10 @@ export function shareUpdate() {
 }
 
 /** Cost of the next rescue. Escalates with herd size; phase 3 will add
- *  paddock-space and hay-budget gates on top. The unicorn is a gift, not a
- *  rescue, so it doesn't count toward the escalation. */
+ *  paddock-space and hay-budget gates on top. Magical gift horses (the unicorn,
+ *  rainbow and golden) are gifts, not rescues, so they don't count toward it. */
 export function rescueCost(state = gameState) {
-  const rescued = state.horses.filter((h) => h.paletteKey !== 'unicorn').length;
+  const rescued = state.horses.filter((h) => !isMagicalCoat(h.paletteKey)).length;
   return Math.round(RESCUE_BASE_COST * Math.pow(RESCUE_COST_FACTOR, rescued - 1));
 }
 
@@ -359,27 +359,45 @@ function collectCoat(coat) {
 // and it lends the paddock a steady extra pull.
 const UNICORN_CHARM = 0.02; // flat attraction added just for having the unicorn
 
-/** Whether the herd already includes the unicorn (it's unique). */
-export function hasUnicorn(state = gameState) {
-  return state.horses.some((h) => h.paletteKey === 'unicorn');
+/** Whether the herd already includes a horse of this coat. */
+export function hasCoat(coat, state = gameState) {
+  return state.horses.some((h) => h.paletteKey === coat);
 }
 
-/** Add the unicorn to the herd (once ever). Arrives thriving — a gift, not a
- *  rescue, so it doesn't count toward the rescue tally. Returns it, or null. */
-export function grantUnicorn() {
-  if (hasUnicorn()) return null;
+/** Whether the herd already includes the unicorn (it's unique). */
+export function hasUnicorn(state = gameState) {
+  return hasCoat('unicorn', state);
+}
+
+/** Add a one-of-a-kind magical gift horse to the herd. Arrives thriving — a
+ *  gift, not a rescue, so it doesn't count toward the rescue tally. Returns it,
+ *  or null if the herd already has one. */
+function grantGiftHorse(coat, name, trait) {
+  if (hasCoat(coat)) return null;
   const horse = createHorse({
-    id: `unicorn-${Date.now().toString(36)}`,
-    name: 'Milagro',
-    paletteKey: 'unicorn',
+    id: `${coat}-${Date.now().toString(36)}`,
+    name,
+    paletteKey: coat,
     wellbeing: WELLBEING_MAX,
     rescueOrder: gameState.horses.length + 1,
-    trait: 'quietly, impossibly magical',
+    trait,
   });
   gameState.horses.push(horse);
-  collectCoat('unicorn');
+  collectCoat(coat);
   return horse;
 }
+
+/** Add the unicorn (once ever), the donation reward. Returns it, or null. */
+export function grantUnicorn() {
+  return grantGiftHorse('unicorn', 'Milagro', 'quietly, impossibly magical');
+}
+
+// Rescue-count milestones that hand over a magical gift horse instead of a cash
+// bonus: a rainbow at 50, a golden pegasus at 100.
+const RESCUE_GIFTS = {
+  50:  { coat: 'rainbow', name: 'Iris',   trait: 'woven from a whole rainbow' },
+  100: { coat: 'golden',  name: 'Dorado', trait: 'winged, and pure gold through and through' },
+};
 
 // ---- rehoming ----
 // Thriving horses are occasionally offered a forever home for a small adoption
@@ -771,8 +789,8 @@ function maybeOfferRehome(dt, events) {
   rehomeCountdown -= dt;
   if (rehomeCountdown > 0) return;
   rehomeCountdown = randomBetween(REHOME_GAP_MIN, REHOME_GAP_MAX);
-  // The unicorn is a permanent resident and is never offered for rehoming.
-  const thriving = gameState.horses.filter((h) => h.wellbeing >= THRIVING_AT && h.paletteKey !== 'unicorn');
+  // Magical gift horses are permanent residents, never offered for rehoming.
+  const thriving = gameState.horses.filter((h) => h.wellbeing >= THRIVING_AT && !isMagicalCoat(h.paletteKey));
   if (!thriving.length) return; // no one ready; try again next interval
   const horse = randomFrom(thriving);
   const income = rehomeIncome();
@@ -787,9 +805,16 @@ function checkMilestones(events) {
   for (const n of RESCUE_MILESTONES) {
     if (gameState.stats.horsesRescued >= n && !m.rescueRewardsGiven.includes(n)) {
       m.rescueRewardsGiven.push(n);
-      const bonus = milestoneBonus();
-      gameState.coins += bonus;
-      events.push({ type: 'rescue-milestone', count: n, bonus });
+      const gift = RESCUE_GIFTS[n];
+      if (gift) {
+        // A milestone with a magical gift horse instead of cash.
+        const horse = grantGiftHorse(gift.coat, gift.name, gift.trait);
+        if (horse) events.push({ type: 'gift-horse', count: n, coat: gift.coat, name: horse.name });
+      } else {
+        const bonus = milestoneBonus();
+        gameState.coins += bonus;
+        events.push({ type: 'rescue-milestone', count: n, bonus });
+      }
     }
   }
   if (gameState.stats.horsesRescued >= DONATE_MILESTONE && !m.donateMilestoneShown && !m.donateOptOut) {

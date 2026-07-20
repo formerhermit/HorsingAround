@@ -1191,6 +1191,14 @@ main {
   color: #3d3428;
 }
 
+/* How to earn a locked coat (e.g. "Rescue 50 horses") -- a warm little hint. */
+.stamp-hint {
+  margin: 0.1rem 0 0;
+  font-size: 0.66rem;
+  font-weight: 600;
+  color: #a3763a;
+}
+
 /* Locked: a dimmed grey ghost of the coat you're still chasing. */
 .stamp.locked .stamp-photo .horse-figure {
   filter: grayscale(1) brightness(1.2) opacity(0.35);

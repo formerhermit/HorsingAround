@@ -13,17 +13,28 @@ export const PALETTE_KEYS = ['bay', 'brown', 'grey', 'palomino', 'white', 'brown
 // Rare coats: never in the common random pool. They only appear via the low
 // per-rescue odds in game.js. The unicorn is rarer still (donation-only).
 export const RARE_COATS = ['spotty', 'red-boy', 'piebald', 'piebald-donkey', 'zebra'];
-const SPECIAL_COATS = new Set([...RARE_COATS, 'unicorn']);
-const KNOWN_COATS = new Set([...PALETTE_KEYS, ...RARE_COATS, 'unicorn']);
 
-/** A rare or unicorn coat, i.e. one that gets the shiny shimmer. */
+// Magical gift horses: earned, not rescued. They arrive thriving and stay
+// permanent residents -- never counted toward a rescue's cost, never offered
+// for adoption, and never dressed up in the shop. They all shimmer.
+export const MAGICAL_COATS = ['unicorn', 'rainbow', 'golden'];
+const MAGICAL_SET = new Set(MAGICAL_COATS);
+export function isMagicalCoat(key) {
+  return MAGICAL_SET.has(key);
+}
+
+const SPECIAL_COATS = new Set([...RARE_COATS, ...MAGICAL_COATS]);
+const KNOWN_COATS = new Set([...PALETTE_KEYS, ...RARE_COATS, ...MAGICAL_COATS]);
+
+/** A rare or magical coat, i.e. one that gets the shiny shimmer. */
 export function isShinyCoat(horse) {
   return SPECIAL_COATS.has(horse.paletteKey);
 }
 
 // Every collectable coat, for the collection book. `rarity` groups the stamps;
 // `mystery` keeps a locked stamp fully hidden (a "?") instead of the usual
-// dimmed-ghost preview. Add coats here (with art) to grow the collection.
+// dimmed-ghost preview; `unlock` is a short hint shown under a locked stamp so
+// a player knows how to earn it. Add coats here (with art) to grow the collection.
 export const COAT_CATALOG = [
   { id: 'bay',            name: 'Bay',           rarity: 'common' },
   { id: 'brown',          name: 'Brown',         rarity: 'common' },
@@ -37,7 +48,9 @@ export const COAT_CATALOG = [
   { id: 'piebald',        name: 'Piebald',       rarity: 'rare', mystery: true },
   { id: 'piebald-donkey', name: 'Piebald donkey', rarity: 'rare' },
   { id: 'zebra',          name: 'Zebra',         rarity: 'rare', mystery: true },
-  { id: 'unicorn',        name: 'Unicorn',       rarity: 'magical' },
+  { id: 'unicorn',        name: 'Unicorn',       rarity: 'magical', unlock: 'Donate to ARCH' },
+  { id: 'rainbow',        name: 'Rainbow',       rarity: 'magical', unlock: 'Rescue 50 horses' },
+  { id: 'golden',         name: 'Golden',        rarity: 'magical', unlock: 'Rescue 100 horses' },
 ];
 
 // Normalised image canvas (see scripts that build assets/horses/*). Costume

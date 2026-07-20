@@ -1,6 +1,6 @@
 // render.js — turns gameState into DOM. No game logic lives here.
 
-import { horseFigureHTML, horseImageSrc, wellbeingLabel, wellbeingColor, isShinyCoat, COAT_CATALOG } from './horse.js';
+import { horseFigureHTML, horseImageSrc, wellbeingLabel, wellbeingColor, isShinyCoat, isMagicalCoat, COAT_CATALOG } from './horse.js';
 import { rescueCost, shareValue, FRONT_ROW, getActiveWant } from './game.js';
 import {
   SHOP_ITEMS, isUnlocked, isAffordable, hasNewAffordableItem,
@@ -172,9 +172,10 @@ function stampHTML(coat, collected) {
       <div class="stamp-photo"><span class="stamp-q">?</span></div>
       <figcaption class="stamp-name">???</figcaption></figure>`;
   }
+  const hint = coat.unlock ? `<figcaption class="stamp-hint">${coat.unlock}</figcaption>` : '';
   return `<figure class="stamp locked rarity-${coat.rarity}">
     <div class="stamp-photo">${portrait()}</div>
-    <figcaption class="stamp-name">${coat.name}</figcaption></figure>`;
+    <figcaption class="stamp-name">${coat.name}</figcaption>${hint}</figure>`;
 }
 
 export function renderCollection(state) {
@@ -304,9 +305,9 @@ export function renderShopModal(state) {
   const unlocked = SHOP_ITEMS.filter((item) => isUnlocked(item, state));
 
   // --- wardrobe: choose a horse, then dress them ---
-  // The unicorn is a magical guest, not a rescue -- it doesn't get dressed up,
-  // so it never appears as a target here.
-  const horses = state.horses.filter((h) => h.paletteKey !== 'unicorn');
+  // Magical gift horses (unicorn, rainbow, golden) are guests, not rescues --
+  // they don't get dressed up, so they never appear as a target here.
+  const horses = state.horses.filter((h) => !isMagicalCoat(h.paletteKey));
   if (!horses.some((h) => h.id === shopHorseTarget)) {
     shopHorseTarget = horses[horses.length - 1]?.id ?? null; // default: newest arrival
   }

@@ -308,6 +308,17 @@ function handleEvent(e) {
       text: `You have re-homed ${fig(e.count)} horses. What an amazing job you're doing! Here's ${fig(`€${e.bonus}`)} extra to keep up the good work.`,
       buttons: [{ label: 'Collect', variant: 'primary' }],
     });
+  } else if (e.type === 'gift-horse') {
+    // A magical gift horse (rainbow at 50, golden at 100). It's already in the
+    // herd; show it, then a congratulations popup.
+    resetPaddockView();
+    renderAll(state);
+    const kind = e.coat === 'golden' ? 'golden horse 🌟' : 'rainbow horse 🌈';
+    enqueueDialog({
+      emoji: e.coat === 'golden' ? '🌟' : '🌈', confetti: true,
+      text: `You've saved ${fig(e.count)} horses! 🎉 That's an incredible thing to have done, so here's a gift: a magical ${kind} has come to live in your paddock. Say hello to ${e.name}!`,
+      buttons: [{ label: 'Wonderful!', variant: 'primary' }],
+    });
   } else if (e.type === 'donate-milestone') {
     // The 10-rescue donate beat. If the unicorn's still unclaimed, this is where
     // it's offered (the magical-friend ask, with confetti); once it's home the
