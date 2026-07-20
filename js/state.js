@@ -88,6 +88,12 @@ export function defaultState() {
     postcards: [],
     pendingPostcards: [],
 
+    // Collection book: coat ids ever collected (Biscuit is a bay from the
+    // start), and how many were collected last time the book was opened (drives
+    // the "new" dot on the button).
+    collectedCoats: ['bay'],
+    collectionSeen: 1,
+
     // one-way feature gates flipped by progression
     unlocks: {
       moneyUI: false,    // flips when Biscuit first reaches "content"
@@ -112,6 +118,7 @@ export function defaultState() {
       donateOptOut: false,      // player chose "Don't ask again" on the donate popup
       firstPostcardShown: false, // the first postcard's toast explains the album
       supporterMilestonesShown: [], // supporter-count milestones already toasted
+      collectionIntroDone: false, // the "check your collection" nudge fired once
     },
 
     stats: {
@@ -216,6 +223,15 @@ function repair(save) {
   save.postcards ??= [];
   save.pendingPostcards ??= [];
   save.milestones.firstPostcardShown ??= false;
+
+  // Collection book is new: seed it from the coats currently in the herd (older
+  // saves can't recover coats they've since rehomed, they'll re-collect those).
+  // A player already past 8 rescues shouldn't get the intro nudge retroactively.
+  if (!save.collectedCoats) {
+    save.collectedCoats = [...new Set(['bay', ...(save.horses ?? []).map((h) => h.paletteKey)])];
+  }
+  save.collectionSeen ??= save.collectedCoats.length;
+  save.milestones.collectionIntroDone ??= (save.stats.horsesRescued ?? 1) >= 8;
 
   // Wardrobe used to be a global purchase that dressed every horse at once.
   // Anyone who bought one under that system keeps it -- migrate those ids

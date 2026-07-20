@@ -1128,6 +1128,85 @@ main {
   }
 }
 
+/* ---------- collection book ---------- */
+
+.collection-grid {
+  display: flex;
+  flex-direction: column;
+}
+
+.collection-group {
+  margin: 1rem 0 0.5rem;
+  font-size: 0.8rem;
+  color: #8a7d68;
+}
+
+.collection-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+  gap: 0.6rem;
+}
+
+.stamp {
+  margin: 0;
+  background: #fffdf7;
+  border: 1.5px solid #ece3cf;
+  border-radius: 12px;
+  padding: 0.35rem 0.35rem 0.5rem;
+  text-align: center;
+}
+
+.stamp-photo {
+  background: linear-gradient(#eef3e6, #e2ecd6);
+  border-radius: 8px;
+  aspect-ratio: 1 / 1;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.stamp-photo .horse-figure {
+  width: 82%;
+  margin: 0 auto;
+}
+
+.stamp-name {
+  margin: 0.35rem 0 0;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #3d3428;
+}
+
+/* Locked: a dimmed grey ghost of the coat you're still chasing. */
+.stamp.locked .stamp-photo .horse-figure {
+  filter: grayscale(1) brightness(1.2) opacity(0.35);
+}
+
+.stamp.locked .stamp-name {
+  color: #b3a488;
+  font-weight: 600;
+}
+
+/* Locked mystery: a plain question mark, no preview at all. */
+.stamp.mystery .stamp-q {
+  align-self: center;
+  font-size: 2rem;
+  font-weight: 800;
+  color: #c9bfa8;
+}
+
+/* Rare and magical stamps, once collected, get a tinted frame. */
+.stamp.collected.rarity-rare {
+  border-color: #e6bd5c;
+  box-shadow: 0 0 0 1px #f2da8f inset;
+}
+
+.stamp.collected.rarity-magical {
+  border-color: #c9a3e6;
+  box-shadow: 0 0 10px rgba(180, 130, 220, 0.35);
+}
+
 /* ---------- toasts & HUD reveal ---------- */
 
 .toasts {

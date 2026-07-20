@@ -29,6 +29,9 @@
       <button class="album-btn" id="album-btn" hidden aria-haspopup="dialog" aria-controls="album-modal" title="Postcards from rehomed horses">
         💌<span class="album-badge" id="album-badge" hidden></span>
       </button>
+      <button class="album-btn" id="collection-btn" aria-haspopup="dialog" aria-controls="collection-modal" title="Your collection of horse types">
+        📖<span class="album-badge" id="collection-badge" hidden></span>
+      </button>
       <button class="sound-btn" id="sound-btn" aria-label="Mute music" title="Music">🔊</button>
     </div>
   </header>
@@ -100,6 +103,20 @@
         of happy endings 💛
       </p>
       <div class="album-grid" id="album-grid"></div>
+    </div>
+  </div>
+
+  <div class="album-overlay" id="collection-overlay" hidden>
+    <div class="album-modal" id="collection-modal" role="dialog" aria-modal="true" aria-labelledby="collection-title">
+      <div class="shop-header">
+        <h2 id="collection-title">Collection</h2>
+        <button class="shop-close" id="collection-close" aria-label="Close collection">×</button>
+      </div>
+      <p class="shop-intro">
+        <span id="collection-count">0 of 9 collected</span>. Every horse type you've
+        cared for. Keep rescuing to collect them all 💛
+      </p>
+      <div class="collection-grid" id="collection-grid"></div>
     </div>
   </div>
 

@@ -281,11 +281,13 @@ export function rescueHorse() {
   });
   herd.push(horse);
   gameState.stats.horsesRescued += 1;
+  const newForCollection = collectCoat(coat);
 
   const rareLabel = RARE_COAT_LABELS[coat];
-  const message = rareLabel
+  let message = rareLabel
     ? `✨ ${name} arrives, thin and wary, but look closer: a rare ${rareLabel}! What a treasure 🌟`
     : `${name} arrives: thin, wary, and keeping to the far end of the paddock. Time to get to work 🐴`;
+  if (newForCollection) message += ' 📖 A new one for your collection!';
 
   return { ok: true, horse, events: [{ type: 'rescue', message }] };
 }
@@ -309,6 +311,13 @@ function pickRescueCoat() {
     if (roll < cumulative) return r.coat;
   }
   return randomFrom(PALETTE_KEYS);
+}
+
+/** Record a coat in the collection book. Returns true if it's newly collected. */
+function collectCoat(coat) {
+  if (gameState.collectedCoats.includes(coat)) return false;
+  gameState.collectedCoats.push(coat);
+  return true;
 }
 
 // ---- the unicorn ----
@@ -335,6 +344,7 @@ export function grantUnicorn() {
     trait: 'quietly, impossibly magical',
   });
   gameState.horses.push(horse);
+  collectCoat('unicorn');
   return horse;
 }
 

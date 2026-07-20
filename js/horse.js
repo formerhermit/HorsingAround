@@ -21,6 +21,21 @@ export function isShinyCoat(horse) {
   return SPECIAL_COATS.has(horse.paletteKey);
 }
 
+// Every collectable coat, for the collection book. `rarity` groups the stamps;
+// `mystery` keeps a locked stamp fully hidden (a "?") instead of the usual
+// dimmed-ghost preview. Add coats here (with art) to grow the collection.
+export const COAT_CATALOG = [
+  { id: 'bay',      name: 'Bay',      rarity: 'common' },
+  { id: 'brown',    name: 'Brown',    rarity: 'common' },
+  { id: 'grey',     name: 'Grey',     rarity: 'common' },
+  { id: 'palomino', name: 'Palomino', rarity: 'common' },
+  { id: 'white',    name: 'Snowy',    rarity: 'common' },
+  { id: 'spotty',   name: 'Spotted',  rarity: 'rare' },
+  { id: 'red-boy',  name: 'Chestnut', rarity: 'rare' },
+  { id: 'piebald',  name: 'Piebald',  rarity: 'rare', mystery: true },
+  { id: 'unicorn',  name: 'Unicorn',  rarity: 'magical' },
+];
+
 // Normalised image canvas (see scripts that build assets/horses/*). Costume
 // coordinates live in this same space.
 export const FIGURE_W = 500;
