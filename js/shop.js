@@ -65,7 +65,7 @@ export const SHOP_ITEMS = [
   // tier 3 — 5 horses rescued
   { id: 'leg-wraps', name: 'Leg wraps', category: 'wardrobe', price: 900, requiresHorses: 5, attractionBonus: 0.014 },
   { id: 'flower-buckets', name: 'Flower buckets', category: 'decor', price: 3000, requiresHorses: 5, shareBonus: 0.06 },
-  { id: 'apple-barrel', name: 'Apple barrel', category: 'decor', price: 3400, requiresHorses: 5, shareBonus: 0.06 },
+  { id: 'flower-barrow', name: 'Flower barrow', category: 'decor', price: 3400, requiresHorses: 5, shareBonus: 0.06 },
   { id: 'butterflies', name: 'Butterflies', category: 'decor', price: 3600, requiresHorses: 5, shareBonus: 0.06 },
 
   // tier 4 — 8 horses rescued (matches the paddock-paging threshold). The

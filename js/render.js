@@ -81,7 +81,7 @@ const ITEM_EMOJI = {
   scarf: '🧣', 'ear-flower': '🌸', boots: '👢', 'leg-wraps': '🩹',
   'forelock-bow': '🎀', 'saddle-blanket': '🟦',
   'flower-garland': '🌼', bunting: '🎏', trough: '💧',
-  'flower-buckets': '🪣', 'apple-barrel': '🍎', 'hay-bales': '🌾',
+  'flower-buckets': '🪣', 'flower-barrow': '🌷', 'hay-bales': '🌾',
   'play-balls': '🎾', butterflies: '🦋', muffin: '🐶', marmalade: '🐱', joya: '🐕',
 };
 
@@ -476,7 +476,7 @@ const GROUND_BASELINE = 92; // subject bottoms rest near here (in the 100-tall r
 // spreads evenly across the row. Butterflies are overlay-only (no ground slot).
 const GROUND_IMAGES = {
   'flower-buckets': { aspect: 1.465, fw: 0.551, fh: 0.819, subjH: 84 },
-  'apple-barrel':   { aspect: 1.465, fw: 0.382, fh: 0.612, subjH: 80 },
+  'flower-barrow':  { aspect: 1.500, fw: 0.854, fh: 0.891, subjH: 72 },
   trough:           { aspect: 1.485, fw: 0.747, fh: 0.343, subjH: 42 },
   'hay-bales':      { aspect: 1.476, fw: 0.584, fh: 0.686, subjH: 72 },
   'play-balls':     { aspect: 2.163, fw: 0.475, fh: 0.329, subjH: 46 },

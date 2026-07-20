@@ -251,6 +251,13 @@ function repair(save) {
     if (idx >= 0) paddockDecor[idx] = 'muffin';
   }
 
+  // The apple barrel was replaced by the flower barrow; convert any that were
+  // bought so those players keep an equivalent decoration rather than losing it.
+  for (const paddockDecor of Object.values(save.shop.decorByPaddock ?? {})) {
+    const idx = paddockDecor.indexOf('apple-barrel');
+    if (idx >= 0) paddockDecor[idx] = 'flower-barrow';
+  }
+
   return save;
 }
 
