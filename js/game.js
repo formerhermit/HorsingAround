@@ -70,7 +70,7 @@ const HORSE_NAMES = [
   'Canela', 'Luna', 'Chispa', 'Trufa', 'Nube', 'Pepita',
   'Almendra', 'Turrón', 'Membrillo', 'Aceituna', 'Bruno', 'Duquesa',
   'Pastora', 'Graciella', 'Revoltosa', 'Bollycao', 'Ratatouille',
-  'Lola (Gabbi)', 'Borrego', 'Margarita', 'Bella', 'Brisa', 'Brava',
+  'Gabbi', 'Borrego', 'Margarita', 'Bella', 'Brisa', 'Brava',
   'Victoria', 'Lucero', 'Luz de Luna', 'Senador', 'Torero', 'Ida',
   'Llaminera', 'Primero', 'Ramona', 'Simba', 'Pinocchio', 'Tizón',
   'Esperanza', 'Cristal', 'Gitana', 'Hindia', 'Pirata', 'Lola',

@@ -534,7 +534,7 @@ const GROUND_BASELINE = 92; // subject bottoms rest near here (in the 100-tall r
 // height. The horizontal slot is assigned dynamically so any mix of props
 // spreads evenly across the row. Butterflies are overlay-only (no ground slot).
 const GROUND_IMAGES = {
-  'flower-buckets': { aspect: 1.465, fw: 0.551, fh: 0.819, subjH: 84 },
+  'flower-buckets': { aspect: 1.465, fw: 0.551, fh: 0.819, subjH: 70 },
   'flower-barrow':  { aspect: 1.500, fw: 0.854, fh: 0.891, subjH: 72 },
   trough:           { aspect: 1.485, fw: 0.747, fh: 0.343, subjH: 42 },
   'hay-bales':      { aspect: 1.476, fw: 0.584, fh: 0.686, subjH: 72 },
