@@ -523,6 +523,13 @@ const SUPPORTER_TOAST_EVERY = 18; // seconds
 let pendingSupporters = 0;
 let supporterToastCooldown = 0;
 
+// Sponsorships batch the same way, once the first has taught what they are: a
+// caring spree that lands several horses at thriving together collapses into
+// one toast instead of a stack. Each is still shown permanently on its card.
+const SPONSOR_TOAST_EVERY = 18; // seconds
+let pendingSponsors = [];
+let sponsorToastCooldown = 0;
+
 // ---- offline earnings ----
 // Time the game was closed still counts: the supporters and sponsors you've
 // already earned keep donating, and a few new supporters drift in. Credited at
@@ -597,14 +604,32 @@ export function tick(dt) {
     if (!horse.sponsor && horse.wellbeing >= sponsorThreshold) {
       horse.sponsor = randomFrom(SUPPORTER_NAMES);
       gameState.supporters += 1;
-      // The first sponsorship explains what it means; once the player
-      // knows, later ones just announce themselves.
-      const message = gameState.milestones.firstSponsorship
-        ? `${horse.sponsor} has sponsored ${horse.name} 💛`
-        : `${horse.sponsor} is so taken with ${horse.name} that they've set up a sponsorship — steady support, every month 💛`;
-      gameState.milestones.firstSponsorship = true;
-      events.push({ type: 'sponsor', message });
+      if (!gameState.milestones.firstSponsorship) {
+        // The very first sponsorship explains what it means, in its own toast.
+        gameState.milestones.firstSponsorship = true;
+        events.push({
+          type: 'sponsor',
+          message: `${horse.sponsor} is so taken with ${horse.name} that they've set up a sponsorship: steady support, every month 💛`,
+        });
+      } else {
+        // Later ones batch (emitted below) so a spree collapses into one toast.
+        pendingSponsors.push({ supporter: horse.sponsor, horseName: horse.name });
+      }
     }
+  }
+
+  sponsorToastCooldown = Math.max(0, sponsorToastCooldown - dt);
+  if (pendingSponsors.length > 0 && sponsorToastCooldown === 0) {
+    const n = pendingSponsors.length;
+    const first = pendingSponsors[0];
+    events.push({
+      type: 'sponsor',
+      message: n === 1
+        ? `${first.supporter} has sponsored ${first.horseName} 💛`
+        : `${first.supporter} and ${n - 1} other${n > 2 ? 's' : ''} have set up sponsorships 💛`,
+    });
+    pendingSponsors = [];
+    sponsorToastCooldown = SPONSOR_TOAST_EVERY;
   }
 
   // happy horses attract new supporters — each one adds pull
