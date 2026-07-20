@@ -5,7 +5,7 @@ import { careFor, tick, rescueHorse, shareUpdate, rescueCost, acceptRehome, decl
 import {
   renderAll, renderHUD, renderActions, updateHorseCard,
   showCareFeedback, showTipPop, showToast, showMoneyPop, showSupporterPop, changePaddock, resetPaddockView,
-  showDonateBanner, hideDonateBanner, showNudgePopup, hideNudgePopup, showDialog,
+  showNudgePopup, hideNudgePopup, showDialog,
   renderShopButton, openShopModal, closeShopModal, renderShopModal, shopDecorPaddock,
   renderPostcardButton, openPostcardAlbum, closePostcardAlbum,
   renderWantBubbles, showWantFulfilled,
@@ -49,24 +49,9 @@ if (!state.milestones.introToastShown) {
 // run -- see the updateOnboardingNudges() call after the dismiss wiring.)
 
 // ---- real-donation banner ----
-// A gentle, always-there reminder that ARCH's horses are real. It appears once
-// the rescue is established (first sponsorship) and then simply stays, every
-// session, until the player chooses to dismiss it -- at which point that choice
-// is remembered and it never returns, so it neither nags nor vanishes on its
-// own. (The footer keeps a quiet Donate link regardless.)
-
-function maybeOfferDonation() {
-  if (!state.milestones.firstSponsorship || state.milestones.donateBannerDismissed) return;
-  showDonateBanner();
-}
-
-maybeOfferDonation(); // on load: a returning player past first sponsorship sees it
-
-document.getElementById('donate-dismiss').addEventListener('click', () => {
-  hideDonateBanner();
-  state.milestones.donateBannerDismissed = true;
-  save();
-});
+// A permanent fixture at the foot of the screen (markup in index.html): always
+// shown, never dismissible. Its "Donate to ARCH" link doubles as a way to earn
+// the unicorn while it's unclaimed (see wireDonateButtons below).
 
 // ---- the donation unicorn ----
 // Well into the rescue (around DONATE_MILESTONE horses saved), offer a magical
@@ -359,7 +344,6 @@ function handleEvent(e) {
 function processEvents(events) {
   if (!events.length) return;
   events.forEach(handleEvent);
-  maybeOfferDonation(); // fires once, on the first sponsorship beat
   // The unicorn offer isn't fired here: the 10-rescue 'donate-milestone' event
   // (handled above) is the single trigger for the crossing, and maybeOfferUnicorn
   // on load covers returning players. Firing it here too would double the popup.
