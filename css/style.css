@@ -377,7 +377,7 @@ main {
   color: #5c5344;
   white-space: nowrap;
   pointer-events: none;
-  animation: care-pop-float 0.9s ease-out forwards;
+  animation: care-pop-float 1.4s ease-out forwards;
 }
 
 /* pastel variants, picked at random per click */
@@ -389,8 +389,9 @@ main {
 
 @keyframes care-pop-float {
   0%   { opacity: 0; translate: 0 6px; }
-  15%  { opacity: 1; }
-  100% { opacity: 0; translate: 0 -34px; }
+  12%  { opacity: 1; }
+  65%  { opacity: 1; }
+  100% { opacity: 0; translate: 0 -36px; }
 }
 
 /* Crit: a care click that lands especially well. Larger and gold, with a pop of
@@ -402,7 +403,7 @@ main {
   font-size: 1.02rem;
   padding: 0.28rem 0.8rem;
   box-shadow: 0 2px 10px rgba(224, 168, 30, 0.35);
-  animation: care-pop-crit 1.05s ease-out forwards;
+  animation: care-pop-crit 1.5s ease-out forwards;
 }
 
 /* Spontaneous tip: money-coloured (matches the share money-pop) so it reads as
@@ -412,14 +413,15 @@ main {
   border-color: #b7d89a;
   color: #4e6e2f;
   font-weight: 700;
-  animation: care-pop-crit 1.05s ease-out forwards;
+  animation: care-pop-crit 1.5s ease-out forwards;
 }
 
 @keyframes care-pop-crit {
   0%   { opacity: 0; translate: 0 8px; scale: 0.7; }
-  18%  { opacity: 1; scale: 1.12; }
-  32%  { scale: 1; }
-  100% { opacity: 0; translate: 0 -46px; }
+  13%  { opacity: 1; scale: 1.12; }
+  24%  { scale: 1; }
+  65%  { opacity: 1; }
+  100% { opacity: 0; translate: 0 -50px; }
 }
 
 /* Little-needs thought bubble: floats above the horse, gently bobbing, showing
@@ -723,12 +725,16 @@ main {
   animation: care-pop-float 0.9s ease-out forwards;
 }
 
-/* Floating "+N 💛" over the supporters chip: warm and quiet, matching the HUD. */
+/* Floating "+N 💛" for the supporters chip: warm and quiet, matching the HUD.
+   The chip sits at the very top of the screen, so this drifts *downward* below
+   it (a float up would sail straight off the top edge), and lingers longer so
+   it's actually readable. */
 .supporter-pop {
   position: absolute;
-  top: 0;
+  top: 100%;
   left: 50%;
-  transform: translate(-50%, -100%) rotate(var(--tilt, 0deg));
+  transform: translate(-50%, 0) rotate(var(--tilt, 0deg));
+  margin-top: 2px;
   background: #fffdf7;
   border: 1.5px solid #e6dcc6;
   border-radius: 999px;
@@ -738,7 +744,14 @@ main {
   color: #b0823f;
   white-space: nowrap;
   pointer-events: none;
-  animation: care-pop-float 0.9s ease-out forwards;
+  animation: supporter-pop-float 1.9s ease-out forwards;
+}
+
+@keyframes supporter-pop-float {
+  0%   { opacity: 0; translate: 0 0; }
+  12%  { opacity: 1; }
+  65%  { opacity: 1; }
+  100% { opacity: 0; translate: 0 26px; }
 }
 
 /* ---------- donate banner ---------- */

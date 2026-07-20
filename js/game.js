@@ -201,9 +201,15 @@ export function careFor(horse) {
   // lands early, well before the donation/rescue/sponsor beats.
   if (before < TRAIT_REVEAL_AT && horse.wellbeing >= TRAIT_REVEAL_AT) {
     horse.trait ??= randomUnused(TRAITS, gameState.horses.map((h) => h.trait).filter(Boolean));
+    // The first couple of these introduce the mechanic in full; after that the
+    // "starting to relax" preamble just repeats, so trim to the punchline.
+    const shown = gameState.stats.traitsRevealed ?? 0;
+    gameState.stats.traitsRevealed = shown + 1;
     events.push({
       type: 'trait',
-      message: `${horse.name} is starting to relax — turns out ${horse.name} is ${horse.trait} 🐴`,
+      message: shown < 2
+        ? `${horse.name} is starting to relax — turns out ${horse.name} is ${horse.trait} 🐴`
+        : `Turns out ${horse.name} is ${horse.trait} 🐴`,
     });
   }
   // First supporter: someone notices a horse doing well, money UI unlocks.
