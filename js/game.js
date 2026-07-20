@@ -451,7 +451,7 @@ const POSTCARD_TEMPLATES = [
   '{name} sends a happy nicker from a new paddock with {adopter}. Still {trait}: some things never change 💛',
   'Word from {adopter}: {name} has fit right in. Still {trait}, but loving the new home 🌼',
   'Greetings from {name}, now living the good life with {adopter}. Still {trait}, we hear! 🥕',
-  '{name} is doing wonderfully with {adopter}. Still {trait}, and that came along for the ride 💛',
+  '{name} is doing wonderfully with {adopter}. Still {trait}, turns out that came along for the ride 💛',
 ];
 // Fallback for the rare horse rehomed without a revealed trait.
 const POSTCARD_TEMPLATES_NOTRAIT = [
