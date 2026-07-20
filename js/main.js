@@ -49,25 +49,24 @@ if (!state.milestones.introToastShown) {
 // run -- see the updateOnboardingNudges() call after the dismiss wiring.)
 
 // ---- real-donation banner ----
-// One quiet story moment (after the first sponsorship, when the game has
-// just taught what steady support means), plus a reprise whenever a player
-// comes back after a proper break. Never more than that.
-
-const RETURN_BREAK_MS = 12 * 60 * 60 * 1000;
+// A gentle, always-there reminder that ARCH's horses are real. It appears once
+// the rescue is established (first sponsorship) and then simply stays, every
+// session, until the player chooses to dismiss it -- at which point that choice
+// is remembered and it never returns, so it neither nags nor vanishes on its
+// own. (The footer keeps a quiet Donate link regardless.)
 
 function maybeOfferDonation() {
-  if (!state.milestones.firstSponsorship || state.milestones.donateBannerShown) return;
-  state.milestones.donateBannerShown = true;
-  // let the sponsorship toast land first
-  setTimeout(showDonateBanner, 4000);
-}
-
-if (state.unlocks.moneyUI && Date.now() - lastPlayedAt > RETURN_BREAK_MS) {
-  state.milestones.donateBannerShown = true; // counts as the one story moment too
+  if (!state.milestones.firstSponsorship || state.milestones.donateBannerDismissed) return;
   showDonateBanner();
 }
 
-document.getElementById('donate-dismiss').addEventListener('click', hideDonateBanner);
+maybeOfferDonation(); // on load: a returning player past first sponsorship sees it
+
+document.getElementById('donate-dismiss').addEventListener('click', () => {
+  hideDonateBanner();
+  state.milestones.donateBannerDismissed = true;
+  save();
+});
 
 // ---- the donation unicorn ----
 // Well into the rescue (around DONATE_MILESTONE horses saved), offer a magical
