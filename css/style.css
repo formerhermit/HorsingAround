@@ -186,7 +186,7 @@ main {
   width: 100%;
   max-width: 960px;
   margin: 0 auto;
-  padding: 0 1.5rem 1rem;
+  padding: 0 1.5rem 0.6rem;
   /* Centre the paddock + buttons in the leftover height so they drop down to
      use the gap that would otherwise sit above the footer. */
   display: flex;
@@ -1265,10 +1265,10 @@ main {
   100% { opacity: 0; translate: 0 -6px; }
 }
 
-/* Key figures in popups -- rescue counts, money, supporter tallies -- bold and
-   green (the primary-button colour) so skim-readers catch them at a glance. */
+/* Key figures in popups -- rescue counts, money, supporter tallies -- coloured
+   green (the primary-button colour) so skim-readers catch them at a glance.
+   Kept at the normal weight: bold green was harder to read. */
 .dialog-text .fig {
-  font-weight: 800;
   color: #5f7d42;
 }
 
@@ -1508,7 +1508,7 @@ main {
   text-align: center;
   font-size: 0.8rem;
   color: #8a7d68;
-  padding: 0.75rem 1.5rem 1.25rem;
+  padding: 0.35rem 1.5rem 1.25rem;
 }
 
 .credit a {
