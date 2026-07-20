@@ -782,7 +782,10 @@ export function hideNudgePopup() {
 export function showDialog({ emoji = '', text, buttons = [], confetti = false }) {
   const overlay = document.getElementById('dialog-overlay');
   document.getElementById('dialog-emoji').textContent = emoji;
-  document.getElementById('dialog-text').textContent = text;
+  // innerHTML so callers can wrap key figures in <span class="fig">. All dialog
+  // text is authored in-code (horse names come from a fixed list), never user
+  // input, so there's no untrusted markup here.
+  document.getElementById('dialog-text').innerHTML = text;
   const row = document.getElementById('dialog-buttons');
   row.replaceChildren();
   for (const b of buttons) {

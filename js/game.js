@@ -601,7 +601,7 @@ let sponsorToastCooldown = 0;
 // tab-switch shouldn't pop a "welcome back".
 export const OFFLINE_MIN_SECONDS = 30 * 60;      // ignore anything under 30 min away
 export const OFFLINE_CAP_SECONDS = 4 * 60 * 60;  // credit at most 4 hours
-export const OFFLINE_RATE = 0.5;                 // offline earns at half the live rate
+export const OFFLINE_RATE = 0.3;                 // offline earns at a fraction of the live rate
 
 /**
  * Credit earnings accrued while the game was closed and return a summary for
