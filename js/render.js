@@ -1,6 +1,6 @@
 // render.js — turns gameState into DOM. No game logic lives here.
 
-import { horseFigureHTML, horseImageSrc, wellbeingLabel, wellbeingColor, isShinyCoat } from './horse.js';
+import { horseFigureHTML, horseImageSrc, wellbeingLabel, wellbeingColor, isShinyCoat, COAT_CATALOG } from './horse.js';
 import { rescueCost, shareValue, FRONT_ROW, getActiveWant } from './game.js';
 import {
   SHOP_ITEMS, isUnlocked, isAffordable, hasNewAffordableItem,
@@ -23,6 +23,7 @@ export function renderAll(state) {
   renderPaddock(state);
   renderShopButton(state);
   renderPostcardButton(state);
+  renderCollectionButton(state);
 }
 
 export function renderHUD(state) {
@@ -139,6 +140,62 @@ export function openPostcardAlbum(state) {
 
 export function closePostcardAlbum() {
   document.getElementById('album-overlay').hidden = true;
+}
+
+// ---- collection book ----
+
+/** The 📖 button lives in the top bar always; a "new" dot shows when coats have
+ *  been collected since the book was last opened. */
+export function renderCollectionButton(state) {
+  const badge = document.getElementById('collection-badge');
+  if (!badge) return;
+  badge.hidden = state.collectedCoats.length <= (state.collectionSeen ?? 0);
+}
+
+const RARITY_GROUPS = [
+  { rarity: 'common',  title: 'Rescue coats' },
+  { rarity: 'rare',    title: 'Rare finds' },
+  { rarity: 'magical', title: 'Magical' },
+];
+
+/** One stamp: the coat in colour once collected; a dimmed ghost (or, for a
+ *  mystery coat, a plain "?") while still locked. */
+function stampHTML(coat, collected) {
+  const portrait = () => horseFigureHTML({ name: coat.name, paletteKey: coat.id, wellbeing: 100 }, []);
+  if (collected) {
+    return `<figure class="stamp collected rarity-${coat.rarity}">
+      <div class="stamp-photo">${portrait()}</div>
+      <figcaption class="stamp-name">${coat.name}</figcaption></figure>`;
+  }
+  if (coat.mystery) {
+    return `<figure class="stamp locked mystery rarity-${coat.rarity}">
+      <div class="stamp-photo"><span class="stamp-q">?</span></div>
+      <figcaption class="stamp-name">???</figcaption></figure>`;
+  }
+  return `<figure class="stamp locked rarity-${coat.rarity}">
+    <div class="stamp-photo">${portrait()}</div>
+    <figcaption class="stamp-name">${coat.name}</figcaption></figure>`;
+}
+
+export function renderCollection(state) {
+  const collected = new Set(state.collectedCoats);
+  const have = COAT_CATALOG.filter((c) => collected.has(c.id)).length;
+  document.getElementById('collection-count').textContent = `${have} of ${COAT_CATALOG.length} collected`;
+  document.getElementById('collection-grid').innerHTML = RARITY_GROUPS.map((g) => {
+    const coats = COAT_CATALOG.filter((c) => c.rarity === g.rarity);
+    if (!coats.length) return '';
+    const stamps = coats.map((c) => stampHTML(c, collected.has(c.id))).join('');
+    return `<h3 class="collection-group">${g.title}</h3><div class="collection-row">${stamps}</div>`;
+  }).join('');
+}
+
+export function openCollection(state) {
+  renderCollection(state);
+  document.getElementById('collection-overlay').hidden = false;
+}
+
+export function closeCollection() {
+  document.getElementById('collection-overlay').hidden = true;
 }
 
 // The shop is target-first: pick one horse / one paddock at the top of each

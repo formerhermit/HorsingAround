@@ -9,6 +9,7 @@ import {
   renderShopButton, openShopModal, closeShopModal, renderShopModal, shopDecorPaddock,
   renderPostcardButton, openPostcardAlbum, closePostcardAlbum,
   renderWantBubbles, showWantFulfilled,
+  renderCollectionButton, openCollection, closeCollection,
 } from './render.js';
 import { buyDecorIn, buyWardrobe, hasNewAffordableItem } from './shop.js';
 import { syncOnLoad, pushCloudSave } from './cloud.js';
@@ -130,6 +131,10 @@ function nudgeConfig(id) {
       text: `You've saved enough to help another horse: tap “Rescue another horse” below to get ${first} a friend.`,
     };
   }
+  if (id === 'collection') return {
+    emoji: '📖', dir: 'up-right',
+    text: "You've rescued a whole paddock! Tap the book up top to see every horse type there is, and which you've collected so far.",
+  };
   return {
     emoji: '🛍️', dir: 'up-right',
     text: 'The shop is open! Tap the Shop button up top to dress your horses and decorate the paddock.',
@@ -148,6 +153,7 @@ function pendingNudge() {
   if (state.unlocks.moneyUI && !m.hasSharedUpdate) candidates.push('share');
   if (state.unlocks.rescue && !m.hasRescuedAgain && state.coins >= rescueCost(state)) candidates.push('rescue');
   if (state.unlocks.moneyUI && !m.shopIntroDone && hasNewAffordableItem(state)) candidates.push('shop');
+  if (state.stats.horsesRescued >= 8 && !m.collectionIntroDone) candidates.push('collection');
   return candidates.find((id) => !snoozedNudges.has(id)) ?? null;
 }
 
@@ -163,6 +169,7 @@ function updateOnboardingNudges() {
 document.getElementById('nudge-dismiss').addEventListener('click', () => {
   const id = document.getElementById('nudge-overlay').dataset.nudge;
   if (id) snoozedNudges.add(id);
+  if (id === 'collection') { state.milestones.collectionIntroDone = true; save(); }
   hideNudgePopup();
 });
 
@@ -382,6 +389,7 @@ document.addEventListener('keydown', (event) => {
   if (event.key !== 'Escape') return;
   if (!document.getElementById('shop-overlay').hidden) closeShopModal();
   if (!document.getElementById('album-overlay').hidden) closePostcardAlbum();
+  if (!document.getElementById('collection-overlay').hidden) closeCollection();
 });
 
 // ---- postcard album ----
@@ -395,6 +403,21 @@ document.getElementById('album-btn').addEventListener('click', () => {
 document.getElementById('album-close').addEventListener('click', closePostcardAlbum);
 document.getElementById('album-overlay').addEventListener('click', (event) => {
   if (event.target.id === 'album-overlay') closePostcardAlbum();
+});
+
+// ---- collection book ----
+
+document.getElementById('collection-btn').addEventListener('click', () => {
+  state.collectionSeen = state.collectedCoats.length; // clear the "new" dot
+  state.milestones.collectionIntroDone = true;        // they've found it; no nudge needed
+  openCollection(state);
+  renderCollectionButton(state);
+  updateOnboardingNudges(); // clears the collection nudge if it's up
+  persist();
+});
+document.getElementById('collection-close').addEventListener('click', closeCollection);
+document.getElementById('collection-overlay').addEventListener('click', (event) => {
+  if (event.target.id === 'collection-overlay') closeCollection();
 });
 
 document.getElementById('shop-modal').addEventListener('click', (event) => {
