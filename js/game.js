@@ -46,7 +46,10 @@ function attractionPerSecond() {
     return sum;
   }, 0);
   // Dressed-up horses turn heads too — wardrobe items add a flat bonus.
-  const base = fromHorses + attractionBonus(gameState);
+  let base = fromHorses + attractionBonus(gameState);
+  // A magical friend draws admirers: the unicorn adds a steady flat charm on top
+  // of the pull it already gives as a thriving horse.
+  if (hasUnicorn()) base += UNICORN_CHARM;
   // A freshly-tended horse makes the whole paddock buzz for a short while (see
   // the little-needs cycle below): attraction is boosted until glowUntil.
   return Date.now() < glowUntil ? base * WANT_GLOW_MULT : base;
@@ -304,6 +307,33 @@ function pickRescueCoat() {
     if (roll < cumulative) return r.coat;
   }
   return randomFrom(PALETTE_KEYS);
+}
+
+// ---- the unicorn ----
+// A one-of-a-kind magical friend, unlocked only by choosing to donate to the
+// real rescue (see main.js). A permanent resident: never offered for rehoming,
+// and it lends the paddock a steady extra pull.
+const UNICORN_CHARM = 0.02; // flat attraction added just for having the unicorn
+
+/** Whether the herd already includes the unicorn (it's unique). */
+export function hasUnicorn(state = gameState) {
+  return state.horses.some((h) => h.paletteKey === 'unicorn');
+}
+
+/** Add the unicorn to the herd (once ever). Arrives thriving — a gift, not a
+ *  rescue, so it doesn't count toward the rescue tally. Returns it, or null. */
+export function grantUnicorn() {
+  if (hasUnicorn()) return null;
+  const horse = createHorse({
+    id: `unicorn-${Date.now().toString(36)}`,
+    name: 'Milagro',
+    paletteKey: 'unicorn',
+    wellbeing: WELLBEING_MAX,
+    rescueOrder: gameState.horses.length + 1,
+    trait: 'quietly, impossibly magical',
+  });
+  gameState.horses.push(horse);
+  return horse;
 }
 
 // ---- rehoming ----
@@ -693,7 +723,8 @@ function maybeOfferRehome(dt, events) {
   rehomeCountdown -= dt;
   if (rehomeCountdown > 0) return;
   rehomeCountdown = randomBetween(REHOME_GAP_MIN, REHOME_GAP_MAX);
-  const thriving = gameState.horses.filter((h) => h.wellbeing >= THRIVING_AT);
+  // The unicorn is a permanent resident and is never offered for rehoming.
+  const thriving = gameState.horses.filter((h) => h.wellbeing >= THRIVING_AT && h.paletteKey !== 'unicorn');
   if (!thriving.length) return; // no one ready; try again next interval
   const horse = randomFrom(thriving);
   const income = rehomeIncome();
