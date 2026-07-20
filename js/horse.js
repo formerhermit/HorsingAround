@@ -61,13 +61,25 @@ export function horseImageSrc(horse) {
   return `assets/horses/${coatOf(horse)}-${wellbeingState(horse.wellbeing)}.png`;
 }
 
+// Where the ear flower sits (the base of the forward ear) depends on the
+// animal's build: donkeys have taller ears and stand lower in the frame, so a
+// horse-tuned anchor floats above their heads. Coats not listed use the horse
+// default. All coats of one animal share a template, so they share an anchor.
+const EAR_FLOWER_ANCHOR = {
+  'brown-donkey':   { cx: 392, cy: 120 },
+  'grey-donkey':    { cx: 392, cy: 120 },
+  'piebald-donkey': { cx: 392, cy: 120 },
+  'zebra':          { cx: 394, cy: 84 },
+};
+const DEFAULT_EAR_FLOWER = { cx: 392, cy: 70 };
+
 /**
  * Costume overlay markup, in the image's 500x480 space. Split by where it sits
  * so head-worn pieces could be tuned independently of leg/back pieces.
  * Coordinates are re-tuned for the raster horse (task in progress) — empty for
  * now so horses render bare until the overlay is dialled in.
  */
-function costumeMarkup(wardrobe = []) {
+function costumeMarkup(wardrobe = [], coat = 'bay') {
   let m = '';
   if (wardrobe.includes('scarf')) {
     // band spanning the whole neck from the mane edge (~x305) to the throat
@@ -77,7 +89,7 @@ function costumeMarkup(wardrobe = []) {
   }
   if (wardrobe.includes('ear-flower')) {
     // a small daisy tucked at the base of the forward ear
-    const cx = 392, cy = 70;
+    const { cx, cy } = EAR_FLOWER_ANCHOR[coat] ?? DEFAULT_EAR_FLOWER;
     const petals = [[cx, cy - 10], [cx + 9.5, cy - 3.1], [cx + 5.9, cy + 8.1], [cx - 5.9, cy + 8.1], [cx - 9.5, cy - 3.1]];
     for (const [px, py] of petals) m += `<circle cx="${px}" cy="${py}" r="6.5" fill="#A971D6"/>`;
     m += `<circle cx="${cx}" cy="${cy}" r="5" fill="#F1C40F"/>`;
@@ -126,7 +138,7 @@ export function horseFigureHTML(horse, wardrobe = []) {
 <div class="horse-figure">
   <div class="horse-shadow"></div>
   <img class="horse-img" src="${horseImageSrc(horse)}" alt="${horse.name} the horse" draggable="false">
-  <svg class="horse-costume" viewBox="0 0 ${FIGURE_W} ${FIGURE_H}" aria-hidden="true">${costumeMarkup(wardrobe)}</svg>
+  <svg class="horse-costume" viewBox="0 0 ${FIGURE_W} ${FIGURE_H}" aria-hidden="true">${costumeMarkup(wardrobe, horse.paletteKey)}</svg>
 </div>`;
 }
 
