@@ -262,22 +262,28 @@ main {
   padding: calc(var(--horse-unit) * 0.24) 1.25rem 1rem;
 }
 
-/* Butterflies: a scatter centred in the middle of the paddock, behind the
-   horses. Sized well below full-bleed so it reads as a cluster, not wallpaper. */
+/* Butterflies: a scatter centred in the middle of the paddock. Sized well below
+   full-bleed so it reads as a cluster, not wallpaper. They flutter in front of
+   the ground props (trough, barrels) but behind the horses. */
 .paddock-butterflies {
   position: absolute;
   inset: 0;
-  z-index: 0;
+  z-index: 2;
   pointer-events: none;
   background: url('../assets/decor/butterflies.png') center 40% / 21% auto no-repeat;
 }
 
-/* Rows sit above the butterfly layer. */
-.horses-back,
-.horses-front,
+/* Stacking inside the paddock: ground props sit lowest, the butterflies flutter
+   in front of them, and the horse rows sit in front of everything. */
 .ground-decor {
   position: relative;
   z-index: 1;
+}
+
+.horses-back,
+.horses-front {
+  position: relative;
+  z-index: 3;
 }
 
 /* Reserve the back row's height even while it's empty, so the front horses
