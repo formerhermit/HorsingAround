@@ -6,9 +6,20 @@
 // up as it's cared for. Costumes are an SVG layer overlaid on top of the image
 // in the image's own 500x480 coordinate space (see costumeMarkup).
 
-// The five coats a horse can have. Kept exported as PALETTE_KEYS so game.js can
-// still pick one at random for a new rescue without changes.
+// The five common coats. Kept exported as PALETTE_KEYS so game.js can pick one
+// at random for an ordinary rescue.
 export const PALETTE_KEYS = ['bay', 'brown', 'grey', 'palomino', 'white'];
+
+// Rare coats: never in the common random pool. They only appear via the low
+// per-rescue odds in game.js. The unicorn is rarer still (donation-only).
+export const RARE_COATS = ['spotty', 'red-boy', 'piebald'];
+const SPECIAL_COATS = new Set([...RARE_COATS, 'unicorn']);
+const KNOWN_COATS = new Set([...PALETTE_KEYS, ...RARE_COATS, 'unicorn']);
+
+/** A rare or unicorn coat, i.e. one that gets the shiny shimmer. */
+export function isShinyCoat(horse) {
+  return SPECIAL_COATS.has(horse.paletteKey);
+}
 
 // Normalised image canvas (see scripts that build assets/horses/*). Costume
 // coordinates live in this same space.
@@ -23,7 +34,7 @@ export function wellbeingState(wellbeing) {
 }
 
 function coatOf(horse) {
-  return PALETTE_KEYS.includes(horse.paletteKey) ? horse.paletteKey : 'brown';
+  return KNOWN_COATS.has(horse.paletteKey) ? horse.paletteKey : 'brown';
 }
 
 /** Path to the image for a horse's current coat + state. */

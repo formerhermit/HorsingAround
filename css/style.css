@@ -485,6 +485,25 @@ main {
   display: block;
 }
 
+/* Rare and unicorn coats get a soft, gently pulsing shimmer behind them (the
+   ::before paints before the image, so it sits behind the horse) to mark them
+   as special without touching the art itself. */
+.horse.is-shiny .horse-figure::before {
+  content: '';
+  position: absolute;
+  inset: -12% -6% -4%;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at 50% 45%,
+    rgba(255, 241, 176, 0.6), rgba(255, 241, 176, 0) 62%);
+  animation: shiny-pulse 2.8s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes shiny-pulse {
+  0%, 100% { opacity: 0.4; transform: scale(0.96); }
+  50%      { opacity: 0.85; transform: scale(1.05); }
+}
+
 .horse-costume {
   pointer-events: none;
 }

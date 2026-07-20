@@ -1,6 +1,6 @@
 // render.js — turns gameState into DOM. No game logic lives here.
 
-import { horseFigureHTML, horseImageSrc, wellbeingLabel, wellbeingColor } from './horse.js';
+import { horseFigureHTML, horseImageSrc, wellbeingLabel, wellbeingColor, isShinyCoat } from './horse.js';
 import { rescueCost, shareValue, FRONT_ROW, getActiveWant } from './game.js';
 import {
   SHOP_ITEMS, isUnlocked, isAffordable, hasNewAffordableItem,
@@ -521,7 +521,7 @@ function butterfliesOverlay(state, paddock) {
 
 function horseCard(horse, scale = 1, isBack = false, wardrobe = []) {
   const card = document.createElement('div');
-  card.className = isBack ? 'horse is-back' : 'horse';
+  card.className = `horse${isBack ? ' is-back' : ''}${isShinyCoat(horse) ? ' is-shiny' : ''}`;
   // Width and text both key off --horse-unit (a viewport-responsive length, see
   // CSS) so the whole scene shrinks to fit shorter screens instead of pushing
   // the buttons off the bottom. 70vw keeps a lone big horse off the edges.
