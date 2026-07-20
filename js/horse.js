@@ -73,6 +73,7 @@ const EAR_FLOWER_ANCHOR = {
   // the rare-coat horses have fluffier forelocks and sit a touch lower
   'red-boy':        { cx: 396, cy: 105 },
   'piebald':        { cx: 400, cy: 110 },
+  'spotty':         { cx: 399, cy: 110 },
 };
 const DEFAULT_EAR_FLOWER = { cx: 392, cy: 70 };
 
