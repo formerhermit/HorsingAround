@@ -90,6 +90,17 @@ const EAR_FLOWER_ANCHOR = {
 };
 const DEFAULT_EAR_FLOWER = { cx: 392, cy: 70 };
 
+// Where the four lower legs sit (each [x0, x1]) for boots and leg-wraps. Donkeys
+// stand a little narrower and the zebra's forelegs sit further forward, so the
+// horse-tuned set lands off their legs. Coats not listed use the horse default.
+const DEFAULT_LEGS = [[94, 128], [149, 183], [281, 316], [331, 366]];
+const LEG_POSITIONS = {
+  'brown-donkey':   [[87, 119], [142, 174], [280, 315], [327, 361]],
+  'grey-donkey':    [[85, 119], [141, 174], [280, 316], [328, 362]],
+  'piebald-donkey': [[86, 119], [141, 174], [280, 315], [327, 361]],
+  'zebra':          [[96, 130], [146, 179], [297, 331], [343, 377]],
+};
+
 /**
  * Costume overlay markup, in the image's 500x480 space. Split by where it sits
  * so head-worn pieces could be tuned independently of leg/back pieces.
@@ -112,10 +123,14 @@ function costumeMarkup(wardrobe = [], coat = 'bay') {
     m += `<circle cx="${cx}" cy="${cy}" r="5" fill="#F1C40F"/>`;
   }
   if (wardrobe.includes('forelock-bow')) {
-    // a ribbon bow tied in the forelock, between the ears on the forehead
-    m += `<path d="M412,84 L389,74 Q383,84 389,94 Z" fill="#F7CD3A"/>`;
-    m += `<path d="M412,84 L435,74 Q441,84 435,94 Z" fill="#F7CD3A"/>`;
-    m += `<rect x="406" y="77" width="12" height="14" rx="4" fill="#E0A81E"/>`;
+    // a ribbon bow on the forehead, tracking the same per-coat head position as
+    // the ear flower (just in and down a touch) so it doesn't float above heads
+    // that sit lower in the frame.
+    const f = EAR_FLOWER_ANCHOR[coat] ?? DEFAULT_EAR_FLOWER;
+    const bx = f.cx + 20, by = f.cy + 14;
+    m += `<path d="M${bx},${by} L${bx - 23},${by - 10} Q${bx - 29},${by} ${bx - 23},${by + 10} Z" fill="#F7CD3A"/>`;
+    m += `<path d="M${bx},${by} L${bx + 23},${by - 10} Q${bx + 29},${by} ${bx + 23},${by + 10} Z" fill="#F7CD3A"/>`;
+    m += `<rect x="${bx - 6}" y="${by - 7}" width="12" height="14" rx="4" fill="#E0A81E"/>`;
   }
   if (wardrobe.includes('saddle-blanket')) {
     // a cloth draped over the back behind the withers, hanging down the barrel
@@ -123,10 +138,10 @@ function costumeMarkup(wardrobe = [], coat = 'bay') {
     // light trim stripe near the hem
     m += `<path d="M173,266 Q228,277 282,266" fill="none" stroke="#BFDBF7" stroke-width="7" stroke-linecap="round"/>`;
   }
+  const legs = LEG_POSITIONS[coat] ?? DEFAULT_LEGS;
   // leg wraps first so boots layer in front of them when both are worn
   if (wardrobe.includes('leg-wraps')) {
     // white bandage wrapped around each lower leg (cannon), above the hoof
-    const legs = [[94, 128], [149, 183], [281, 316], [331, 366]];
     for (const [x0, x1] of legs) {
       const w = x1 - x0;
       m += `<rect x="${x0 - 2}" y="388" width="${w + 4}" height="52" rx="6" fill="#F7F7F4"/>`;
@@ -135,7 +150,6 @@ function costumeMarkup(wardrobe = [], coat = 'bay') {
   }
   if (wardrobe.includes('boots')) {
     // a boot over each lower leg + hoof: body, cuff band, darker sole
-    const legs = [[94, 128], [149, 183], [281, 316], [331, 366]];
     for (const [x0, x1] of legs) {
       const w = x1 - x0;
       m += `<rect x="${x0 - 3}" y="414" width="${w + 6}" height="52" rx="8" fill="#3F7FD6"/>`;
