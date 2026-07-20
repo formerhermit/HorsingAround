@@ -139,5 +139,4 @@ Every save is scoped to its own anonymous user, so players never see each other'
 
 ## What's next
 
-- Real ARCH horse stories, told inside the game
-- A pasture that slowly fills up to reward coming back
+- Leaderboard
