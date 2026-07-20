@@ -73,9 +73,17 @@ Spend your funds on nice things.
 
 Each paddock gets its own decorations, up to a tidy limit. Some choices are one or the other: flower garland *or* bunting, an ear flower *or* a forelock bow. The dog and cat are the big splurges, for when the rescue's really thriving.
 
+### Rare coats
+
+Most rescues arrive in one of five everyday coats. Just occasionally, a rarer one turns up: a **spotted** pony, a **chestnut**, or a **piebald**. They're uncommon on purpose (roughly a one-in-ten surprise on a rescue), and they wear a soft shiny shimmer to set them apart.
+
+### The collection book
+
+Tap the book up top to open your collection: every coat there is to find, which ones you've already welcomed home, and dimmed silhouettes for the ones you haven't. It fills in as your rescue grows.
+
 ### Little celebrations
 
-The game cheers you on. Hit 5, 25, 50 (and beyond) rescues, or rehomings, and you'll get a pat on the back and a bit of extra cash. Reach 10 rescues and there's confetti, plus a gentle nudge: if you're enjoying this, maybe donate to the real ARCH too.
+The game cheers you on. Hit 5, 25, 50 (and beyond) rescues, or rehomings, and you'll get a pat on the back and a bit of extra cash. Reach 10 rescues and there's confetti, plus a gentle nudge toward the real ARCH, with a magical friend in it for you if you help (more on that below).
 
 ### The paddock
 
@@ -83,7 +91,9 @@ The newest three horses stand up front, and older ones move to the back as the h
 
 ## Helping the real ARCH
 
-A quiet banner shows up at most twice: once shortly after your first sponsor, and again if you come back after a long break. It links straight to [ARCH's donation page](https://donorbox.org/donate-to-arch?amount=10). There's also a low-key Donate link in the footer, always there if you go looking.
+The horses in the game are pretend, but ARCH's are real. A quiet banner shows up at most twice: once shortly after your first sponsor, and again if you come back after a long break. It links straight to [ARCH's donation page](https://donorbox.org/donate-to-arch?amount=10), and there's a low-key Donate link in the footer too, always there if you go looking.
+
+Around your tenth rescue, the game offers a **unicorn**. Donate to the real rescue and a one-of-a-kind magical friend comes to live in your paddock, shimmering away and quietly charming new supporters. It's honour-based, on the donate click, and it's a gift, so it never counts toward a rescue's cost. And it's not a single missable moment: if you wave off that first offer, tapping any Donate button brings it back, so the unicorn stays winnable.
 
 ## Under the hood
 
