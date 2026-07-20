@@ -6,7 +6,7 @@
 
 import {
   gameState, createHorse,
-  RESCUE_MILESTONES, REHOME_MILESTONES, DONATE_MILESTONE,
+  RESCUE_MILESTONES, REHOME_MILESTONES, DONATE_MILESTONE, SUPPORTER_MILESTONES,
 } from './state.js';
 import { PALETTE_KEYS } from './horse.js';
 import { attractionBonus, shareMultiplier, PADDOCK_CAP } from './shop.js';
@@ -615,13 +615,21 @@ export function tick(dt) {
 
   supporterToastCooldown = Math.max(0, supporterToastCooldown - dt);
   if (pendingSupporters > 0 && supporterToastCooldown === 0) {
-    const name = randomFrom(SUPPORTER_NAMES);
-    events.push({
-      type: 'supporter',
-      message: pendingSupporters === 1
-        ? `${name} started following the rescue 💛`
-        : `${name} and ${pendingSupporters - 1} other${pendingSupporters > 2 ? 's' : ''} started following the rescue 💛`,
-    });
+    // Early on, named "X started following" toasts teach the mechanic. Once the
+    // first sponsorship lands (the economy has clearly clicked), these would
+    // just be noise amid the richer beats, so they step down to a subtle "+N"
+    // pop on the supporters chip instead. The HUD count climbs either way.
+    if (gameState.milestones.firstSponsorship) {
+      events.push({ type: 'supporter-quiet', count: pendingSupporters });
+    } else {
+      const name = randomFrom(SUPPORTER_NAMES);
+      events.push({
+        type: 'supporter',
+        message: pendingSupporters === 1
+          ? `${name} started following the rescue 💛`
+          : `${name} and ${pendingSupporters - 1} other${pendingSupporters > 2 ? 's' : ''} started following the rescue 💛`,
+      });
+    }
     pendingSupporters = 0;
     supporterToastCooldown = SUPPORTER_TOAST_EVERY;
   }
@@ -670,6 +678,14 @@ function checkMilestones(events) {
       const bonus = milestoneBonus();
       gameState.coins += bonus;
       events.push({ type: 'rehome-milestone', count: n, bonus });
+    }
+  }
+  // Supporter-count milestones: a rare celebratory toast (no cash) that marks
+  // growth now that per-arrival follow toasts have tapered off.
+  for (const n of SUPPORTER_MILESTONES) {
+    if (gameState.supporters >= n && !m.supporterMilestonesShown.includes(n)) {
+      m.supporterMilestonesShown.push(n);
+      events.push({ type: 'supporter-milestone', count: n });
     }
   }
 }
