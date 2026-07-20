@@ -304,7 +304,9 @@ export function renderShopModal(state) {
   const unlocked = SHOP_ITEMS.filter((item) => isUnlocked(item, state));
 
   // --- wardrobe: choose a horse, then dress them ---
-  const horses = state.horses;
+  // The unicorn is a magical guest, not a rescue -- it doesn't get dressed up,
+  // so it never appears as a target here.
+  const horses = state.horses.filter((h) => h.paletteKey !== 'unicorn');
   if (!horses.some((h) => h.id === shopHorseTarget)) {
     shopHorseTarget = horses[horses.length - 1]?.id ?? null; // default: newest arrival
   }
