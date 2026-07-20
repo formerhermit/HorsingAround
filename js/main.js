@@ -1,7 +1,7 @@
 // main.js — boot the game: load state, render, wire input and persistence.
 
 import { initState, save, gameState } from './state.js';
-import { careFor, tick, rescueHorse, shareUpdate, rescueCost, acceptRehome, declineRehome, collectOfflineEarnings, collectDuePostcards, markPostcardsRead, fulfilWant } from './game.js';
+import { careFor, tick, rescueHorse, shareUpdate, rescueCost, acceptRehome, declineRehome, collectOfflineEarnings, collectDuePostcards, markPostcardsRead, fulfilWant, grantUnicorn, hasUnicorn } from './game.js';
 import {
   renderAll, renderHUD, renderActions, updateHorseCard,
   showCareFeedback, showTipPop, showToast, showMoneyPop, showSupporterPop, changePaddock, resetPaddockView,
@@ -62,6 +62,36 @@ if (state.unlocks.moneyUI && Date.now() - lastPlayedAt > RETURN_BREAK_MS) {
 }
 
 document.getElementById('donate-dismiss').addEventListener('click', hideDonateBanner);
+
+// ---- the donation unicorn ----
+// Once the rescue is established (first sponsorship done), offer a magical
+// friend as a thank-you for donating to the real ARCH horses. Honor-based on
+// the Donate click, since there's no way to verify the donation itself. Shown
+// at most once per session; "Not now" just closes and it can return next visit.
+let unicornSnoozed = false;
+
+function maybeOfferUnicorn() {
+  if (!state.milestones.firstSponsorship || hasUnicorn(state) || unicornSnoozed) return;
+  unicornSnoozed = true; // one gentle ask per session
+  enqueueDialog({
+    emoji: '🦄',
+    text: 'The horses here are pretend, but the ones at ARCH are real, and they need help. Donate to the rescue and a magical friend will come to live in your paddock 💛',
+    buttons: [
+      { label: 'Donate 💛', variant: 'primary', onClick: () => {
+        window.open(DONATE_URL, '_blank', 'noopener');
+        const unicorn = grantUnicorn();
+        if (unicorn) {
+          resetPaddockView();
+          renderAll(state);
+          refreshUI();
+          persist();
+          setTimeout(() => showToast(`🦄 Thank you for helping the real horses. Say hello to ${unicorn.name}, your magical friend 💛`), 600);
+        }
+      } },
+      { label: 'Not now', variant: 'ghost' },
+    ],
+  });
+}
 
 // Cloud sync is a background enhancement, never a blocker on first paint —
 // Biscuit is already on screen and clickable before this resolves.
@@ -271,6 +301,7 @@ function processEvents(events) {
   if (!events.length) return;
   events.forEach(handleEvent);
   maybeOfferDonation(); // fires once, on the first sponsorship beat
+  maybeOfferUnicorn();  // the magical-friend offer, once the rescue is established
   refreshUI();
   persist(); // story beats are worth persisting immediately
 }
@@ -393,6 +424,10 @@ horsesEl.addEventListener('keydown', (event) => {
     handleCare(card, null);
   }
 });
+
+// A returning player who's past the first sponsorship (but hasn't got the
+// unicorn) gets the offer on load too, after any welcome-back / postcard beats.
+maybeOfferUnicorn();
 
 // ---- simulation tick: supporter income + arrivals ----
 
