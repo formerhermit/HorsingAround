@@ -125,6 +125,7 @@ export function defaultState() {
       totalDonated: 0,
       horsesRescued: 1,  // Biscuit counts
       horsesRehomed: 0,  // horses sent to a forever home
+      traitsRevealed: 0, // how many personality-reveal beats have played
     },
 
     savedAt: Date.now(),
@@ -210,6 +211,9 @@ function repair(save) {
   save.stats ??= {};
   save.stats.horsesRescued ??= save.horses?.length ?? 1;
   save.stats.horsesRehomed ??= 0;
+  // Backfill from horses that already show a trait, so returning players don't
+  // replay the long-form intro.
+  save.stats.traitsRevealed ??= (save.horses ?? []).filter((h) => h.trait).length;
   save.milestones.rescueRewardsGiven ??= RESCUE_MILESTONES.filter((n) => save.stats.horsesRescued >= n);
   save.milestones.rehomeRewardsGiven ??= REHOME_MILESTONES.filter((n) => save.stats.horsesRehomed >= n);
   save.milestones.donateMilestoneShown ??= save.stats.horsesRescued >= DONATE_MILESTONE;
