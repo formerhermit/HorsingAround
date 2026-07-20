@@ -70,6 +70,9 @@ const EAR_FLOWER_ANCHOR = {
   'grey-donkey':    { cx: 392, cy: 120 },
   'piebald-donkey': { cx: 392, cy: 120 },
   'zebra':          { cx: 394, cy: 84 },
+  // the rare-coat horses have fluffier forelocks and sit a touch lower
+  'red-boy':        { cx: 396, cy: 105 },
+  'piebald':        { cx: 400, cy: 110 },
 };
 const DEFAULT_EAR_FLOWER = { cx: 392, cy: 70 };
 
