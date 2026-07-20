@@ -404,8 +404,9 @@ function renderPaddock(state) {
 
 // Fence-line decor: stays on the fixed overlay near the actual fence rails.
 // Positioned in a 900x130 space so items never collide even all owned at once.
-// Flower garland repeats along the whole fence, resting on the upper rail.
-const GARLAND_RAIL_Y = 35; // SVG-y the garland subject centres on (the top plank)
+// Flower garland repeats along the whole fence, resting on the top rail (which
+// sits at y~18 in the decor space, the same rail the bunting hangs from).
+const GARLAND_RAIL_Y = 18; // SVG-y the garland subject centres on (the top rail)
 function fenceGarlandImages() {
   const garland = { aspect: 1.500, fw: 0.635, fh: 0.287, subjH: 16 }; // half size
   const hImg = garland.subjH / garland.fh;
