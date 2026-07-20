@@ -15,6 +15,11 @@ import { buyDecorIn, buyWardrobe, hasNewAffordableItem } from './shop.js';
 import { syncOnLoad, pushCloudSave } from './cloud.js';
 import './audio.js';
 
+// Wrap a key figure (a count, a € amount, a supporter tally) so it renders bold
+// and green in a popup -- see the .fig rule and showDialog's innerHTML. Values
+// are always numbers/short strings authored in-code, so plain interpolation is safe.
+const fig = (v) => `<span class="fig">${v}</span>`;
+
 // Visit index.html?reset to discard the save during development.
 const reset = new URLSearchParams(location.search).has('reset');
 const state = initState({ reset });
@@ -252,11 +257,11 @@ function formatAway(seconds) {
 
 function showWelcomeBack(summary) {
   const money = Math.floor(summary.income);
-  const parts = [`your supporters donated €${money}`];
+  const parts = [`your supporters donated ${fig(`€${money}`)}`];
   if (summary.newSupporters > 0) {
     parts.push(summary.newSupporters === 1
-      ? '1 new supporter found the rescue'
-      : `${summary.newSupporters} new supporters found the rescue`);
+      ? `${fig('1')} new supporter found the rescue`
+      : `${fig(summary.newSupporters)} new supporters found the rescue`);
   }
   // A random horse "missed you" — the personal touch that makes it warm.
   const horse = state.horses[Math.floor(Math.random() * state.horses.length)];
@@ -298,7 +303,7 @@ function handleEvent(e) {
   if (e.type === 'rehome-offer') {
     enqueueDialog({
       emoji: '🏡',
-      text: `${e.horseName} is ready for rehoming. Agree to adoption for €${e.income}?`,
+      text: `${e.horseName} is ready for rehoming. Agree to adoption for ${fig(`€${e.income}`)}?`,
       buttons: [
         { label: 'Yes please!', variant: 'primary', onClick: () => {
           const res = acceptRehome();
@@ -310,13 +315,13 @@ function handleEvent(e) {
   } else if (e.type === 'rescue-milestone') {
     enqueueDialog({
       emoji: '🎉',
-      text: `You have rescued ${e.count} horses. What an amazing job you're doing! Have a little extra cash to keep up the good work.`,
+      text: `You have rescued ${fig(e.count)} horses. What an amazing job you're doing! Here's ${fig(`€${e.bonus}`)} extra to keep up the good work.`,
       buttons: [{ label: 'Collect', variant: 'primary' }],
     });
   } else if (e.type === 'rehome-milestone') {
     enqueueDialog({
       emoji: '🎉',
-      text: `You have re-homed ${e.count} horses. What an amazing job you're doing! Have a little extra cash to keep up the good work.`,
+      text: `You have re-homed ${fig(e.count)} horses. What an amazing job you're doing! Here's ${fig(`€${e.bonus}`)} extra to keep up the good work.`,
       buttons: [{ label: 'Collect', variant: 'primary' }],
     });
   } else if (e.type === 'donate-milestone') {
@@ -326,7 +331,7 @@ function handleEvent(e) {
     if (hasUnicorn(state)) {
       enqueueDialog({
         emoji: '💛', confetti: true,
-        text: `You have rescued ${e.count} horses. If you're enjoying this game, why not donate to ARCH to help our real horses too?`,
+        text: `You have rescued ${fig(e.count)} horses. If you're enjoying this game, why not donate to ARCH to help our real horses too?`,
         buttons: [
           { label: 'Donate', variant: 'primary', onClick: () => window.open(DONATE_URL, '_blank', 'noopener') },
           { label: "Don't ask again", variant: 'ghost', onClick: () => { state.milestones.donateOptOut = true; save(); } },
@@ -336,7 +341,7 @@ function handleEvent(e) {
       unicornSnoozed = true; // this beat is the session's unicorn offer; don't double up
       enqueueDialog({
         emoji: '🦄', confetti: true,
-        text: `You've rescued ${e.count} horses! The ones here are pretend, but the horses at ARCH are real, and they need help. Donate to the rescue and a magical friend will come to live in your paddock 💛`,
+        text: `You've rescued ${fig(e.count)} horses! The ones here are pretend, but the horses at ARCH are real, and they need help. Donate to the rescue and a magical friend will come to live in your paddock 💛`,
         buttons: [
           { label: 'Donate 💛', variant: 'primary', onClick: claimUnicorn },
           { label: "Don't ask again", variant: 'ghost', onClick: () => { state.milestones.donateOptOut = true; save(); } },
@@ -413,7 +418,7 @@ document.getElementById('actions').addEventListener('click', (event) => {
       renderAll(state);
       processEvents(events);
     } else if (reason === 'needs-care') {
-      showToast('You still have horses which need help');
+      showToast('You still have horses which need help', 'alert');
     }
   }
 });
