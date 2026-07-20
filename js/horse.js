@@ -6,13 +6,13 @@
 // up as it's cared for. Costumes are an SVG layer overlaid on top of the image
 // in the image's own 500x480 coordinate space (see costumeMarkup).
 
-// The five common coats. Kept exported as PALETTE_KEYS so game.js can pick one
-// at random for an ordinary rescue.
-export const PALETTE_KEYS = ['bay', 'brown', 'grey', 'palomino', 'white'];
+// The common coats. Kept exported as PALETTE_KEYS so game.js can pick one
+// at random for an ordinary rescue. Donkeys share the horses' common pool.
+export const PALETTE_KEYS = ['bay', 'brown', 'grey', 'palomino', 'white', 'brown-donkey', 'grey-donkey'];
 
 // Rare coats: never in the common random pool. They only appear via the low
 // per-rescue odds in game.js. The unicorn is rarer still (donation-only).
-export const RARE_COATS = ['spotty', 'red-boy', 'piebald'];
+export const RARE_COATS = ['spotty', 'red-boy', 'piebald', 'piebald-donkey', 'zebra'];
 const SPECIAL_COATS = new Set([...RARE_COATS, 'unicorn']);
 const KNOWN_COATS = new Set([...PALETTE_KEYS, ...RARE_COATS, 'unicorn']);
 
@@ -25,15 +25,19 @@ export function isShinyCoat(horse) {
 // `mystery` keeps a locked stamp fully hidden (a "?") instead of the usual
 // dimmed-ghost preview. Add coats here (with art) to grow the collection.
 export const COAT_CATALOG = [
-  { id: 'bay',      name: 'Bay',      rarity: 'common' },
-  { id: 'brown',    name: 'Brown',    rarity: 'common' },
-  { id: 'grey',     name: 'Grey',     rarity: 'common' },
-  { id: 'palomino', name: 'Palomino', rarity: 'common' },
-  { id: 'white',    name: 'Snowy',    rarity: 'common' },
-  { id: 'spotty',   name: 'Spotted',  rarity: 'rare' },
-  { id: 'red-boy',  name: 'Chestnut', rarity: 'rare' },
-  { id: 'piebald',  name: 'Piebald',  rarity: 'rare', mystery: true },
-  { id: 'unicorn',  name: 'Unicorn',  rarity: 'magical' },
+  { id: 'bay',            name: 'Bay',           rarity: 'common' },
+  { id: 'brown',          name: 'Brown',         rarity: 'common' },
+  { id: 'grey',           name: 'Grey',          rarity: 'common' },
+  { id: 'palomino',       name: 'Palomino',      rarity: 'common' },
+  { id: 'white',          name: 'Snowy',         rarity: 'common' },
+  { id: 'brown-donkey',   name: 'Brown donkey',  rarity: 'common' },
+  { id: 'grey-donkey',    name: 'Grey donkey',   rarity: 'common' },
+  { id: 'spotty',         name: 'Spotted',       rarity: 'rare' },
+  { id: 'red-boy',        name: 'Chestnut',      rarity: 'rare' },
+  { id: 'piebald',        name: 'Piebald',       rarity: 'rare', mystery: true },
+  { id: 'piebald-donkey', name: 'Piebald donkey', rarity: 'rare' },
+  { id: 'zebra',          name: 'Zebra',         rarity: 'rare', mystery: true },
+  { id: 'unicorn',        name: 'Unicorn',       rarity: 'magical' },
 ];
 
 // Normalised image canvas (see scripts that build assets/horses/*). Costume
