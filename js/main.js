@@ -1,6 +1,6 @@
 // main.js — boot the game: load state, render, wire input and persistence.
 
-import { initState, save, gameState } from './state.js';
+import { initState, save, gameState, DONATE_MILESTONE } from './state.js';
 import { careFor, tick, rescueHorse, shareUpdate, rescueCost, acceptRehome, declineRehome, collectOfflineEarnings, collectDuePostcards, markPostcardsRead, fulfilWant, grantUnicorn, hasUnicorn } from './game.js';
 import {
   renderAll, renderHUD, renderActions, updateHorseCard,
@@ -65,34 +65,67 @@ if (state.unlocks.moneyUI && Date.now() - lastPlayedAt > RETURN_BREAK_MS) {
 document.getElementById('donate-dismiss').addEventListener('click', hideDonateBanner);
 
 // ---- the donation unicorn ----
-// Once the rescue is established (first sponsorship done), offer a magical
+// Well into the rescue (around DONATE_MILESTONE horses saved), offer a magical
 // friend as a thank-you for donating to the real ARCH horses. Honor-based on
-// the Donate click, since there's no way to verify the donation itself. Shown
-// at most once per session; "Not now" just closes and it can return next visit.
+// the Donate click, since there's no way to verify the donation itself. This is
+// the same beat as the 10-rescue "donate to ARCH" popup (see handleEvent), so
+// the player only ever gets one donate prompt there, not two.
+//
+// The offer surfaces two ways: automatically once per session (maybeOfferUnicorn),
+// and on demand whenever the player taps a Donate button while the unicorn is
+// still unclaimed (see wireDonateButtons). Either way the magical friend stays
+// winnable, so the auto-popup is never the single missable chance to get it.
 let unicornSnoozed = false;
 
-function maybeOfferUnicorn() {
-  if (!state.milestones.firstSponsorship || hasUnicorn(state) || unicornSnoozed) return;
-  unicornSnoozed = true; // one gentle ask per session
+/** Open the real donation page and, honor-based, grant the unicorn as thanks. */
+function claimUnicorn() {
+  window.open(DONATE_URL, '_blank', 'noopener');
+  const unicorn = grantUnicorn();
+  if (unicorn) {
+    resetPaddockView();
+    renderAll(state);
+    refreshUI();
+    persist();
+    setTimeout(() => showToast(`🦄 Thank you for helping the real horses. Say hello to ${unicorn.name}, your magical friend 💛`), 600);
+  }
+}
+
+/** Show the magical-friend offer. Always shows (used for the on-demand Donate
+ *  tap); the snooze/milestone gating lives in maybeOfferUnicorn. */
+function offerUnicorn() {
   enqueueDialog({
     emoji: '🦄',
     text: 'The horses here are pretend, but the ones at ARCH are real, and they need help. Donate to the rescue and a magical friend will come to live in your paddock 💛',
     buttons: [
-      { label: 'Donate 💛', variant: 'primary', onClick: () => {
-        window.open(DONATE_URL, '_blank', 'noopener');
-        const unicorn = grantUnicorn();
-        if (unicorn) {
-          resetPaddockView();
-          renderAll(state);
-          refreshUI();
-          persist();
-          setTimeout(() => showToast(`🦄 Thank you for helping the real horses. Say hello to ${unicorn.name}, your magical friend 💛`), 600);
-        }
-      } },
+      { label: 'Donate 💛', variant: 'primary', onClick: claimUnicorn },
       { label: 'Not now', variant: 'ghost' },
     ],
   });
 }
+
+function maybeOfferUnicorn() {
+  if (state.stats.horsesRescued < DONATE_MILESTONE || hasUnicorn(state)
+      || state.milestones.donateOptOut || unicornSnoozed) return;
+  unicornSnoozed = true; // one gentle ask per session
+  offerUnicorn();
+}
+
+// The Donate buttons at the foot of the screen (the footer credit link and the
+// donation banner) double as a way to earn the unicorn. While it's unclaimed, a
+// tap opens the magical-friend offer instead of jumping straight to the donation
+// page, so the reward is discoverable from every donate entry point. Once the
+// unicorn is home, the links behave as plain donation links again.
+function wireDonateButtons() {
+  document.querySelectorAll('[data-donate]').forEach((el) => {
+    el.addEventListener('click', (e) => {
+      if (hasUnicorn(state)) return; // already won: let the link open normally
+      e.preventDefault();
+      offerUnicorn();
+    });
+  });
+}
+
+wireDonateButtons();
 
 // Cloud sync is a background enhancement, never a blocker on first paint —
 // Biscuit is already on screen and clickable before this resolves.
@@ -287,14 +320,29 @@ function handleEvent(e) {
       buttons: [{ label: 'Collect', variant: 'primary' }],
     });
   } else if (e.type === 'donate-milestone') {
-    enqueueDialog({
-      emoji: '💛', confetti: true,
-      text: `You have rescued ${e.count} horses. If you're enjoying this game, why not donate to ARCH to help our real horses too?`,
-      buttons: [
-        { label: 'Donate', variant: 'primary', onClick: () => window.open(DONATE_URL, '_blank', 'noopener') },
-        { label: "Don't ask again", variant: 'ghost', onClick: () => { state.milestones.donateOptOut = true; save(); } },
-      ],
-    });
+    // The 10-rescue donate beat. If the unicorn's still unclaimed, this is where
+    // it's offered (the magical-friend ask, with confetti); once it's home the
+    // same beat becomes a plain thank-you donate nudge.
+    if (hasUnicorn(state)) {
+      enqueueDialog({
+        emoji: '💛', confetti: true,
+        text: `You have rescued ${e.count} horses. If you're enjoying this game, why not donate to ARCH to help our real horses too?`,
+        buttons: [
+          { label: 'Donate', variant: 'primary', onClick: () => window.open(DONATE_URL, '_blank', 'noopener') },
+          { label: "Don't ask again", variant: 'ghost', onClick: () => { state.milestones.donateOptOut = true; save(); } },
+        ],
+      });
+    } else {
+      unicornSnoozed = true; // this beat is the session's unicorn offer; don't double up
+      enqueueDialog({
+        emoji: '🦄', confetti: true,
+        text: `You've rescued ${e.count} horses! The ones here are pretend, but the horses at ARCH are real, and they need help. Donate to the rescue and a magical friend will come to live in your paddock 💛`,
+        buttons: [
+          { label: 'Donate 💛', variant: 'primary', onClick: claimUnicorn },
+          { label: "Don't ask again", variant: 'ghost', onClick: () => { state.milestones.donateOptOut = true; save(); } },
+        ],
+      });
+    }
   } else if (e.type === 'supporter-quiet') {
     showSupporterPop(e.count); // subtle chip pop, not a toast
   } else if (e.type === 'supporter-milestone') {
@@ -308,7 +356,9 @@ function processEvents(events) {
   if (!events.length) return;
   events.forEach(handleEvent);
   maybeOfferDonation(); // fires once, on the first sponsorship beat
-  maybeOfferUnicorn();  // the magical-friend offer, once the rescue is established
+  // The unicorn offer isn't fired here: the 10-rescue 'donate-milestone' event
+  // (handled above) is the single trigger for the crossing, and maybeOfferUnicorn
+  // on load covers returning players. Firing it here too would double the popup.
   refreshUI();
   persist(); // story beats are worth persisting immediately
 }
@@ -448,7 +498,7 @@ horsesEl.addEventListener('keydown', (event) => {
   }
 });
 
-// A returning player who's past the first sponsorship (but hasn't got the
+// A returning player who's already past the 10-rescue mark (but hasn't got the
 // unicorn) gets the offer on load too, after any welcome-back / postcard beats.
 maybeOfferUnicorn();
 
