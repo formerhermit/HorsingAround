@@ -4,7 +4,7 @@ import { initState, save, gameState } from './state.js';
 import { careFor, tick, rescueHorse, shareUpdate, rescueCost, acceptRehome, declineRehome, collectOfflineEarnings, collectDuePostcards, markPostcardsRead, fulfilWant } from './game.js';
 import {
   renderAll, renderHUD, renderActions, updateHorseCard,
-  showCareFeedback, showTipPop, showToast, showMoneyPop, changePaddock, resetPaddockView,
+  showCareFeedback, showTipPop, showToast, showMoneyPop, showSupporterPop, changePaddock, resetPaddockView,
   showDonateBanner, hideDonateBanner, showNudgePopup, hideNudgePopup, showDialog,
   renderShopButton, openShopModal, closeShopModal, renderShopModal, shopDecorPaddock,
   renderPostcardButton, openPostcardAlbum, closePostcardAlbum,
@@ -258,6 +258,10 @@ function handleEvent(e) {
         { label: "Don't ask again", variant: 'ghost', onClick: () => { state.milestones.donateOptOut = true; save(); } },
       ],
     });
+  } else if (e.type === 'supporter-quiet') {
+    showSupporterPop(e.count); // subtle chip pop, not a toast
+  } else if (e.type === 'supporter-milestone') {
+    showToast(`🎉 ${e.count} people now follow the rescue 💛`);
   } else {
     showToast(e.message);
   }

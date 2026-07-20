@@ -305,6 +305,19 @@ export function showMoneyPop(amount) {
   pop.addEventListener('animationend', () => pop.remove());
 }
 
+/** A subtle "+N 💛" over the supporters chip, for follower arrivals once the
+ *  per-arrival toasts have tapered off. Kept out of the toast stack on purpose. */
+export function showSupporterPop(count) {
+  const chip = document.getElementById('chip-supporters');
+  if (!chip || chip.hidden) return;
+  const pop = document.createElement('span');
+  pop.className = 'supporter-pop';
+  pop.style.setProperty('--tilt', `${(Math.random() * 8 - 4).toFixed(1)}deg`);
+  pop.textContent = `+${count} 💛`;
+  chip.appendChild(pop);
+  pop.addEventListener('animationend', () => pop.remove());
+}
+
 // How many horses stand in the foreground row (FRONT_ROW, shared with game.js);
 // older horses move to a smaller background line along the fence, further away.
 const FRONT_COUNT = FRONT_ROW;

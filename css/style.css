@@ -58,6 +58,7 @@ body {
 }
 
 .chip {
+  position: relative; /* anchors the floating "+N" supporter pop */
   display: flex;
   align-items: baseline;
   gap: 0.35rem;
@@ -692,6 +693,24 @@ main {
   font-size: 0.85rem;
   font-weight: 700;
   color: #4e6e2f;
+  white-space: nowrap;
+  pointer-events: none;
+  animation: care-pop-float 0.9s ease-out forwards;
+}
+
+/* Floating "+N 💛" over the supporters chip: warm and quiet, matching the HUD. */
+.supporter-pop {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translate(-50%, -100%) rotate(var(--tilt, 0deg));
+  background: #fffdf7;
+  border: 1.5px solid #e6dcc6;
+  border-radius: 999px;
+  padding: 0.1rem 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #b0823f;
   white-space: nowrap;
   pointer-events: none;
   animation: care-pop-float 0.9s ease-out forwards;

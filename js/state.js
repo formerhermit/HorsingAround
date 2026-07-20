@@ -12,6 +12,9 @@ export const SAVE_VERSION = 1;
 export const RESCUE_MILESTONES = [5, 25, 50, 100, 150, 250, 500, 750, 1000, 1500];
 export const REHOME_MILESTONES = [5, 10, 25, 50, 100, 150, 250, 500, 1000];
 export const DONATE_MILESTONE = 10; // rescues -> the confetti / "donate to ARCH" popup
+// Supporter counts that earn a celebratory toast (no cash) once per-arrival
+// follow toasts have tapered off. Just a "look how you've grown" beat.
+export const SUPPORTER_MILESTONES = [50, 100, 250, 500, 1000, 2500, 5000];
 
 const WARDROBE_IDS = new Set(SHOP_ITEMS.filter((i) => i.category === 'wardrobe').map((i) => i.id));
 
@@ -108,6 +111,7 @@ export function defaultState() {
       donateMilestoneShown: false, // the 10-rescue confetti/donate popup fired
       donateOptOut: false,      // player chose "Don't ask again" on the donate popup
       firstPostcardShown: false, // the first postcard's toast explains the album
+      supporterMilestonesShown: [], // supporter-count milestones already toasted
     },
 
     stats: {
@@ -203,6 +207,9 @@ function repair(save) {
   save.milestones.rehomeRewardsGiven ??= REHOME_MILESTONES.filter((n) => save.stats.horsesRehomed >= n);
   save.milestones.donateMilestoneShown ??= save.stats.horsesRescued >= DONATE_MILESTONE;
   save.milestones.donateOptOut ??= false;
+  // Supporter milestones are new; treat any already passed as shown so a
+  // returning player isn't flooded with retroactive "you've grown!" toasts.
+  save.milestones.supporterMilestonesShown ??= SUPPORTER_MILESTONES.filter((n) => (save.supporters ?? 0) >= n);
 
   // Postcards are new; existing saves start with empty collections. A returning
   // player's next rehoming earns their first postcard (and its explanatory toast).
