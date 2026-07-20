@@ -38,21 +38,21 @@ A few things happen along the way. Around **40**, a horse's personality shows th
 Money comes in a few ways:
 
 - **Your first donation**: a one-off €12 the first time any horse reaches "content". It only ever happens once.
-- **Supporters**: everyone following the rescue chips in €0.15 a second, all the time, in the background.
-- **Sponsors**: every horse with a sponsor brings in an extra €0.40 a second, forever, on top of that.
+- **Supporters**: everyone following the rescue chips in €0.04 a second, all the time, in the background. A herd of a given size and health sustains only so large a following, so this income settles at a steady level rather than climbing forever, grow and improve the herd to raise it.
+- **Sponsors**: every horse with a sponsor brings in an extra €0.15 a second, forever, on top of that.
 - **Share an update**: a button you press to ask for support. Each press is worth `€1 + €0.30 for every supporter`. The more people follow you, the more each ask brings in.
 
 You spend money on two things: **rescuing more horses** and **the shop**.
 
 ### Supporters
 
-Supporters start at zero, and jump to one the moment that first donation lands. After that, happy horses attract more of them: the better your herd's doing, the faster your following grows. Every new sponsor counts as a supporter too.
+Supporters start at zero, and jump to one the moment that first donation lands. After that, happy horses attract more of them: the better your herd's doing, the faster your following grows, up to a ceiling that a herd of that size and health can sustain. Rescue and care for more horses to lift the ceiling. Every new sponsor counts as a supporter too.
 
 Supporters pull double duty. They donate on their own, and they make every "share an update" worth more. So growing your following pays off twice.
 
 ### Sponsors
 
-The first time a horse hits 95 wellbeing, someone falls for it and becomes its sponsor, paying €0.40 a second, forever. A horse you've nursed all the way back keeps paying its way.
+The first time a horse hits 95 wellbeing, someone falls for it and becomes its sponsor, paying €0.15 a second, forever. A horse you've nursed all the way back keeps paying its way.
 
 ### Rescue more horses
 
@@ -73,9 +73,9 @@ Spend your funds on nice things.
 
 Each paddock gets its own decorations, up to a tidy limit. Some choices are one or the other: flower garland *or* bunting, an ear flower *or* a forelock bow. The dog and cat are the big splurges, for when the rescue's really thriving.
 
-### Rare coats
+### Animals and rare coats
 
-Most rescues arrive in one of five everyday coats. Just occasionally, a rarer one turns up: a **spotted** pony, a **chestnut**, or a **piebald**. They're uncommon on purpose (roughly a one-in-ten surprise on a rescue), and they wear a soft shiny shimmer to set them apart.
+Most rescues arrive as an everyday horse or donkey. Just occasionally a rarer one turns up: a **spotted** pony, a **chestnut**, a **piebald**, a **piebald donkey**, or even a **zebra**. Rares are uncommon on purpose (together about one rescue in seven), and they wear a soft shiny shimmer to set them apart.
 
 ### The collection book
 
@@ -91,7 +91,7 @@ The newest three horses stand up front, and older ones move to the back as the h
 
 ## Helping the real ARCH
 
-The horses in the game are pretend, but ARCH's are real. A quiet banner shows up at most twice: once shortly after your first sponsor, and again if you come back after a long break. It links straight to [ARCH's donation page](https://donorbox.org/donate-to-arch?amount=10), and there's a low-key Donate link in the footer too, always there if you go looking.
+The horses in the game are pretend, but ARCH's are real. A banner sits permanently at the foot of the screen, a standing reminder that links straight to [ARCH's donation page](https://donorbox.org/donate-to-arch?amount=10), because a real donation pays for real hay.
 
 Around your tenth rescue, the game offers a **unicorn**. Donate to the real rescue and a one-of-a-kind magical friend comes to live in your paddock, shimmering away and quietly charming new supporters. It's honour-based, on the donate click, and it's a gift, so it never counts toward a rescue's cost. And it's not a single missable moment: if you wave off that first offer, tapping any Donate button brings it back, so the unicorn stays winnable.
 
