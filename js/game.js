@@ -264,11 +264,12 @@ export function rescueHorse() {
   gameState.coins -= cost;
   const herd = gameState.horses;
   const name = randomUnused(HORSE_NAMES, herd.map((h) => h.name));
+  const coat = pickRescueCoat();
   const horse = createHorse({
     // rescueOrder makes this unique even for rescues in the same millisecond
     id: `horse-${herd.length + 1}-${Date.now().toString(36)}`,
     name,
-    paletteKey: randomFrom(PALETTE_KEYS),
+    paletteKey: coat,
     wellbeing: 4 + Math.floor(Math.random() * 4), // 4–7: rougher than Biscuit's 12
     rescueOrder: herd.length + 1,
     trait: randomUnused(TRAITS, herd.map((h) => h.trait)),
@@ -276,14 +277,33 @@ export function rescueHorse() {
   herd.push(horse);
   gameState.stats.horsesRescued += 1;
 
-  return {
-    ok: true,
-    horse,
-    events: [{
-      type: 'rescue',
-      message: `${name} arrives — thin, wary, and keeping to the far end of the paddock. Time to get to work 🐴`,
-    }],
-  };
+  const rareLabel = RARE_COAT_LABELS[coat];
+  const message = rareLabel
+    ? `✨ ${name} arrives, thin and wary, but look closer: a rare ${rareLabel}! What a treasure 🌟`
+    : `${name} arrives: thin, wary, and keeping to the far end of the paddock. Time to get to work 🐴`;
+
+  return { ok: true, horse, events: [{ type: 'rescue', message }] };
+}
+
+// ---- rare coats ----
+// A rescue usually brings a common coat, but occasionally a rare one turns up.
+// The odds are deliberately steep (and staggered) so a rare feels like an
+// event: spotty 5%, red boy 3%, piebald 2%, and a common coat the other 90%.
+const RARE_COAT_CHANCES = [
+  { coat: 'spotty',  chance: 0.05 },
+  { coat: 'red-boy', chance: 0.03 },
+  { coat: 'piebald', chance: 0.02 },
+];
+const RARE_COAT_LABELS = { spotty: 'spotted one', 'red-boy': 'chestnut', piebald: 'piebald' };
+
+function pickRescueCoat() {
+  const roll = Math.random();
+  let cumulative = 0;
+  for (const r of RARE_COAT_CHANCES) {
+    cumulative += r.chance;
+    if (roll < cumulative) return r.coat;
+  }
+  return randomFrom(PALETTE_KEYS);
 }
 
 // ---- rehoming ----
