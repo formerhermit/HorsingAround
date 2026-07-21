@@ -10,9 +10,23 @@
 // is gated by herd size; locked items don't exist in the shop UI at all.
 
 // A paddock holds at most this many horses before older ones roll to the next
-// paddock over. Lives here (not render.js) so decor rules can count paddocks
-// without importing the renderer.
-export const PADDOCK_CAP = 8;
+// paddock over. It's viewport-dependent: a wide screen fits the whole layered
+// herd, but a narrow phone can only show a couple of horses before the front
+// row wraps and shoves the newest arrivals (the ones you tap) below the fold.
+// So on mobile the cap drops right down and older horses roll to the next
+// paddock, reachable with the ‹ nav arrow — the newest always stay on screen
+// with the action buttons. Lives here (not render.js) so decor rules can count
+// paddocks without importing the renderer.
+export const PADDOCK_CAP_WIDE = 8;
+export const PADDOCK_CAP_NARROW = 2;
+// Matches the 560px layout breakpoint in style.css.
+const NARROW_PADDOCK_QUERY = '(max-width: 560px)';
+
+/** How many horses fill a paddock right now, given the viewport width. */
+export function paddockCap() {
+  return (typeof window !== 'undefined' && window.matchMedia(NARROW_PADDOCK_QUERY).matches)
+    ? PADDOCK_CAP_NARROW : PADDOCK_CAP_WIDE;
+}
 
 // Fence-line decor hangs above the horses and never crowds them, so it doesn't
 // count against a paddock's decoration budget.
@@ -84,7 +98,7 @@ export const SHOP_ITEMS = [
 
 /** How many paddocks the herd currently fills (home paddock always counts). */
 export function paddockCount(state) {
-  return Math.max(1, Math.ceil(state.horses.length / PADDOCK_CAP));
+  return Math.max(1, Math.ceil(state.horses.length / paddockCap()));
 }
 
 export function isUnlocked(item, state) {

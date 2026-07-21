@@ -4,7 +4,7 @@ import { horseFigureHTML, horseImageSrc, wellbeingLabel, wellbeingColor, isShiny
 import { rescueCost, shareValue, FRONT_ROW, getActiveWant } from './game.js';
 import {
   SHOP_ITEMS, isUnlocked, isAffordable, hasNewAffordableItem,
-  PADDOCK_CAP, paddockCount, paddockDecor,
+  paddockCap, paddockCount, paddockDecor,
   horseHasItem, isDecorInPaddock, paddockHasRoomFor,
   paddockExclusiveRival, horseExclusiveRival, EXCLUSIVE_GROUPS,
 } from './shop.js';
@@ -385,8 +385,9 @@ const FRONT_SCALES = [1, 0.82, 0.68]; // newest first
 const BACK_SCALE = 0.48;
 // A scale-1 card is one --horse-unit wide (set in CSS, viewport-responsive).
 
-// PADDOCK_CAP (how many horses fill a paddock before older ones roll over)
-// lives in shop.js so decor rules can count paddocks; imported above.
+// paddockCap() (how many horses fill a paddock before older ones roll over --
+// viewport-dependent) lives in shop.js so decor rules can count paddocks;
+// imported above.
 
 /** Human label for a paddock slot, matching the on-scene label wording. */
 function paddockLabel(index) {
@@ -407,13 +408,14 @@ export function changePaddock(delta, state) {
   renderPaddock(state);
 }
 
-/** Split the herd, newest first, into paddocks of up to PADDOCK_CAP.
+/** Split the herd, newest first, into paddocks of up to paddockCap().
  *  Never leaves a single horse alone — herd animals, even in the UI. */
 function paddockChunks(state) {
+  const cap = paddockCap();
   const newestFirst = [...state.horses].reverse();
   const chunks = [];
-  for (let i = 0; i < newestFirst.length; i += PADDOCK_CAP) {
-    chunks.push(newestFirst.slice(i, i + PADDOCK_CAP));
+  for (let i = 0; i < newestFirst.length; i += cap) {
+    chunks.push(newestFirst.slice(i, i + cap));
   }
   const last = chunks[chunks.length - 1];
   if (chunks.length > 1 && last.length === 1) {

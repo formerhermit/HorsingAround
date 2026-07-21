@@ -524,6 +524,15 @@ setInterval(persist, 15000);
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'hidden') persist();
 });
+
+// The paddock cap is viewport-dependent (fewer horses per paddock on mobile),
+// so crossing that breakpoint -- rotating a phone, resizing a window -- changes
+// how the herd splits. Re-render from the home paddock so the newest arrivals
+// stay in view rather than leaving a stale, half-off-screen layout behind.
+window.matchMedia('(max-width: 560px)').addEventListener('change', () => {
+  resetPaddockView();
+  renderAll(state);
+});
 window.addEventListener('beforeunload', save); // no time for a network call here
 
 // Handy in the console while developing.

@@ -9,7 +9,7 @@ import {
   RESCUE_MILESTONES, REHOME_MILESTONES, DONATE_MILESTONE, SUPPORTER_MILESTONES,
 } from './state.js';
 import { PALETTE_KEYS, isMagicalCoat } from './horse.js';
-import { attractionBonus, shareMultiplier, PADDOCK_CAP } from './shop.js';
+import { attractionBonus, shareMultiplier, paddockCap } from './shop.js';
 
 // ---- tuning ----
 export const CARE_GAIN = 2;          // wellbeing per care click
@@ -577,13 +577,13 @@ export function getActiveWant() {
   return activeWant;
 }
 
-// Wants land on horses in the home paddock (the newest PADDOCK_CAP, both rows,
+// Wants land on horses in the home paddock (the newest paddockCap(), both rows,
 // all visible on the default view) that are content enough to fancy a little
 // luxury. Keying off the whole home chunk (not just the front row) matters:
 // the front row is usually the freshly-rescued scruffy arrivals, while the
 // recovered horses that actually want treats sit just behind them.
 function eligibleWantHorses() {
-  return gameState.horses.slice(-PADDOCK_CAP).filter((h) => h.wellbeing >= WANT_MIN_WELLBEING);
+  return gameState.horses.slice(-paddockCap()).filter((h) => h.wellbeing >= WANT_MIN_WELLBEING);
 }
 
 /** Advance the little-needs cycle by dt seconds. One want at a time; spawns
