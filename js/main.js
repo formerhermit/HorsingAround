@@ -1,7 +1,7 @@
 // main.js — boot the game: load state, render, wire input and persistence.
 
 import { initState, save, gameState, DONATE_MILESTONE } from './state.js';
-import { careFor, tick, rescueHorse, shareUpdate, rescueCost, acceptRehome, declineRehome, collectOfflineEarnings, collectDuePostcards, markPostcardsRead, fulfilWant, grantUnicorn, hasUnicorn } from './game.js';
+import { careFor, tick, rescueHorse, shareUpdate, rescueCost, acceptRehome, declineRehome, collectOfflineEarnings, collectDuePostcards, collectDueStatues, markPostcardsRead, fulfilWant, grantUnicorn, hasUnicorn } from './game.js';
 import {
   renderAll, renderHUD, renderActions, updateHorseCard,
   showCareFeedback, showTipPop, showToast, showMoneyPop, showSupporterPop, changePaddock, resetPaddockView,
@@ -302,7 +302,27 @@ function deliverPostcards(due) {
   persist();
 }
 
+// A postcard milestone may have earned a keepsake statue. Runs after every
+// delivery and once on load (catching up returning players), independent of
+// whether any new postcards arrived this time.
+function grantStatues() {
+  const granted = collectDueStatues(state);
+  if (!granted.length) return;
+  if (granted.length === 1) {
+    const s = granted[0];
+    showToast(s.placed
+      ? `🏆 A ${s.name.toLowerCase()} arrived in your paddock, a keepsake for the horses you've rehomed 💛`
+      : `🏆 A ${s.name.toLowerCase()} is waiting in your Tack room, a keepsake for the horses you've rehomed 💛`);
+  } else {
+    showToast(`🏆 ${granted.length} keepsake statues arrived for the horses you've rehomed. Check your paddock and Tack room 💛`);
+  }
+  if (granted.some((s) => s.placed)) renderAll(state); // show any auto-placed statue
+  refreshUI(); // badge the Tack room for any that went to the stores
+  persist();
+}
+
 deliverPostcards(collectDuePostcards());
+grantStatues();
 
 const DONATE_URL = 'https://donorbox.org/donate-to-arch?amount=10';
 
@@ -557,6 +577,7 @@ setInterval(() => {
   refreshUI();
   processEvents(events);
   deliverPostcards(collectDuePostcards(now)); // same-visit postcards land here
+  grantStatues();                             // ...and any statue they just earned
   renderWantBubbles(state); // show/hide the little-needs bubble as wants come and go
 }, 1000);
 

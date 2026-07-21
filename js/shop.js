@@ -99,6 +99,15 @@ export const SHOP_ITEMS = [
   { id: 'muffin', name: 'Muffin the dog', category: 'decor', price: 50000, requiresHorses: 8, shareBonus: 0.12 },
   { id: 'marmalade', name: 'Marmalade the cat', category: 'decor', price: 65000, requiresHorses: 8, shareBonus: 0.12 },
   { id: 'joya', name: 'Joya the dog', category: 'decor', price: 75000, requiresHorses: 8, shareBonus: 0.15 },
+
+  // Gift statues — keepsakes for the horses you've rehomed, earned by collecting
+  // postcards (see STATUE_REWARDS in game.js), never bought. gift:true keeps them
+  // out of the purchasable shop until awarded; once owned they behave like any
+  // decor (place, remove, store). Awarded in order: wooden, stone, flowers, gold.
+  { id: 'statue-wooden', name: 'Wooden statue', category: 'decor', price: 0, gift: true, requiresHorses: 0, shareBonus: 0.03 },
+  { id: 'statue-stone', name: 'Stone statue', category: 'decor', price: 0, gift: true, requiresHorses: 0, shareBonus: 0.04 },
+  { id: 'statue-flowers', name: 'Flower statue', category: 'decor', price: 0, gift: true, requiresHorses: 0, shareBonus: 0.05 },
+  { id: 'statue-gold', name: 'Golden statue', category: 'decor', price: 0, gift: true, requiresHorses: 0, shareBonus: 0.06 },
 ];
 
 /** How many paddocks the herd currently fills (home paddock always counts). */
@@ -107,6 +116,9 @@ export function paddockCount(state) {
 }
 
 export function isUnlocked(item, state) {
+  // Gift items don't exist in the shop until they're awarded; once owned (placed
+  // or in the stores) they show up so the player can arrange them.
+  if (item.gift) return ownedCount(item.id, state) > 0;
   return state.horses.length >= item.requiresHorses;
 }
 
@@ -196,7 +208,7 @@ export function paddocksOpenFor(item, state) {
 }
 
 export function canBuyDecorIn(item, state, paddock) {
-  return item.category === 'decor' && isUnlocked(item, state)
+  return item.category === 'decor' && !item.gift && isUnlocked(item, state)
     && isAffordable(item, state) && canOwnMore(item, state)
     && paddockHasRoomFor(item, state, paddock);
 }

@@ -85,6 +85,7 @@ const ITEM_EMOJI = {
   'flower-garland': '🌼', bunting: '🎏', trough: '💧',
   'flower-buckets': '🪣', 'flower-barrow': '🌷', 'hay-bales': '🌾',
   'play-balls': '🎾', butterflies: '🦋', muffin: '🐶', marmalade: '🐱', joya: '🐕',
+  'statue-wooden': '🪵', 'statue-stone': '🗿', 'statue-flowers': '🌸', 'statue-gold': '🏆',
 };
 
 /** Shop button: visible once funds exist, badged when something new is worth a look. */
@@ -579,6 +580,12 @@ const GROUND_IMAGES = {
   muffin:           { aspect: 1.500, fw: 0.502, fh: 0.541, subjH: 66 },
   joya:             { aspect: 1.500, fw: 0.581, fh: 0.645, subjH: 78 },
   marmalade:        { aspect: 1.465, fw: 0.509, fh: 0.532, subjH: 48 },
+  // Gift statues — tightly cropped to the subject (fw/fh = 1), so aspect is just
+  // the image's own w/h. Tall props: horse on a plinth.
+  'statue-wooden':  { aspect: 0.845, fw: 1.0, fh: 1.0, subjH: 84 },
+  'statue-stone':   { aspect: 0.890, fw: 1.0, fh: 1.0, subjH: 84 },
+  'statue-flowers': { aspect: 0.884, fw: 1.0, fh: 1.0, subjH: 84 },
+  'statue-gold':    { aspect: 0.866, fw: 1.0, fh: 1.0, subjH: 84 },
 };
 
 function groundImage(id, cx) {
