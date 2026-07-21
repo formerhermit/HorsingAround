@@ -138,11 +138,26 @@
           <button class="shop-close" id="collection-close" aria-label="Close collection">×</button>
         </div>
       </div>
-      <p class="shop-intro">
-        <span id="collection-count">0 of 9 collected</span>. Every horse type you've
-        cared for. Keep rescuing to collect them all 💛
-      </p>
-      <div class="collection-grid" id="collection-grid"></div>
+
+      <div class="modal-tabs" role="tablist" aria-label="Collection and stats">
+        <button class="modal-tab is-active" id="tab-collection" role="tab"
+                aria-selected="true" aria-controls="panel-collection">📖 Collection</button>
+        <button class="modal-tab" id="tab-stats" role="tab"
+                aria-selected="false" aria-controls="panel-stats">📊 Stats</button>
+      </div>
+
+      <div class="modal-panel" id="panel-collection" role="tabpanel" aria-labelledby="tab-collection">
+        <p class="shop-intro">
+          <span id="collection-count">0 of 9 collected</span>. Every horse type you've
+          cared for. Keep rescuing to collect them all 💛
+        </p>
+        <div class="collection-grid" id="collection-grid"></div>
+      </div>
+
+      <div class="modal-panel" id="panel-stats" role="tabpanel" aria-labelledby="tab-stats" hidden>
+        <p class="shop-intro">A little record of everything you've done for the herd 💛</p>
+        <div class="stats-list" id="stats-list"></div>
+      </div>
     </div>
   </div>
 

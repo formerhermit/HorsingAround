@@ -9,7 +9,7 @@ import {
   renderShopButton, openShopModal, closeShopModal, renderShopModal, shopDecorPaddock, shopWardrobeHorse,
   renderPostcardButton, openPostcardAlbum, closePostcardAlbum,
   renderWantBubbles, showWantFulfilled,
-  renderCollectionButton, openCollection, closeCollection,
+  renderCollectionButton, openCollection, closeCollection, renderStats,
 } from './render.js';
 import {
   buyDecorIn, buyWardrobe, placeDecor, removeDecor, placeWardrobe, removeWardrobe,
@@ -513,14 +513,32 @@ document.getElementById('album-overlay').addEventListener('click', (event) => {
 
 // ---- collection book ----
 
+// Switch between the Collection and Stats tabs inside the collection modal.
+function showCollectionTab(name) {
+  const isStats = name === 'stats';
+  document.getElementById('panel-collection').hidden = isStats;
+  document.getElementById('panel-stats').hidden = !isStats;
+  const tabC = document.getElementById('tab-collection');
+  const tabS = document.getElementById('tab-stats');
+  tabC.classList.toggle('is-active', !isStats);
+  tabS.classList.toggle('is-active', isStats);
+  tabC.setAttribute('aria-selected', String(!isStats));
+  tabS.setAttribute('aria-selected', String(isStats));
+  document.getElementById('collection-title').textContent = isStats ? 'Stats' : 'Collection';
+  if (isStats) renderStats(state);
+}
+
 document.getElementById('collection-btn').addEventListener('click', () => {
   state.collectionSeen = state.collectedCoats.length; // clear the "new" dot
   state.milestones.collectionIntroDone = true;        // they've found it; no nudge needed
+  showCollectionTab('collection'); // always open on the Collection tab
   openCollection(state);
   renderCollectionButton(state);
   updateOnboardingNudges(); // clears the collection nudge if it's up
   persist();
 });
+document.getElementById('tab-collection').addEventListener('click', () => showCollectionTab('collection'));
+document.getElementById('tab-stats').addEventListener('click', () => showCollectionTab('stats'));
 document.getElementById('collection-close').addEventListener('click', closeCollection);
 document.getElementById('collection-overlay').addEventListener('click', (event) => {
   if (event.target.id === 'collection-overlay') closeCollection();
@@ -578,6 +596,7 @@ setInterval(() => {
   // proper offline earnings are a later feature.
   const dt = Math.min((now - lastTick) / 1000, 2);
   lastTick = now;
+  state.stats.playSeconds += dt; // clamped dt keeps a backgrounded tab from inflating this
   const events = tick(dt);
   state.horses.forEach(updateHorseCard); // tick can change sponsor lines (and later, wellbeing)
   refreshUI();

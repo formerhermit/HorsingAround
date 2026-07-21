@@ -131,6 +131,8 @@ export function defaultState() {
       horsesRescued: 1,  // Biscuit counts
       horsesRehomed: 0,  // horses sent to a forever home
       traitsRevealed: 0, // how many personality-reveal beats have played
+      playSeconds: 0,    // active play time, summed from the sim tick's clamped dt
+      startedAt: Date.now(), // when this rescue began (for "caring since ...")
     },
 
     savedAt: Date.now(),
@@ -235,6 +237,14 @@ function repair(save) {
   // Backfill from horses that already show a trait, so returning players don't
   // replay the long-form intro.
   save.stats.traitsRevealed ??= (save.horses ?? []).filter((h) => h.trait).length;
+  // Playtime tracking is new. Start the counter at 0 (we can't recover past
+  // hours), and date the rescue's start from the oldest horse still around,
+  // falling back to when the save was last written.
+  save.stats.playSeconds ??= 0;
+  save.stats.startedAt ??= Math.min(
+    ...(save.horses ?? []).map((h) => h.arrivedAt ?? Infinity),
+    save.savedAt ?? Date.now(),
+  );
   save.milestones.rescueRewardsGiven ??= RESCUE_MILESTONES.filter((n) => save.stats.horsesRescued >= n);
   save.milestones.rehomeRewardsGiven ??= REHOME_MILESTONES.filter((n) => save.stats.horsesRehomed >= n);
   save.milestones.donateMilestoneShown ??= save.stats.horsesRescued >= DONATE_MILESTONE;
