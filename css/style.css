@@ -1627,6 +1627,28 @@ main {
   background: #e4dbc6;
 }
 
+/* "Tell a friend" on celebratory milestones: a quiet second line under the
+   main action, so it invites sharing without competing with Collect. */
+.dialog-share {
+  margin-top: 0.9rem;
+}
+
+.dialog-share-btn {
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #6f8f4f;
+  background: none;
+  border: none;
+  padding: 0.2rem 0.4rem;
+  cursor: pointer;
+  border-radius: 999px;
+}
+
+.dialog-share-btn:hover {
+  text-decoration: underline;
+}
+
 /* ---------- confetti ---------- */
 
 .confetti-layer {

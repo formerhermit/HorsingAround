@@ -349,13 +349,13 @@ function handleEvent(e) {
     });
   } else if (e.type === 'rescue-milestone') {
     enqueueDialog({
-      emoji: '🎉',
+      emoji: '🎉', share: true,
       text: `You have rescued ${fig(e.count)} horses. What an amazing job you're doing! Here's ${fig(`€${e.bonus}`)} extra to keep up the good work.`,
       buttons: [{ label: 'Collect', variant: 'primary' }],
     });
   } else if (e.type === 'rehome-milestone') {
     enqueueDialog({
-      emoji: '🎉',
+      emoji: '🎉', share: true,
       text: `You have re-homed ${fig(e.count)} horses. What an amazing job you're doing! Here's ${fig(`€${e.bonus}`)} extra to keep up the good work.`,
       buttons: [{ label: 'Collect', variant: 'primary' }],
     });
@@ -366,7 +366,7 @@ function handleEvent(e) {
     renderAll(state);
     const kind = e.coat === 'golden' ? 'golden horse 🌟' : 'rainbow horse 🌈';
     enqueueDialog({
-      emoji: e.coat === 'golden' ? '🌟' : '🌈', confetti: true,
+      emoji: e.coat === 'golden' ? '🌟' : '🌈', confetti: true, share: true,
       text: `You've saved ${fig(e.count)} horses! 🎉 That's an incredible thing to have done, so here's a gift: a magical ${kind} has come to live in your paddock. Say hello to ${e.name}!`,
       buttons: [{ label: 'Wonderful!', variant: 'primary' }],
     });

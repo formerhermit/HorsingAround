@@ -816,7 +816,7 @@ export function hideNudgePopup() {
  * two buttons. Each button = { label, variant, onClick }; clicking it closes the
  * dialog and runs onClick. Pass confetti:true for a celebratory burst.
  */
-export function showDialog({ emoji = '', text, buttons = [], confetti = false }) {
+export function showDialog({ emoji = '', text, buttons = [], confetti = false, share = false }) {
   const overlay = document.getElementById('dialog-overlay');
   document.getElementById('dialog-emoji').textContent = emoji;
   // innerHTML so callers can wrap key figures in <span class="fig">. All dialog
@@ -835,6 +835,24 @@ export function showDialog({ emoji = '', text, buttons = [], confetti = false })
     }, { once: true });
     row.append(btn);
   }
+
+  // Optional "Tell a friend" affordance on celebratory milestones. It carries
+  // data-share-game (handled by share.js's delegated listener) and deliberately
+  // sits outside the button row so it does NOT dismiss the dialog: a player can
+  // share their milestone and still click Collect. Rebuilt each call; removed
+  // when the next dialog doesn't ask for it.
+  const card = overlay.querySelector('.dialog-card');
+  card.querySelector('.dialog-share')?.remove();
+  if (share) {
+    const wrap = document.createElement('div');
+    wrap.className = 'dialog-share';
+    wrap.innerHTML =
+      '<button class="dialog-share-btn" data-share-game type="button" ' +
+      'aria-label="Tell a friend about Horsing Around">' +
+      '<span aria-hidden="true">💛</span> Tell a friend</button>';
+    card.append(wrap);
+  }
+
   overlay.hidden = false;
   if (confetti) burstConfetti();
 }
