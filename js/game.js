@@ -9,7 +9,7 @@ import {
   RESCUE_MILESTONES, REHOME_MILESTONES, DONATE_MILESTONE, SUPPORTER_MILESTONES,
 } from './state.js';
 import { PALETTE_KEYS, isMagicalCoat } from './horse.js';
-import { attractionBonus, shareMultiplier, paddockCap } from './shop.js';
+import { attractionBonus, shareMultiplier, paddockCap, reclaimOrphanedDecor } from './shop.js';
 
 // ---- tuning ----
 export const CARE_GAIN = 2;          // wellbeing per care click
@@ -437,8 +437,17 @@ export function acceptRehome() {
   const [horse] = gameState.horses.splice(idx, 1);
   gameState.coins += income;
   gameState.stats.horsesRehomed += 1;
+  // The horse goes to its new home, but its clothes stay: anything it was
+  // wearing comes off into the stores to re-use on another horse.
+  const leftBehind = horse.wardrobe.length > 0;
+  for (const id of horse.wardrobe) {
+    gameState.shop.stock[id] = (gameState.shop.stock[id] ?? 0) + 1;
+  }
+  horse.wardrobe = [];
+  // The herd just shrank -- a paddock may have vanished; rescue its decor.
+  reclaimOrphanedDecor(gameState);
   schedulePostcard(horse); // a keepsake note will arrive from its new home later
-  return { horse, income };
+  return { horse, income, leftBehind };
 }
 
 /** Decline the pending offer: the horse stays, no money changes hands. */

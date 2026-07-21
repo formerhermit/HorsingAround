@@ -6,12 +6,15 @@ import {
   renderAll, renderHUD, renderActions, updateHorseCard,
   showCareFeedback, showTipPop, showToast, showMoneyPop, showSupporterPop, changePaddock, resetPaddockView,
   showNudgePopup, hideNudgePopup, showDialog,
-  renderShopButton, openShopModal, closeShopModal, renderShopModal, shopDecorPaddock,
+  renderShopButton, openShopModal, closeShopModal, renderShopModal, shopDecorPaddock, shopWardrobeHorse,
   renderPostcardButton, openPostcardAlbum, closePostcardAlbum,
   renderWantBubbles, showWantFulfilled,
   renderCollectionButton, openCollection, closeCollection,
 } from './render.js';
-import { buyDecorIn, buyWardrobe, hasNewAffordableItem } from './shop.js';
+import {
+  buyDecorIn, buyWardrobe, placeDecor, removeDecor, placeWardrobe, removeWardrobe,
+  hasNewAffordableItem,
+} from './shop.js';
 import { syncOnLoad, pushCloudSave } from './cloud.js';
 import './audio.js';
 
@@ -164,13 +167,21 @@ function nudgeConfig(id) {
     emoji: '📖', dir: 'up-right',
     text: "You've rescued a whole paddock! Tap the book up top to see every horse type there is, and which you've collected so far.",
   };
+  if (id === 'left-behind') return {
+    emoji: '🧣', dir: 'up-right',
+    text: `${leftBehindHorseName} has gone to their new home, but left their outfit behind. It's waiting in your Tack room up top, ready for another horse.`,
+  };
   return {
     emoji: '🛍️', dir: 'up-right',
-    text: 'The shop is open! Tap the Shop button up top to dress your horses and decorate the paddock.',
+    text: 'The Tack room is open! Tap the button up top to dress your horses and decorate the paddock.',
   };
 }
 
 const snoozedNudges = new Set(); // nudge ids dismissed this session
+// A rehomed horse's clothes have just landed in the stores; show the one-time
+// explainer on the next nudge sweep. Cleared (and never repeated) once seen.
+let leftBehindPending = false;
+let leftBehindHorseName = '';
 
 /** The highest-priority onboarding goal that's outstanding and not snoozed, or
  *  null. Rescue and shop only surface once they're actually actionable -- enough
@@ -179,6 +190,7 @@ const snoozedNudges = new Set(); // nudge ids dismissed this session
 function pendingNudge() {
   const m = state.milestones;
   const candidates = [];
+  if (leftBehindPending && !m.leftBehindShown) candidates.push('left-behind');
   if (state.unlocks.moneyUI && !m.hasSharedUpdate) candidates.push('share');
   if (state.unlocks.rescue && !m.hasRescuedAgain && state.coins >= rescueCost(state)) candidates.push('rescue');
   if (state.unlocks.moneyUI && !m.shopIntroDone && hasNewAffordableItem(state)) candidates.push('shop');
@@ -199,6 +211,7 @@ document.getElementById('nudge-dismiss').addEventListener('click', () => {
   const id = document.getElementById('nudge-overlay').dataset.nudge;
   if (id) snoozedNudges.add(id);
   if (id === 'collection') { state.milestones.collectionIntroDone = true; save(); }
+  if (id === 'left-behind') { state.milestones.leftBehindShown = true; leftBehindPending = false; save(); }
   hideNudgePopup();
 });
 
@@ -298,7 +311,13 @@ function handleEvent(e) {
       buttons: [
         { label: 'Yes please!', variant: 'primary', onClick: () => {
           const res = acceptRehome();
-          if (res) { resetPaddockView(); renderAll(state); refreshUI(); persist(); }
+          if (res) {
+            if (res.leftBehind && !state.milestones.leftBehindShown) {
+              leftBehindHorseName = res.horse.name;
+              leftBehindPending = true; // refreshUI's nudge sweep will surface it
+            }
+            resetPaddockView(); renderAll(state); refreshUI(); persist();
+          }
         } },
         { label: 'Not now', variant: 'ghost', onClick: () => declineRehome() },
       ],
@@ -477,21 +496,27 @@ document.getElementById('collection-overlay').addEventListener('click', (event) 
 });
 
 document.getElementById('shop-modal').addEventListener('click', (event) => {
-  const btn = event.target.closest('.shop-buy-btn');
-  if (!btn) return;
-  const itemId = btn.dataset.itemId;
-  // The buy target is chosen once per section, not per item.
-  let ok;
-  if (btn.dataset.cat === 'decor') {
-    ({ ok } = buyDecorIn(itemId, shopDecorPaddock(), state));
+  const buy = event.target.closest('.shop-buy-btn');
+  const action = event.target.closest('[data-action]');
+  if (!buy && !action) return;
+  // The target (which horse / which paddock) is chosen once per section, not
+  // per item, so every buy/place/remove acts on the current selection.
+  const itemId = (buy ?? action).dataset.itemId;
+  let ok = false;
+  if (buy) {
+    if (buy.dataset.cat === 'decor') ({ ok } = buyDecorIn(itemId, shopDecorPaddock(), state));
+    else ({ ok } = buyWardrobe(itemId, shopWardrobeHorse(), state));
   } else {
-    const horseSelect = document.getElementById('shop-horse-select');
-    const horseId = horseSelect ? horseSelect.value : state.horses[state.horses.length - 1]?.id;
-    ({ ok } = buyWardrobe(itemId, horseId, state));
+    switch (action.dataset.action) {
+      case 'place-decor': ({ ok } = placeDecor(itemId, shopDecorPaddock(), state)); break;
+      case 'remove-decor': ({ ok } = removeDecor(itemId, shopDecorPaddock(), state)); break;
+      case 'place-wardrobe': ({ ok } = placeWardrobe(itemId, shopWardrobeHorse(), state)); break;
+      case 'remove-wardrobe': ({ ok } = removeWardrobe(itemId, shopWardrobeHorse(), state)); break;
+    }
   }
   if (!ok) return;
-  renderShopModal(state); // refresh owned/afford states within the open modal
-  renderAll(state); // new wardrobe/decor shows up on the horses/paddock immediately
+  renderShopModal(state); // refresh owned/stored/afford states within the open modal
+  renderAll(state); // wardrobe/decor changes show up on the horses/paddock immediately
   persist();
 });
 
