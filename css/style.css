@@ -56,6 +56,10 @@ body {
   display: flex;
   align-items: center;
   gap: 0.6rem;
+  /* Wrap to a second line rather than running off the side on narrow screens
+     (a full HUD is two chips plus four buttons). */
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .chip[hidden] {
@@ -1040,6 +1044,12 @@ main {
 @media (max-width: 480px) {
   .shop-grid {
     grid-template-columns: 1fr;
+  }
+  /* Drop the HUD onto its own full-width line under the title and let its chips
+     and buttons wrap, so nothing runs off the side of a phone screen. */
+  .hud {
+    flex: 1 0 100%;
+    justify-content: flex-start;
   }
 }
 
