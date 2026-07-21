@@ -35,14 +35,21 @@ const offlineSummary = collectOfflineEarnings(lastPlayedAt);
 renderAll(state);
 save(); // persist immediately so the save shape exists from first load
 
-// ---- intro nudge ----
-// Brand-new players don't know clicking a horse does anything. One cute,
-// colourful, one-time toast fixes that -- never shown again after.
-
+// ---- intro popup ----
+// Brand-new players don't know clicking a horse does anything. A small toast
+// was too easy to miss, so this is a big centred welcome card (the same modal
+// as the other event dialogs) that introduces the rescue and points them at
+// Biscuit. Shown once ever, a couple of seconds after load so the paddock has
+// painted first, then dismissed with a single obvious button.
 if (!state.milestones.introToastShown) {
   state.milestones.introToastShown = true;
-  setTimeout(() => showToast('👋 Tap Biscuit to give him some care!', 'intro'), 1200);
   save();
+  const first = state.horses[0]?.name ?? 'Biscuit';
+  setTimeout(() => enqueueDialog({
+    emoji: '🐴',
+    text: `Welcome to your little horse rescue! This is ${fig(first)}, your very first rescue. He arrived tired and hungry, and needs some care to recover. Tap him to look after him, and watch him perk up 💛`,
+    buttons: [{ label: `Let's help ${first}!`, variant: 'primary' }],
+  }), 2000);
 }
 
 // (Onboarding nudges are re-asserted on load once their definitions below have
