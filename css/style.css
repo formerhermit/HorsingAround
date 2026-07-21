@@ -33,6 +33,11 @@ body {
   max-width: 960px;
   width: 100%;
   margin: 0 auto;
+  /* Lift the HUD above the paddock (which makes its own stacking context via
+     translateZ) so the supporters "+N" pop, which drifts down out of the chip,
+     lands in front of the paddock sky rather than behind it. */
+  position: relative;
+  z-index: 30;
 }
 
 .title-block h1 {
