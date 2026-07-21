@@ -7,7 +7,7 @@ import {
   paddockCap, paddockCount, paddockDecor,
   horseHasItem, isDecorInPaddock, paddockHasRoomFor,
   paddockExclusiveRival, horseExclusiveRival, EXCLUSIVE_GROUPS,
-  STACKABLE_IDS, stockCount, decorLocation, wardrobeLocation,
+  STACKABLE_IDS, stockCount, decorLocation,
 } from './shop.js';
 
 const ITEM_NAME = Object.fromEntries(SHOP_ITEMS.map((i) => [i.id, i.name]));
@@ -214,7 +214,7 @@ function shopItemRow(item, control, dimmed) {
   row.innerHTML = `
     <span class="shop-item-icon">${ITEM_EMOJI[item.id] ?? '✨'}</span>
     <span class="shop-item-name">${item.name}</span>
-    ${control}`;
+    <span class="shop-item-actions">${control}</span>`;
   return row;
 }
 
@@ -231,10 +231,9 @@ const removeBtn = (item, cat) =>
 function wardrobeItemRow(item, horse, state) {
   const worn = horseHasItem(horse, item.id);
   const rival = worn ? null : horseExclusiveRival(item, horse);
-  // A spare in the stores is the useful action, so it wins over an "on another
-  // horse" note when the item happens to be both worn elsewhere and in stock.
+  // Clothing is per-horse, so a copy worn by another horse doesn't block this
+  // one -- either place a spare from the stores, or buy this horse its own.
   const inStore = !worn && !rival && stockCount(item.id, state) > 0;
-  const elsewhere = worn || rival || inStore ? null : wardrobeLocation(item.id, state);
   let control, dimmed = false;
   if (worn) {
     control = `<span class="shop-item-owned">Worn</span>${removeBtn(item, 'wardrobe')}`;
@@ -244,9 +243,6 @@ function wardrobeItemRow(item, horse, state) {
     dimmed = true;
   } else if (inStore) {
     control = placeBtn(item, 'wardrobe');
-  } else if (elsewhere) {
-    control = `<span class="shop-item-note">On ${elsewhere.name}</span>`;
-    dimmed = true;
   } else {
     control = buyBtn(item, 'wardrobe', state);
   }

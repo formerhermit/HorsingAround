@@ -140,8 +140,9 @@ export function ownedCount(itemId, state) {
   return stockCount(itemId, state) + placedCount(itemId, state);
 }
 
-/** Whether the player may acquire another copy: always for stackable banners,
- *  otherwise only if they don't already own one somewhere. */
+/** Whether the player may acquire another copy of a one-of-each item (decor):
+ *  always for stackable banners, otherwise only if they don't already own one.
+ *  Wardrobe is per-horse and doesn't use this -- see canBuyWardrobeFor. */
 export function canOwnMore(item, state) {
   return STACKABLE_IDS.has(item.id) || ownedCount(item.id, state) === 0;
 }
@@ -262,9 +263,11 @@ export function eligibleHorses(item, state) {
   return state.horses.filter((h) => !horseHasItem(h, item.id) && !horseExclusiveRival(item, h));
 }
 
+// Clothing is per-horse: you may buy one of each item for every horse (still
+// its ear-flower-OR-forelock-bow choice per horse). Only decor is one-of-each,
+// so there's no canOwnMore cap here -- just "this horse doesn't have it yet".
 export function canBuyWardrobeFor(item, horse, state) {
   return item.category === 'wardrobe' && isUnlocked(item, state) && isAffordable(item, state)
-    && canOwnMore(item, state)
     && !horseHasItem(horse, item.id) && !horseExclusiveRival(item, horse);
 }
 
@@ -275,12 +278,6 @@ export function buyWardrobe(itemId, horseId, state) {
   state.coins -= item.price;
   horse.wardrobe.push(item.id);
   return { ok: true, item, horse };
-}
-
-/** The horse currently wearing a wardrobe item, or null. Single wardrobe items
- *  are worn by at most one horse. */
-export function wardrobeLocation(itemId, state) {
-  return state.horses.find((h) => h.wardrobe.includes(itemId)) ?? null;
 }
 
 /** Dress a horse in a copy from the stores. Free. */
@@ -340,8 +337,9 @@ export function hasNewAffordableItem(state) {
       return canOwnMore(i, state) && isUnlocked(i, state) && isAffordable(i, state)
         && paddocksOpenFor(i, state).length > 0;
     }
+    // Wardrobe is per-horse: buyable whenever a horse still lacks it.
     if (inStore && eligibleHorses(i, state).length > 0) return true;
-    return canOwnMore(i, state) && isUnlocked(i, state) && isAffordable(i, state)
+    return isUnlocked(i, state) && isAffordable(i, state)
       && eligibleHorses(i, state).length > 0;
   });
 }
