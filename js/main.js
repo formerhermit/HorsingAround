@@ -222,6 +222,10 @@ function enqueueDialog(spec) {
 
 function pumpDialogs() {
   if (dialogActive || dialogQueue.length === 0) return;
+  // Don't interrupt the open shop (the "tack room"): a rehome offer popping up
+  // over it is confusing -- you could adopt a horse that's still listed for
+  // dressing in the shop. Hold queued dialogs; closing the shop re-pumps them.
+  if (!document.getElementById('shop-overlay').hidden) return;
   dialogActive = true;
   const spec = dialogQueue.shift();
   showDialog({
@@ -437,13 +441,19 @@ document.getElementById('shop-btn').addEventListener('click', () => {
   updateOnboardingNudges(); // clears the shop nudge if it was up
   openShopModal(state);
 });
-document.getElementById('shop-close').addEventListener('click', closeShopModal);
+// Close the shop, then flush any dialogs (rehome offers, milestones) that were
+// held back while it was open -- see the guard in pumpDialogs.
+function closeShop() {
+  closeShopModal();
+  pumpDialogs();
+}
+document.getElementById('shop-close').addEventListener('click', closeShop);
 document.getElementById('shop-overlay').addEventListener('click', (event) => {
-  if (event.target.id === 'shop-overlay') closeShopModal();
+  if (event.target.id === 'shop-overlay') closeShop();
 });
 document.addEventListener('keydown', (event) => {
   if (event.key !== 'Escape') return;
-  if (!document.getElementById('shop-overlay').hidden) closeShopModal();
+  if (!document.getElementById('shop-overlay').hidden) closeShop();
   if (!document.getElementById('album-overlay').hidden) closePostcardAlbum();
   if (!document.getElementById('collection-overlay').hidden) closeCollection();
 });
