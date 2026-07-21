@@ -122,6 +122,7 @@ export function defaultState() {
       supporterMilestonesShown: [], // supporter-count milestones already toasted
       collectionIntroDone: false, // the "check your collection" nudge fired once
       leftBehindShown: false,   // the one-time "a rehomed horse left clothes in your stores" nudge
+      statuesGiven: [],         // postcard-milestone statue ids already awarded
     },
 
     stats: {
@@ -213,6 +214,9 @@ function repair(save) {
   // The stores are new; a returning player shouldn't get the one-time
   // "clothes left behind" nudge retroactively on their next rehoming.
   save.milestones.leftBehindShown ??= true;
+  // Statue keepsakes are new; an empty list lets a returning player earn any
+  // their postcard count already qualifies for on next load (a nice catch-up).
+  save.milestones.statuesGiven ??= [];
 
   // Reward/donate milestones are new; backfill any the existing save has already
   // passed so a returning player isn't hit with a flood of retroactive popups.

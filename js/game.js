@@ -9,7 +9,7 @@ import {
   RESCUE_MILESTONES, REHOME_MILESTONES, DONATE_MILESTONE, SUPPORTER_MILESTONES,
 } from './state.js';
 import { PALETTE_KEYS, isMagicalCoat } from './horse.js';
-import { attractionBonus, shareMultiplier, paddockCap, reclaimOrphanedDecor } from './shop.js';
+import { attractionBonus, shareMultiplier, paddockCap, reclaimOrphanedDecor, SHOP_ITEMS, paddockHasRoomFor } from './shop.js';
 
 // ---- tuning ----
 export const CARE_GAIN = 2;          // wellbeing per care click
@@ -549,6 +549,40 @@ export function collectDuePostcards(now = Date.now()) {
 /** Mark every collected postcard as read (called when the album is opened). */
 export function markPostcardsRead(state = gameState) {
   for (const pc of state.postcards) pc.read = true;
+}
+
+// ---- statue keepsakes ----
+// A garden statue arrives for each postcard milestone: a growing memorial to the
+// horses you've found homes for. Awarded in order (wooden, stone, flowers, gold),
+// once each, and the player keeps every one -- they stack up as the album grows.
+export const STATUE_REWARDS = [
+  { at: 1, id: 'statue-wooden' },
+  { at: 5, id: 'statue-stone' },
+  { at: 15, id: 'statue-flowers' },
+  { at: 30, id: 'statue-gold' },
+];
+
+/** Grant any statue whose postcard threshold has just been reached (once each).
+ *  A new statue drops straight into the home paddock if there's room, otherwise
+ *  it waits in the stores. Returns [{ id, name, placed }] for the delivery toast. */
+export function collectDueStatues(state = gameState) {
+  const given = (state.milestones.statuesGiven ??= []);
+  const count = (state.postcards ?? []).length;
+  const granted = [];
+  for (const { at, id } of STATUE_REWARDS) {
+    if (count < at || given.includes(id)) continue;
+    given.push(id);
+    const item = SHOP_ITEMS.find((i) => i.id === id);
+    let placed = false;
+    if (paddockHasRoomFor(item, state, 0)) {
+      (state.shop.decorByPaddock[0] ??= []).push(id);
+      placed = true;
+    } else {
+      state.shop.stock[id] = (state.shop.stock[id] ?? 0) + 1;
+    }
+    granted.push({ id, name: item.name, placed });
+  }
+  return granted;
 }
 
 // ---- little needs ----
