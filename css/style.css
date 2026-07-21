@@ -975,9 +975,27 @@ main {
 
 .shop-item-name {
   flex: 1;
+  min-width: 0;
   font-size: 0.85rem;
   font-weight: 600;
   color: #3d3428;
+}
+
+/* Holds the row's control(s) — a price/Place button, or a "Worn"/"In paddock"
+   label with its Remove button. Kept together so they wrap as a unit. */
+.shop-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-left: auto;
+}
+
+/* A placed/worn row carries a wide label+Remove pair. In the half-width either/or
+   columns that can't fit on one line, so let the controls drop below the name
+   rather than spill over the OR. Buy rows aren't .owned, so they stay one line. */
+.shop-item.owned {
+  flex-wrap: wrap;
+  row-gap: 0.3rem;
 }
 
 .shop-item-owned {

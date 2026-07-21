@@ -286,22 +286,19 @@ function repair(save) {
     if (idx >= 0) paddockDecor[idx] = 'flower-barrow';
   }
 
-  // "One of each" is new. The old model let you buy the same single item many
-  // times (a scarf per horse, a trough per paddock). Consolidate: keep the first
-  // placement of each single item, reclaim the rest into the stores. Stackable
-  // banners are exempt. Idempotent -- a healed save has no duplicates to move.
-  const seenSingle = new Set();
-  const keepFirst = (id) => {
-    if (STACKABLE_IDS.has(id)) return true;
-    if (seenSingle.has(id)) { save.shop.stock[id] = (save.shop.stock[id] ?? 0) + 1; return false; }
-    seenSingle.add(id);
-    return true;
-  };
-  for (const horse of save.horses ?? []) {
-    horse.wardrobe = (horse.wardrobe ?? []).filter(keepFirst);
-  }
+  // "One of each" decor is new. The old model let you buy the same prop for many
+  // paddocks; consolidate to keep the first placement and reclaim the rest into
+  // the stores. Stackable banners are exempt, and clothing stays per-horse (a
+  // scarf on every horse is fine), so this touches decor only. Idempotent -- a
+  // healed save has no decor duplicates left to move.
+  const seenDecor = new Set();
   for (const p of Object.keys(save.shop.decorByPaddock).sort((a, b) => Number(a) - Number(b))) {
-    save.shop.decorByPaddock[p] = save.shop.decorByPaddock[p].filter(keepFirst);
+    save.shop.decorByPaddock[p] = save.shop.decorByPaddock[p].filter((id) => {
+      if (STACKABLE_IDS.has(id)) return true;
+      if (seenDecor.has(id)) { save.shop.stock[id] = (save.shop.stock[id] ?? 0) + 1; return false; }
+      seenDecor.add(id);
+      return true;
+    });
     if (save.shop.decorByPaddock[p].length === 0) delete save.shop.decorByPaddock[p];
   }
   // Sweep up any decor stranded in paddocks the herd has since shrunk past.
