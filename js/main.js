@@ -16,6 +16,7 @@ import {
   hasNewAffordableItem,
 } from './shop.js';
 import { syncOnLoad, pushCloudSave } from './cloud.js';
+import { initShare } from './share.js';
 import './audio.js';
 
 // Wrap a key figure (a count, a € amount, a supporter tally) so it renders bold
@@ -524,6 +525,11 @@ document.getElementById('collection-close').addEventListener('click', closeColle
 document.getElementById('collection-overlay').addEventListener('click', (event) => {
   if (event.target.id === 'collection-overlay') closeCollection();
 });
+
+// ---- social sharing ----
+// One delegated listener for every [data-share-game] button (postcards +
+// collection headers today; anywhere they're added later, for free).
+initShare();
 
 document.getElementById('shop-modal').addEventListener('click', (event) => {
   const buy = event.target.closest('.shop-buy-btn');
