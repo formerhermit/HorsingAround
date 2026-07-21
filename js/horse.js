@@ -12,7 +12,7 @@ export const PALETTE_KEYS = ['bay', 'brown', 'grey', 'palomino', 'white', 'brown
 
 // Rare coats: never in the common random pool. They only appear via the low
 // per-rescue odds in game.js. The unicorn is rarer still (donation-only).
-export const RARE_COATS = ['spotty', 'red-boy', 'piebald', 'piebald-donkey', 'zebra'];
+export const RARE_COATS = ['spotty', 'red-boy', 'piebald', 'piebald-donkey', 'zebra', 'patchy', 'creamy'];
 
 // Magical gift horses: earned, not rescued. They arrive thriving and stay
 // permanent residents -- never counted toward a rescue's cost, never offered
@@ -48,6 +48,8 @@ export const COAT_CATALOG = [
   { id: 'piebald',        name: 'Piebald',       rarity: 'rare', mystery: true },
   { id: 'piebald-donkey', name: 'Piebald donkey', rarity: 'rare' },
   { id: 'zebra',          name: 'Zebra',         rarity: 'rare', mystery: true },
+  { id: 'patchy',         name: 'Patchy',        rarity: 'rare' },
+  { id: 'creamy',         name: 'Creamy mane',   rarity: 'rare' },
   { id: 'unicorn',        name: 'Unicorn',       rarity: 'magical', unlock: 'Donate to ARCH' },
   { id: 'rainbow',        name: 'Rainbow',       rarity: 'magical', unlock: 'Rescue 50 horses' },
   { id: 'golden',         name: 'Golden',        rarity: 'magical', unlock: 'Rescue 100 horses' },
