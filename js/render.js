@@ -7,6 +7,7 @@ import {
   PADDOCK_CAP, paddockCount, paddockDecor,
   horseHasItem, isDecorInPaddock, paddockHasRoomFor,
   paddockExclusiveRival, horseExclusiveRival, EXCLUSIVE_GROUPS,
+  STACKABLE_IDS, stockCount, decorLocation, wardrobeLocation,
 } from './shop.js';
 
 const ITEM_NAME = Object.fromEntries(SHOP_ITEMS.map((i) => [i.id, i.name]));
@@ -206,21 +207,10 @@ export function closeCollection() {
 let shopHorseTarget = null;   // horse id
 let shopPaddockTarget = 0;    // paddock index
 
-/** One item row for the chosen horse: owned, blocked by its either/or rival,
- *  buyable, or too dear. */
-function wardrobeItemRow(item, horse, state) {
+/** Wrap a control string in the shared item-row markup. */
+function shopItemRow(item, control, dimmed) {
   const row = document.createElement('div');
-  const owned = horseHasItem(horse, item.id);
-  const rival = owned ? null : horseExclusiveRival(item, horse);
-  row.className = `shop-item${owned || rival ? ' owned' : ''}`;
-  let control;
-  if (owned) {
-    control = '<span class="shop-item-owned">Owned</span>';
-  } else if (rival) {
-    control = `<span class="shop-item-note">${ITEM_NAME[rival]} chosen</span>`;
-  } else {
-    control = `<button class="shop-buy-btn" data-item-id="${item.id}" data-cat="wardrobe" ${isAffordable(item, state) ? '' : 'disabled'}>€${item.price}</button>`;
-  }
+  row.className = `shop-item${dimmed ? ' owned' : ''}`;
   row.innerHTML = `
     <span class="shop-item-icon">${ITEM_EMOJI[item.id] ?? '✨'}</span>
     <span class="shop-item-name">${item.name}</span>
@@ -228,29 +218,72 @@ function wardrobeItemRow(item, horse, state) {
   return row;
 }
 
-/** One item row for the chosen paddock: already placed, blocked by its either/or
- *  rival, out of room, buyable, or too dear. */
-function decorItemRow(item, paddock, state) {
-  const row = document.createElement('div');
-  const inPaddock = isDecorInPaddock(item, state, paddock);
-  const rival = inPaddock ? null : paddockExclusiveRival(item, state, paddock);
-  const blocked = !inPaddock && !rival && !paddockHasRoomFor(item, state, paddock); // at the 3-decor cap
-  row.className = `shop-item${inPaddock || rival || blocked ? ' owned' : ''}`;
-  let control;
-  if (inPaddock) {
-    control = '<span class="shop-item-owned">In paddock</span>';
+const buyBtn = (item, cat, state) =>
+  `<button class="shop-buy-btn" data-item-id="${item.id}" data-cat="${cat}" ${isAffordable(item, state) ? '' : 'disabled'}>€${item.price}</button>`;
+const placeBtn = (item, cat) =>
+  `<button class="shop-place-btn" data-action="place-${cat}" data-item-id="${item.id}">Place</button>`;
+const removeBtn = (item, cat) =>
+  `<button class="shop-remove-btn" data-action="remove-${cat}" data-item-id="${item.id}" title="Return to your stores">Remove</button>`;
+
+/** One item row for the chosen horse: worn here (with Remove), blocked by its
+ *  either/or rival, worn by another horse, placeable from the stores, buyable,
+ *  or too dear. */
+function wardrobeItemRow(item, horse, state) {
+  const worn = horseHasItem(horse, item.id);
+  const rival = worn ? null : horseExclusiveRival(item, horse);
+  // A spare in the stores is the useful action, so it wins over an "on another
+  // horse" note when the item happens to be both worn elsewhere and in stock.
+  const inStore = !worn && !rival && stockCount(item.id, state) > 0;
+  const elsewhere = worn || rival || inStore ? null : wardrobeLocation(item.id, state);
+  let control, dimmed = false;
+  if (worn) {
+    control = `<span class="shop-item-owned">Worn</span>${removeBtn(item, 'wardrobe')}`;
+    dimmed = true;
   } else if (rival) {
     control = `<span class="shop-item-note">${ITEM_NAME[rival]} chosen</span>`;
-  } else if (blocked) {
-    control = '<span class="shop-item-note">Paddock full</span>';
+    dimmed = true;
+  } else if (inStore) {
+    control = placeBtn(item, 'wardrobe');
+  } else if (elsewhere) {
+    control = `<span class="shop-item-note">On ${elsewhere.name}</span>`;
+    dimmed = true;
   } else {
-    control = `<button class="shop-buy-btn" data-item-id="${item.id}" data-cat="decor" ${isAffordable(item, state) ? '' : 'disabled'}>€${item.price}</button>`;
+    control = buyBtn(item, 'wardrobe', state);
   }
-  row.innerHTML = `
-    <span class="shop-item-icon">${ITEM_EMOJI[item.id] ?? '✨'}</span>
-    <span class="shop-item-name">${item.name}</span>
-    ${control}`;
-  return row;
+  return shopItemRow(item, control, dimmed);
+}
+
+/** One item row for the chosen paddock: placed here (with Remove), blocked by
+ *  its either/or rival, placed in another paddock, out of room, placeable from
+ *  the stores, buyable, or too dear. */
+function decorItemRow(item, paddock, state) {
+  const inThis = isDecorInPaddock(item, state, paddock);
+  const rival = inThis ? null : paddockExclusiveRival(item, state, paddock);
+  const room = paddockHasRoomFor(item, state, paddock);
+  const inStore = !inThis && !rival && stockCount(item.id, state) > 0;
+  // "Placed elsewhere" only matters when there's no spare in the stores to place.
+  const elsewhere = (inThis || rival || inStore || STACKABLE_IDS.has(item.id))
+    ? null : decorLocation(item.id, state);
+  let control, dimmed = false;
+  if (inThis) {
+    control = `<span class="shop-item-owned">In paddock</span>${removeBtn(item, 'decor')}`;
+    dimmed = true;
+  } else if (rival) {
+    control = `<span class="shop-item-note">${ITEM_NAME[rival]} chosen</span>`;
+    dimmed = true;
+  } else if (inStore) {
+    control = room ? placeBtn(item, 'decor') : '<span class="shop-item-note">Paddock full</span>';
+    dimmed = !room;
+  } else if (elsewhere !== null) {
+    control = `<span class="shop-item-note">In ${paddockLabel(elsewhere)}</span>`;
+    dimmed = true;
+  } else if (!room) {
+    control = '<span class="shop-item-note">Paddock full</span>';
+    dimmed = true;
+  } else {
+    control = buyBtn(item, 'decor', state);
+  }
+  return shopItemRow(item, control, dimmed);
 }
 
 /** A section's target selector: "<label> [ <select> ]". Re-renders the whole
@@ -341,6 +374,11 @@ export function renderShopModal(state) {
 /** The paddock the decor section is currently targeting (read by the buy handler). */
 export function shopDecorPaddock() {
   return shopPaddockTarget;
+}
+
+/** The horse the wardrobe section is currently targeting (read by the buy handler). */
+export function shopWardrobeHorse() {
+  return shopHorseTarget;
 }
 
 export function openShopModal(state) {

@@ -1,7 +1,7 @@
 // state.js — single source of truth for everything the game knows,
 // plus localStorage persistence.
 
-import { SHOP_ITEMS } from './shop.js';
+import { SHOP_ITEMS, STACKABLE_IDS, reclaimOrphanedDecor } from './shop.js';
 
 export const SAVE_KEY = 'horsing-around:save';
 export const SAVE_VERSION = 1;
@@ -80,6 +80,9 @@ export function defaultState() {
     // Wardrobe lives on each horse; item definitions live in shop.js.
     shop: {
       decorByPaddock: {},
+      // Owned-but-unplaced items, by id -> count. Buying, then removing from a
+      // horse/paddock, parks an item here to re-use rather than re-buy.
+      stock: {},
     },
 
     // Keepsake postcards from rehomed horses. `pendingPostcards` holds ones
@@ -118,6 +121,7 @@ export function defaultState() {
       firstPostcardShown: false, // the first postcard's toast explains the album
       supporterMilestonesShown: [], // supporter-count milestones already toasted
       collectionIntroDone: false, // the "check your collection" nudge fired once
+      leftBehindShown: false,   // the one-time "a rehomed horse left clothes in your stores" nudge
     },
 
     stats: {
@@ -199,12 +203,16 @@ function repair(save) {
     if (horse.name === 'Lola (Gabbi)') horse.name = 'Gabbi';
   }
   save.shop ??= {};
+  save.shop.stock ??= {};
   // Existing saves belong to players who've already figured out how to
   // play -- only a brand-new defaultState() should get the onboarding nudges.
   save.milestones.introToastShown ??= true;
   save.milestones.hasSharedUpdate ??= true;
   save.milestones.hasRescuedAgain ??= true;
   save.milestones.shopIntroDone ??= true;
+  // The stores are new; a returning player shouldn't get the one-time
+  // "clothes left behind" nudge retroactively on their next rehoming.
+  save.milestones.leftBehindShown ??= true;
 
   // Reward/donate milestones are new; backfill any the existing save has already
   // passed so a returning player isn't hit with a flood of retroactive popups.
@@ -277,6 +285,27 @@ function repair(save) {
     const idx = paddockDecor.indexOf('apple-barrel');
     if (idx >= 0) paddockDecor[idx] = 'flower-barrow';
   }
+
+  // "One of each" is new. The old model let you buy the same single item many
+  // times (a scarf per horse, a trough per paddock). Consolidate: keep the first
+  // placement of each single item, reclaim the rest into the stores. Stackable
+  // banners are exempt. Idempotent -- a healed save has no duplicates to move.
+  const seenSingle = new Set();
+  const keepFirst = (id) => {
+    if (STACKABLE_IDS.has(id)) return true;
+    if (seenSingle.has(id)) { save.shop.stock[id] = (save.shop.stock[id] ?? 0) + 1; return false; }
+    seenSingle.add(id);
+    return true;
+  };
+  for (const horse of save.horses ?? []) {
+    horse.wardrobe = (horse.wardrobe ?? []).filter(keepFirst);
+  }
+  for (const p of Object.keys(save.shop.decorByPaddock).sort((a, b) => Number(a) - Number(b))) {
+    save.shop.decorByPaddock[p] = save.shop.decorByPaddock[p].filter(keepFirst);
+    if (save.shop.decorByPaddock[p].length === 0) delete save.shop.decorByPaddock[p];
+  }
+  // Sweep up any decor stranded in paddocks the herd has since shrunk past.
+  reclaimOrphanedDecor(save);
 
   return save;
 }

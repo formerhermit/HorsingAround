@@ -1000,6 +1000,45 @@ main {
   cursor: default;
 }
 
+/* Place: bring an owned item out of the stores. Free, so it reads friendlier
+   (green) than the coin-cost buy button. */
+.shop-place-btn {
+  font: inherit;
+  font-weight: 700;
+  font-size: 0.8rem;
+  color: #fffdf7;
+  background: #6f8f4f;
+  border: none;
+  border-radius: 999px;
+  padding: 0.3rem 0.7rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.shop-place-btn:hover {
+  background: #607d43;
+}
+
+/* Remove: send a placed item back to the stores. A quiet, secondary control
+   sitting after the "Worn"/"In paddock" label. */
+.shop-remove-btn {
+  font: inherit;
+  font-weight: 700;
+  font-size: 0.72rem;
+  color: #9a7135;
+  background: none;
+  border: 1px solid #ddd0b0;
+  border-radius: 999px;
+  padding: 0.2rem 0.55rem;
+  margin-left: 0.4rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.shop-remove-btn:hover {
+  background: #efe7d5;
+}
+
 /* Decor item that can't be placed: the target paddock is at its decoration
    limit. Muted, like the owned state, but not celebratory. */
 .shop-item-note {
