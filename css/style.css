@@ -1282,6 +1282,75 @@ main {
 
 /* ---------- collection book ---------- */
 
+/* ---------- modal tabs (Collection / Stats) ---------- */
+
+.modal-tabs {
+  display: flex;
+  gap: 0.4rem;
+  margin: 0.2rem 0 0.9rem;
+  border-bottom: 1.5px solid #ece3cf;
+}
+
+.modal-tab {
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #8a7d68;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1.5px;
+  padding: 0.4rem 0.6rem;
+  cursor: pointer;
+}
+
+.modal-tab:hover {
+  color: #5c5344;
+}
+
+.modal-tab.is-active {
+  color: #6f8f4f;
+  border-bottom-color: #6f8f4f;
+}
+
+/* ---------- stats tab ---------- */
+
+.stats-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-group {
+  margin: 1rem 0 0.35rem;
+  font-size: 0.8rem;
+  color: #8a7d68;
+}
+
+.stat-group:first-child {
+  margin-top: 0.2rem;
+}
+
+.stat-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.5rem 0.2rem;
+  border-bottom: 1px solid #f0e9d9;
+}
+
+.stat-label {
+  font-size: 0.9rem;
+  color: #5c5344;
+}
+
+.stat-value {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #3d3428;
+  white-space: nowrap;
+}
+
 .collection-grid {
   display: flex;
   flex-direction: column;

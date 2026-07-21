@@ -201,6 +201,82 @@ export function closeCollection() {
   document.getElementById('collection-overlay').hidden = true;
 }
 
+// ---- stats tab ----
+
+/** "3h 12m", "45m", or a gentle line for a brand-new rescue. */
+function formatPlaytime(seconds) {
+  const total = Math.floor(seconds);
+  if (total < 60) return 'just getting started';
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  if (h > 0) return m ? `${h}h ${m}m` : `${h}h`;
+  return `${m}m`;
+}
+
+/** A date like "21 Jul 2026" for the "caring since" line. */
+function formatDate(ts) {
+  return new Date(ts).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+/** Distinct decor ids the player owns, whether placed in a paddock or parked in
+ *  their stores. Used for the "decorations collected" tally. */
+function ownedDecorIds(state) {
+  const owned = new Set();
+  for (const ids of Object.values(state.shop?.decorByPaddock ?? {})) {
+    for (const id of ids) owned.add(id);
+  }
+  for (const id of Object.keys(state.shop?.stock ?? {})) owned.add(id);
+  return owned;
+}
+
+function statRow(label, value) {
+  return `<div class="stat-row"><span class="stat-label">${label}</span>` +
+    `<span class="stat-value">${value}</span></div>`;
+}
+
+function statGroup(title, rows) {
+  return `<h3 class="stat-group">${title}</h3>${rows.join('')}`;
+}
+
+export function renderStats(state) {
+  const s = state.stats;
+  const owned = ownedDecorIds(state);
+
+  const coatsTotal = COAT_CATALOG.length;
+  const coatsHave = COAT_CATALOG.filter((c) => state.collectedCoats.includes(c.id)).length;
+
+  const buyableDecor = SHOP_ITEMS.filter((i) => i.category === 'decor' && !i.gift);
+  const decorHave = buyableDecor.filter((i) => owned.has(i.id)).length;
+
+  const giftDecor = SHOP_ITEMS.filter((i) => i.category === 'decor' && i.gift);
+  const statuesHave = giftDecor.filter((i) => owned.has(i.id)).length;
+
+  const list = document.getElementById('stats-list');
+  list.innerHTML = [
+    statGroup('Horses', [
+      statRow('Horses rescued', s.horsesRescued),
+      statRow('Found new homes', s.horsesRehomed),
+      statRow('In your care now', state.horses.length),
+      statRow('Personalities discovered', s.traitsRevealed),
+    ]),
+    statGroup('Your rescue', [
+      statRow('Supporters', state.supporters),
+      statRow('Raised for hay', `€${Math.floor(s.totalDonated).toLocaleString()}`),
+      statRow('Postcards received', state.postcards.length),
+      statRow('Cuddles given', (s.clicks ?? 0).toLocaleString()),
+    ]),
+    statGroup('Collections', [
+      statRow('Horse coats', `${coatsHave} / ${coatsTotal}`),
+      statRow('Decorations', `${decorHave} / ${buyableDecor.length}`),
+      statRow('Keepsake statues', `${statuesHave} / ${giftDecor.length}`),
+    ]),
+    statGroup('Time', [
+      statRow('Time played', formatPlaytime(s.playSeconds ?? 0)),
+      statRow('Caring since', formatDate(s.startedAt ?? Date.now())),
+    ]),
+  ].join('');
+}
+
 // The shop is target-first: pick one horse / one paddock at the top of each
 // section, then every item row shows that target's own state (owned, buyable,
 // or blocked). Beats a picker on every card and makes the target unmistakable.
