@@ -4,6 +4,22 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Horsing Around</title>
+  <meta name="description" content="A little game about looking after rescue horses: raising a smile, and a bit of real money, for ARCH horse rescue.">
+
+  <!-- Social share cards (Open Graph + Twitter). Absolute URLs so links unfurl
+       correctly on Facebook / X / WhatsApp, which can't resolve relative paths. -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Horsing Around">
+  <meta property="og:title" content="Horsing Around: a little rescue paddock">
+  <meta property="og:description" content="Look after a paddock of rescue horses, and help the real ones at ARCH. Come and play 💛">
+  <meta property="og:url" content="https://formerhermit.github.io/HorsingAround/">
+  <meta property="og:image" content="https://formerhermit.github.io/HorsingAround/Horsing-Around-Revamped.png">
+  <meta property="og:image:alt" content="A paddock of friendly cartoon rescue horses.">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Horsing Around: a little rescue paddock">
+  <meta name="twitter:description" content="Look after a paddock of rescue horses, and help the real ones at ARCH. Come and play 💛">
+  <meta name="twitter:image" content="https://formerhermit.github.io/HorsingAround/Horsing-Around-Revamped.png">
+
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -96,7 +112,12 @@
     <div class="album-modal" id="album-modal" role="dialog" aria-modal="true" aria-labelledby="album-title">
       <div class="shop-header">
         <h2 id="album-title">Postcards</h2>
-        <button class="shop-close" id="album-close" aria-label="Close postcards">×</button>
+        <div class="header-actions">
+          <button class="share-btn-modal" data-share-game aria-label="Tell a friend about Horsing Around">
+            <span class="share-icon" aria-hidden="true">💛</span> Tell a friend
+          </button>
+          <button class="shop-close" id="album-close" aria-label="Close postcards">×</button>
+        </div>
       </div>
       <p class="shop-intro">
         Horses you've rehomed write to say how they're settling in: a little wall
@@ -110,7 +131,12 @@
     <div class="album-modal" id="collection-modal" role="dialog" aria-modal="true" aria-labelledby="collection-title">
       <div class="shop-header">
         <h2 id="collection-title">Collection</h2>
-        <button class="shop-close" id="collection-close" aria-label="Close collection">×</button>
+        <div class="header-actions">
+          <button class="share-btn-modal" data-share-game aria-label="Tell a friend about Horsing Around">
+            <span class="share-icon" aria-hidden="true">💛</span> Tell a friend
+          </button>
+          <button class="shop-close" id="collection-close" aria-label="Close collection">×</button>
+        </div>
       </div>
       <p class="shop-intro">
         <span id="collection-count">0 of 9 collected</span>. Every horse type you've

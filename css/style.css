@@ -887,6 +887,74 @@ main {
   font-size: 1.3rem;
 }
 
+/* Right-hand cluster in a modal header: the "Tell a friend" share button sits
+   beside the close ×. */
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+/* Quiet share affordance: reads as an invitation, not a call to action, so it
+   never competes with the game's own green "Share an update" fundraiser. */
+.share-btn-modal {
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #6f8f4f;
+  background: none;
+  border: 1px solid #cfdcb9;
+  border-radius: 999px;
+  padding: 0.3rem 0.7rem;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.share-btn-modal:hover {
+  background: #eef3e2;
+  border-color: #6f8f4f;
+}
+
+.share-icon {
+  font-size: 0.85em;
+}
+
+/* Desktop fallback menu (mobile uses the native share sheet instead). Floats
+   at the document level, positioned in JS under the button that opened it. */
+.share-menu {
+  position: absolute;
+  z-index: 200;
+  min-width: 9rem;
+  background: #fffdf7;
+  border: 1px solid #e6ddca;
+  border-radius: 0.7rem;
+  box-shadow: 0 6px 20px rgba(61, 52, 40, 0.18);
+  padding: 0.3rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.share-menu-item {
+  font: inherit;
+  font-size: 0.85rem;
+  color: #3d3428;
+  text-align: left;
+  text-decoration: none;
+  background: none;
+  border: none;
+  border-radius: 0.45rem;
+  padding: 0.5rem 0.6rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.share-menu-item:hover {
+  background: #f0ece0;
+}
+
 .shop-close {
   font: inherit;
   font-size: 1.3rem;
@@ -1557,6 +1625,28 @@ main {
 
 .dialog-btn-ghost:hover {
   background: #e4dbc6;
+}
+
+/* "Tell a friend" on celebratory milestones: a quiet second line under the
+   main action, so it invites sharing without competing with Collect. */
+.dialog-share {
+  margin-top: 0.9rem;
+}
+
+.dialog-share-btn {
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #6f8f4f;
+  background: none;
+  border: none;
+  padding: 0.2rem 0.4rem;
+  cursor: pointer;
+  border-radius: 999px;
+}
+
+.dialog-share-btn:hover {
+  text-decoration: underline;
 }
 
 /* ---------- confetti ---------- */
