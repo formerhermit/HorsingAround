@@ -153,8 +153,17 @@ export function initState({ reset = false } = {}) {
  * rebind the export, or they'd keep seeing the stale one.
  */
 export function adoptCloudState(cloudState) {
+  // Heal the cloud save exactly as loadSave heals a local one, so fields added
+  // since it was written (the item stores, statue milestones, ...) are backfilled
+  // rather than left missing -- otherwise cloud players hit code that assumes them.
+  let healed = cloudState;
+  try {
+    healed = (cloudState.version !== SAVE_VERSION ? migrate(cloudState) : repair(cloudState)) ?? cloudState;
+  } catch (err) {
+    console.warn('Could not heal cloud save, adopting as-is:', err);
+  }
   for (const key of Object.keys(gameState)) delete gameState[key];
-  Object.assign(gameState, cloudState);
+  Object.assign(gameState, healed);
   return gameState;
 }
 

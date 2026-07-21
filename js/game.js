@@ -566,6 +566,11 @@ export const STATUE_REWARDS = [
  *  A new statue drops straight into the home paddock if there's room, otherwise
  *  it waits in the stores. Returns [{ id, name, placed }] for the delivery toast. */
 export function collectDueStatues(state = gameState) {
+  // Defensive: a cloud save adopted mid-session may predate the stores, so make
+  // sure the containers exist before we place or store a statue (see below).
+  state.shop ??= {};
+  state.shop.decorByPaddock ??= {};
+  state.shop.stock ??= {};
   const given = (state.milestones.statuesGiven ??= []);
   const count = (state.postcards ?? []).length;
   const granted = [];
