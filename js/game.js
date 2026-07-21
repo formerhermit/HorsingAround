@@ -284,6 +284,12 @@ export function rescueNeedsCareFirst(state = gameState) {
   return !!bumped && bumped.wellbeing < THRIVING_AT;
 }
 
+// The full "thin, wary, keeping to the far end" arrival line sets the scene the
+// first few times, but gets old once the player knows the drill. After this many
+// rescued arrivals, common coats get the short version instead. Rare coats keep
+// their own treasure line every time -- those stay an event.
+const ARRIVAL_FLAVOUR_LIMIT = 3;
+
 /**
  * Spend rescue funds to bring in a new horse, arriving in worse condition
  * than Biscuit did. Returns { ok, horse, events }.
@@ -312,9 +318,17 @@ export function rescueHorse() {
   const newForCollection = collectCoat(coat);
 
   const rareLabel = RARE_COAT_LABELS[coat];
-  let message = rareLabel
-    ? `✨ ${name} arrives, thin and wary, but look closer: a rare ${rareLabel}! What a treasure 🌟`
-    : `${name} arrives: thin, wary, and keeping to the far end of the paddock. Time to get to work 🐴`;
+  // horsesRescued already counts this arrival (and Biscuit), so subtract Biscuit
+  // to get how many rescues have arrived so far.
+  const arrivalNo = gameState.stats.horsesRescued - 1;
+  let message;
+  if (rareLabel) {
+    message = `✨ ${name} arrives, thin and wary, but look closer: a rare ${rareLabel}! What a treasure 🌟`;
+  } else if (arrivalNo <= ARRIVAL_FLAVOUR_LIMIT) {
+    message = `${name} arrives: thin, wary, and keeping to the far end of the paddock. Time to get to work 🐴`;
+  } else {
+    message = `${name} has arrived. Time to get to work 🐴`;
+  }
   if (newForCollection) message += ' 📖 A new one for your collection!';
 
   return { ok: true, horse, events: [{ type: 'rescue', message }] };
