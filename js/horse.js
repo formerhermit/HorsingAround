@@ -92,14 +92,25 @@ const EAR_FLOWER_ANCHOR = {
 };
 const DEFAULT_EAR_FLOWER = { cx: 392, cy: 70 };
 
+// The scarf is authored for the horse neck; donkeys' throats sit lower and a
+// little forward, so their scarf is translated onto the throat. Coats not listed
+// wear the scarf at its authored position.
+const SCARF_OFFSET = {
+  'brown-donkey':   { dx: 11, dy: 52 },
+  'grey-donkey':    { dx: 11, dy: 52 },
+  'piebald-donkey': { dx: 11, dy: 52 },
+};
+
 // Where the four lower legs sit (each [x0, x1]) for boots and leg-wraps. Donkeys
 // stand a little narrower and the zebra's forelegs sit further forward, so the
 // horse-tuned set lands off their legs. Coats not listed use the horse default.
 const DEFAULT_LEGS = [[94, 128], [149, 183], [281, 316], [331, 366]];
+// Donkey ranges measured from the art across the boot band (the legs splay out
+// slightly toward the hoof, so these span the whole footprint the boot covers).
 const LEG_POSITIONS = {
-  'brown-donkey':   [[87, 119], [142, 174], [280, 315], [327, 361]],
-  'grey-donkey':    [[85, 119], [141, 174], [280, 316], [328, 362]],
-  'piebald-donkey': [[86, 119], [141, 174], [280, 315], [327, 361]],
+  'brown-donkey':   [[83, 119], [137, 174], [278, 315], [324, 361]],
+  'grey-donkey':    [[82, 119], [137, 174], [278, 316], [324, 362]],
+  'piebald-donkey': [[78, 115], [133, 170], [283, 321], [331, 370]],
   'zebra':          [[96, 130], [146, 179], [297, 331], [343, 377]],
 };
 
@@ -113,9 +124,14 @@ function costumeMarkup(wardrobe = [], coat = 'bay') {
   let m = '';
   if (wardrobe.includes('scarf')) {
     // band spanning the whole neck from the mane edge (~x305) to the throat
-    // (~x390), with a knotted tail hanging at the front of the throat
-    m += `<path d="M300,188 Q345,179 390,179 Q401,191 397,203 Q394,213 388,216 Q345,220 303,214 Q295,202 300,188 Z" fill="#D9534F"/>`;
-    m += `<path d="M382,213 Q378,239 385,259 Q397,241 396,211 Z" fill="#C0392B"/>`;
+    // (~x390), with a knotted tail hanging at the front of the throat.
+    // Donkeys carry their heads higher and more upright, so their throat sits
+    // lower and a touch forward -- shift the whole scarf down/right onto it.
+    const off = SCARF_OFFSET[coat];
+    const open = off ? `<g transform="translate(${off.dx},${off.dy})">` : '';
+    const close = off ? '</g>' : '';
+    m += `${open}<path d="M300,188 Q345,179 390,179 Q401,191 397,203 Q394,213 388,216 Q345,220 303,214 Q295,202 300,188 Z" fill="#D9534F"/>`;
+    m += `<path d="M382,213 Q378,239 385,259 Q397,241 396,211 Z" fill="#C0392B"/>${close}`;
   }
   if (wardrobe.includes('ear-flower')) {
     // a small daisy tucked at the base of the forward ear
