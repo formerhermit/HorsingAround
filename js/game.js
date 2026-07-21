@@ -323,10 +323,12 @@ export function rescueHorse() {
 // ---- rare coats ----
 // A rescue usually brings a common coat, but occasionally a rare one turns up.
 // The odds are deliberately steep (and staggered) so a rare feels like an
-// event: the five rares total ~13.5%, and a common coat the other ~86.5%.
+// event: the seven rares total ~19%, and a common coat the other ~81%.
 const RARE_COAT_CHANCES = [
   { coat: 'spotty',         chance: 0.05 },
   { coat: 'red-boy',        chance: 0.03 },
+  { coat: 'patchy',         chance: 0.03 },
+  { coat: 'creamy',         chance: 0.025 },
   { coat: 'piebald',        chance: 0.02 },
   { coat: 'piebald-donkey', chance: 0.02 },
   { coat: 'zebra',          chance: 0.015 },
@@ -334,6 +336,7 @@ const RARE_COAT_CHANCES = [
 const RARE_COAT_LABELS = {
   spotty: 'spotted one', 'red-boy': 'chestnut', piebald: 'piebald',
   'piebald-donkey': 'piebald donkey', zebra: 'zebra',
+  patchy: 'patchy one', creamy: 'creamy-maned one',
 };
 
 function pickRescueCoat() {
