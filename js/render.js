@@ -590,6 +590,20 @@ function renderPaddock(state) {
     frontRow.append(horseCard(h, FRONT_SCALES[rank] ?? BACK_SCALE, false, h.wardrobe));
   });
 
+  // With several views to page between, every view must measure the same or
+  // the scene jumps at each arrow press. Pad sparse rows with ghost cards up
+  // to a full view's shape: on narrow screens the front row *wraps* (cards
+  // stack), so its height depends on the card count, not just the tallest
+  // card. A lone starter horse (single view, nothing to page) keeps its
+  // natural height.
+  if (views.length > 1) {
+    if (!back.length) backRow.append(ghostCard(BACK_SCALE, true));
+    const frontTarget = Math.min(viewCap(), FRONT_COUNT);
+    for (let i = front.length; i < frontTarget; i++) {
+      frontRow.append(ghostCard(FRONT_SCALES[i] ?? BACK_SCALE, false));
+    }
+  }
+
   const children = [backRow, groundDecorRow(state, paddock, view, viewCount), frontRow];
   const butterflies = butterfliesOverlay(state, paddock);
   if (butterflies) children.unshift(butterflies); // behind the horses
@@ -737,6 +751,26 @@ function butterfliesOverlay(state, paddock) {
   layer.className = 'paddock-butterflies';
   layer.setAttribute('aria-hidden', 'true');
   return layer;
+}
+
+/** An invisible placeholder card giving an empty horse row exactly one real
+ *  card's height -- a freshly built paddock, or a view whose back row is bare,
+ *  must measure identical to a populated one at every viewport, or the scene
+ *  jumps while paging. A CSS min-height can only approximate that (the card's
+ *  text block mixes unit-scaled and fixed-px parts), so an inert ghost card
+ *  gets it exact by construction. */
+function ghostCard(scale, isBack) {
+  const ghost = horseCard(
+    { id: '', name: 'Ghost', paletteKey: 'bay', wellbeing: 100, wardrobe: [] },
+    scale, isBack, [],
+  );
+  ghost.classList.add('horse-ghost');
+  ghost.removeAttribute('role');
+  ghost.removeAttribute('tabindex');
+  ghost.removeAttribute('aria-label');
+  ghost.setAttribute('aria-hidden', 'true');
+  delete ghost.dataset.horseId;
+  return ghost;
 }
 
 function horseCard(horse, scale = 1, isBack = false, wardrobe = []) {
