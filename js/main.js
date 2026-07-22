@@ -48,6 +48,12 @@ const googleError = googleQuery.get('error_description') || googleQuery.get('err
   || googleHash.get('error_description') || googleHash.get('error');
 if (googleReturn) history.replaceState(null, '', location.pathname);
 
+// "Keep my progress instead" on the Google conflict card stashes this
+// device's save here before switching accounts, since the redirect to
+// Google and back fully reloads the page -- nothing in JS memory survives
+// it. Read back and cleared once we're signed in as the other account.
+const OVERRIDE_STASH_KEY = 'horsing-around:google-override-stash';
+
 // Captured before save() stamps a fresh time: how long ago the last session was.
 const lastPlayedAt = state.savedAt;
 
@@ -173,6 +179,30 @@ syncOnLoad().then((adopted) => {
     }
   } else if (googleReturn === 'signin') {
     showToast(adopted ? 'Welcome back! Your Google save is here 💛' : 'Signed in with Google 💛', 'ok');
+  } else if (googleReturn === 'override') {
+    // "Keep my progress instead": we're now signed in as the OTHER account
+    // (reconciliation above already adopted its save) -- overwrite that with
+    // what was stashed before the redirect, then push it up so the cloud
+    // agrees. If the stash is missing (e.g. a stale/replayed URL), there's
+    // nothing to restore; just report the plain sign-in.
+    const stashed = localStorage.getItem(OVERRIDE_STASH_KEY);
+    localStorage.removeItem(OVERRIDE_STASH_KEY);
+    if (stashed) {
+      try {
+        adoptCloudState(JSON.parse(stashed));
+        resetPaddockView();
+        renderAll(state);
+        save();
+        pushCloudSave();
+        pushScore();
+        showToast('Your progress is now saved to this Google account 💛', 'ok');
+      } catch (err) {
+        console.warn('Could not restore the stashed save after overriding:', err);
+        showToast('Signed in with Google, but restoring your other progress failed — sorry!', 'alert');
+      }
+    } else {
+      showToast('Signed in with Google 💛', 'ok');
+    }
   }
 });
 
@@ -768,17 +798,23 @@ scConfirmLoad.addEventListener('click', async () => {
   showToast('Welcome back! Your paddock is here 💛', 'ok');
 });
 
-// Google sign-in: the same two-flow split as save codes, since a single
-// button can't tell "attach Google here" from "sign in from elsewhere"
-// apart. Both redirect away immediately -- see js/google.js for why the
-// feedback toast happens on the *next* load instead of here.
+// Google sign-in. Both redirect away immediately -- see js/google.js for why
+// the feedback toast happens on the *next* load instead of here.
+//
 // One button, one safe default: always try to attach Google to this save
 // first. If that Google account turns out to already have a save of its own,
 // Supabase reports it as an error on the redirect back (see googleReturn
-// handling above), and only THEN does the game offer the explicit switch --
-// "Load that save here instead" -- as its own confirmed action.
+// handling above), and only then does the conflict card offer a real choice
+// between the two saves -- load theirs, or overwrite theirs with what's here.
 document.getElementById('google-signin-btn').addEventListener('click', () => linkGoogle());
-document.getElementById('google-conflict-switch').addEventListener('click', () => signInWithGoogle());
+document.getElementById('google-conflict-load').addEventListener('click', () => signInWithGoogle('signin'));
+document.getElementById('google-conflict-override').addEventListener('click', () => {
+  // Stash this device's save before the redirect -- nothing in memory
+  // survives it, and main.js's googleReturn handling reads this back once
+  // we're signed in as the other account.
+  localStorage.setItem(OVERRIDE_STASH_KEY, JSON.stringify(gameState));
+  signInWithGoogle('override');
+});
 document.getElementById('google-conflict-cancel').addEventListener('click', () => {
   document.getElementById('google-conflict').hidden = true;
   // The link attempt already failed server-side before this card ever showed
