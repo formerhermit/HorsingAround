@@ -804,8 +804,9 @@ scConfirmLoad.addEventListener('click', async () => {
 // One button, one safe default: always try to attach Google to this save
 // first. If that Google account turns out to already have a save of its own,
 // Supabase reports it as an error on the redirect back (see googleReturn
-// handling above), and only then does the conflict card offer a real choice
-// between the two saves -- load theirs, or overwrite theirs with what's here.
+// handling above), and only then does the conflict card offer a real choice:
+// load that other save here, or save this device's game there instead
+// (overwriting what that account had).
 document.getElementById('google-signin-btn').addEventListener('click', () => linkGoogle());
 document.getElementById('google-conflict-load').addEventListener('click', () => signInWithGoogle('signin'));
 document.getElementById('google-conflict-override').addEventListener('click', () => {
@@ -815,13 +816,9 @@ document.getElementById('google-conflict-override').addEventListener('click', ()
   localStorage.setItem(OVERRIDE_STASH_KEY, JSON.stringify(gameState));
   signInWithGoogle('override');
 });
-document.getElementById('google-conflict-cancel').addEventListener('click', () => {
-  document.getElementById('google-conflict').hidden = true;
-  // The link attempt already failed server-side before this card ever showed
-  // -- there's nothing to undo here, but silently hiding the card and saying
-  // nothing reads as "did that even work?" Confirm the actual outcome.
-  showToast('Kept your current save — Google wasn’t connected.', 'ok');
-});
+// No separate cancel action here -- the modal's own × (sync-close) already
+// dismisses the card without doing anything, and the conflict card's own
+// text points players there.
 
 // The header whisper: quiet, and only ever seen on a brand-new save (see
 // updateRestoreWhisper). Jumps straight to the code-entry step, since anyone
