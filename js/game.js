@@ -45,6 +45,18 @@ export const THRIVING_AT = 95;       // wellbeing for "thriving" (matches wellbe
 export const FRONT_ROW = 3;          // horses shown up close; the rest fall to the back row (matches render.js)
 const LONELY_DELAY = 14;             // seconds after first donation before the loneliness beat
 
+// ---- gentle upkeep (issue #45) ----
+// Horses love routine: left alone long enough, a horse slowly eases back down
+// toward "content", and a few quick care taps top it back up. This gives a
+// recovered herd a reason to be visited without ever getting mean: drift never
+// takes a horse below DRIFT_FLOOR (safely "content", still the happy artwork),
+// a sponsor once earned stays forever, and magical gift horses are above such
+// earthly needs entirely. The stakes run through the herd's supporter pull: a
+// topped-up herd sustains a bigger following than a drifted one.
+export const DRIFT_FLOOR = 82;        // drift stops here: still "content"
+export const DRIFT_GRACE = 8 * 60;    // seconds a horse holds steady after care
+export const DRIFT_PER_SEC = 1 / 60;  // then eases down ~1 wellbeing a minute
+
 // Chance per second that a new supporter notices the rescue. Every horse
 // contributes according to its own wellbeing and the contributions add up,
 // so each recovered horse permanently speeds up supporter growth — and a
@@ -205,6 +217,7 @@ export function careFor(horse) {
 
   const before = horse.wellbeing;
   horse.wellbeing = Math.min(WELLBEING_MAX, horse.wellbeing + gain);
+  horse.lastCaredAt = Date.now(); // even a maxed horse holds its shine when petted
 
   const events = [];
   // Personality emerges as a horse recovers enough to relax. Assign one here
@@ -780,13 +793,28 @@ export function collectOfflineEarnings(lastPlayedAt, now = Date.now()) {
   const room = Math.max(0, supporterCapacity() - gameState.supporters);
   const newSupporters = Math.min(Math.floor(attractionPerSecond() * seconds), Math.floor(room));
 
+  // The herd eases too while you're gone, discounted by the same offline rate
+  // as the earnings and never below the floor. `drifted` counts horses that
+  // slipped out of thriving, so the welcome-back note can suggest a top-up.
+  // Capacity and attraction were computed above, from the herd as it was left:
+  // supporters arrived over the whole trip, most of it before the ease-down.
+  const drop = seconds * DRIFT_PER_SEC;
+  let drifted = 0;
+  for (const horse of gameState.horses) {
+    if (isMagicalCoat(horse.paletteKey) || horse.wellbeing <= DRIFT_FLOOR) continue;
+    const before = horse.wellbeing;
+    horse.wellbeing = Math.max(DRIFT_FLOOR, horse.wellbeing - drop);
+    horse.lastCaredAt = now; // a fresh hold on return, so live drift waits its grace
+    if (before >= THRIVING_AT && horse.wellbeing < THRIVING_AT) drifted += 1;
+  }
+
   if (Math.floor(income) < 1 && newSupporters < 1) return null;
 
   gameState.coins += income;
   gameState.stats.totalDonated += income;
   gameState.supporters += newSupporters;
 
-  return { awaySeconds, capped: awaySeconds > OFFLINE_CAP_SECONDS, income, newSupporters };
+  return { awaySeconds, capped: awaySeconds > OFFLINE_CAP_SECONDS, income, newSupporters, drifted };
 }
 
 /**
@@ -879,11 +907,32 @@ export function tick(dt) {
     supporterToastCooldown = SUPPORTER_TOAST_EVERY;
   }
 
+  updateDrift(dt, Date.now(), events); // the gentle-upkeep ease-down
   maybeOfferRehome(dt, events);
   checkMilestones(events);
   updateWants(dt, Date.now()); // the little-needs cycle (bubbles drawn by main)
 
   return events;
+}
+
+/** Ease long-untended horses back toward the floor (see the gentle-upkeep
+ *  tuning above). Pushes a one-time intro event the first time a horse drifts
+ *  out of "thriving", so the mechanic explains itself the moment it shows. */
+function updateDrift(dt, now, events) {
+  for (const horse of gameState.horses) {
+    if (isMagicalCoat(horse.paletteKey) || horse.wellbeing <= DRIFT_FLOOR) continue;
+    horse.lastCaredAt ??= now; // self-heal a save that predates the field
+    if (now - horse.lastCaredAt < DRIFT_GRACE * 1000) continue;
+    const before = horse.wellbeing;
+    horse.wellbeing = Math.max(DRIFT_FLOOR, horse.wellbeing - DRIFT_PER_SEC * dt);
+    if (!gameState.milestones.driftIntroShown && before >= THRIVING_AT && horse.wellbeing < THRIVING_AT) {
+      gameState.milestones.driftIntroShown = true;
+      events.push({
+        type: 'drift-intro',
+        message: `${horse.name} could do with a top-up: horses love routine, and a few taps keep a thriving horse thriving 💛`,
+      });
+    }
+  }
 }
 
 /** Occasionally offer a thriving horse a forever home, once the herd is large

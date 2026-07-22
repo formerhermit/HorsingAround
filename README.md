@@ -33,6 +33,8 @@ As a horse recovers, it visibly perks up: a dull, scruffy coat turns rich and he
 
 A few things happen along the way. Around **40**, a horse's personality shows through. At **80**, the first horse to get there earns your very first donation (€12), which opens up the money side of the game. At **95** ("thriving"), a horse gets a sponsor for life.
 
+Horses love routine. Leave a horse alone for a while and it slowly eases back down toward **content**: never lower, never unhappy, and a sponsor once earned stays forever. A few quick taps top it back up. A topped-up herd sustains a bigger following than a drifted one, so a visit to the paddock is never wasted. (Magical horses are above such earthly concerns.)
+
 ### Money
 
 Money comes in a few ways:

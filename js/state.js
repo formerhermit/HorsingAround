@@ -52,6 +52,7 @@ export function createHorse({
     facing,
     sizeJitter,
     arrivedAt: Date.now(),
+    lastCaredAt: Date.now(), // last care tap; drives the gentle-upkeep drift (game.js)
   };
 }
 
@@ -116,6 +117,7 @@ export function defaultState() {
     milestones: {
       firstDonation: false,
       firstSponsorship: false,  // once true, sponsorship toasts go terse
+      driftIntroShown: false,   // the one-time "horses love routine" top-up explainer
       introToastShown: false,   // the "tap Biscuit" nudge new players get once
       hasSharedUpdate: false,   // resolves the "share to raise money" onboarding popup
       hasRescuedAgain: false,   // resolves the "rescue another horse" onboarding popup
@@ -234,6 +236,9 @@ function repair(save) {
     horse.wardrobe ??= [];
     horse.facing ??= Math.random() < 0.5 ? 'left' : 'right';
     horse.sizeJitter ??= 0.92 + Math.random() * 0.16;
+    // Upkeep drift is new: date existing horses' care from this load, so an
+    // updated save gets its grace period rather than an instant ease-down.
+    horse.lastCaredAt ??= Date.now();
     // Joya is now reserved for the dog decor item; rename any horse
     if (horse.name === 'Joya') horse.name = 'Billy';
     if (horse.name === 'Pantoja 2' || horse.name === 'Panjota 2') horse.name = 'Binky';
@@ -243,6 +248,8 @@ function repair(save) {
   save.shop.stock ??= {};
   // The share charge meter is new; 0 means "never shared", i.e. a full charge.
   save.lastSharedAt ??= 0;
+  // The gentle-upkeep drift is new; returning players get its explainer too.
+  save.milestones.driftIntroShown ??= false;
   // The monthly leaderboard is opt-in and new; existing saves start off it.
   // Unlike the other backfilled nudges, the leaderboard one stays *on* for
   // returning players -- the feature is new to them too, so their next rescue
