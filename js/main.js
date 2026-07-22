@@ -1,7 +1,7 @@
 // main.js — boot the game: load state, render, wire input and persistence.
 
 import { initState, save, gameState, adoptCloudState, DONATE_MILESTONE, SAVE_KEY, disableSaving } from './state.js';
-import { careFor, tick, rescueHorse, shareUpdate, rescueCost, acceptRehome, declineRehome, collectOfflineEarnings, collectDuePostcards, collectDueStatues, markPostcardsRead, fulfilWant, grantUnicorn, hasUnicorn } from './game.js';
+import { careFor, tick, rescueHorse, shareUpdate, rescueCost, acceptRehome, declineRehome, requestRehome, collectOfflineEarnings, collectDuePostcards, collectDueStatues, markPostcardsRead, fulfilWant, grantUnicorn, hasUnicorn } from './game.js';
 import {
   renderAll, renderHUD, renderActions, updateHorseCard,
   showCareFeedback, showTipPop, showToast, showMoneyPop, showSupporterPop, changePaddock, resetPaddockView,
@@ -14,7 +14,7 @@ import {
 } from './render.js';
 import {
   buyDecorIn, buyWardrobe, placeDecor, removeDecor, placeWardrobe, removeWardrobe,
-  hasNewAffordableItem,
+  hasNewAffordableItem, buyPaddock, nextPaddockPrice,
 } from './shop.js';
 import { syncOnLoad, pullCloudSave, pushCloudSave, getCloudUserId, deleteCloudData, getClient } from './cloud.js';
 import { createSaveCode, previewSaveCode, confirmSaveCode } from './saveCode.js';
@@ -585,9 +585,45 @@ document.getElementById('actions').addEventListener('click', (event) => {
       processEvents(events);
     } else if (reason === 'needs-care') {
       showToast('You still have horses which need help', 'alert');
+    } else if (reason === 'full') {
+      showFullPaddocksDialog();
     }
   }
 });
+
+// Every paddock space is taken: exactly how the real rescue works. The two
+// ways to make room are both offered on the spot.
+function showFullPaddocksDialog() {
+  const price = nextPaddockPrice(state);
+  const buttons = [
+    { label: '🏡 Ask around for a forever home', variant: 'primary', onClick: () => {
+      const offer = requestRehome();
+      if (offer) processEvents([offer]);
+      else showToast('No horse is settled enough for a forever home yet. Keep caring!', 'alert');
+    } },
+  ];
+  if (price !== null) {
+    buttons.push({ label: `🔨 Build a paddock · €${price}`, onClick: () => {
+      const res = buyPaddock(state);
+      if (res.ok) {
+        showToast(`🎉 Paddock ${res.count} is ready: room for 8 more horses, and a fresh spot to decorate!`);
+        renderAll(state);
+        refreshUI();
+        persist();
+      } else {
+        showToast(`A new paddock costs €${price}. Keep fundraising!`, 'alert');
+      }
+    } });
+  }
+  buttons.push({ label: 'Not now', variant: 'ghost' });
+  enqueueDialog({
+    emoji: '🐴',
+    text: price !== null
+      ? `The rescue is full: every paddock space is taken. Find a thriving horse a forever home, or build a new paddock for ${fig(`€${price}`)}.`
+      : 'The rescue is full: every paddock space is taken. Find a thriving horse a forever home to make room.',
+    buttons,
+  });
+}
 
 document.getElementById('nav-older').addEventListener('click', () => changePaddock(1, state));
 document.getElementById('nav-newer').addEventListener('click', () => changePaddock(-1, state));
@@ -1117,10 +1153,11 @@ document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'hidden') persist();
 });
 
-// The paddock cap is viewport-dependent (fewer horses per paddock on mobile),
-// so crossing that breakpoint -- rotating a phone, resizing a window -- changes
-// how the herd splits. Re-render from the home paddock so the newest arrivals
-// stay in view rather than leaving a stale, half-off-screen layout behind.
+// The number of horses one *view* shows is viewport-dependent (a paddock pages
+// across several views on mobile), so crossing that breakpoint -- rotating a
+// phone, resizing a window -- changes the view strip. Re-render from the home
+// paddock so the newest arrivals stay in view rather than leaving a stale,
+// half-off-screen layout behind.
 window.matchMedia('(max-width: 560px)').addEventListener('change', () => {
   resetPaddockView();
   renderAll(state);

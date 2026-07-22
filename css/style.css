@@ -229,6 +229,17 @@ main {
   transform: translateZ(0);
 }
 
+/* The magical paddock — the free home of the gift horses (unicorn, rainbow,
+   golden pegasus). Same scene layers as .paddock, recoloured to a soft dusk:
+   violet sky, cooler enchanted grass. Toggled by render.js per view. */
+.paddock.magic-paddock {
+  border-color: #cbbcec;
+  background:
+    linear-gradient(#93b98c, #6fa07c) 0 calc(var(--horse-unit) * 0.545) / 100% 100% no-repeat,
+    linear-gradient(#f0e7fb, #f0e7fb) 0 calc(var(--horse-unit) * 0.536) / 100% 2px no-repeat,
+    #e2d5f6;
+}
+
 /* fence: posts + two rails, drawn with layered gradients so it tiles at any
    width. Vertical metrics scale with --horse-unit (ratios from the original
    60/78/16/48px design at a 220px unit) so it shrinks with the horses. */

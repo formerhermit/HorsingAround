@@ -9,7 +9,7 @@ import {
   RESCUE_MILESTONES, REHOME_MILESTONES, DONATE_MILESTONE, SUPPORTER_MILESTONES,
 } from './state.js';
 import { PALETTE_KEYS, isMagicalCoat } from './horse.js';
-import { attractionBonus, shareMultiplier, paddockCap, reclaimOrphanedDecor, SHOP_ITEMS, paddockHasRoomFor } from './shop.js';
+import { attractionBonus, shareMultiplier, PADDOCK_CAP, herdAtCapacity, SHOP_ITEMS, paddockHasRoomFor } from './shop.js';
 
 // ---- tuning ----
 export const CARE_GAIN = 2;          // wellbeing per care click
@@ -295,6 +295,9 @@ const ARRIVAL_FLAVOUR_LIMIT = 3;
  * than Biscuit did. Returns { ok, horse, events }.
  */
 export function rescueHorse() {
+  // Every paddock space taken: like the real rescue, no one else can come in
+  // until a horse finds a forever home (or a new paddock is built).
+  if (herdAtCapacity(gameState)) return { ok: false, horse: null, reason: 'full', events: [] };
   const cost = rescueCost();
   if (gameState.coins < cost) return { ok: false, horse: null, events: [] };
   // Don't send a still-struggling horse to the back row to make space.
@@ -458,8 +461,6 @@ export function acceptRehome() {
     gameState.shop.stock[id] = (gameState.shop.stock[id] ?? 0) + 1;
   }
   horse.wardrobe = [];
-  // The herd just shrank -- a paddock may have vanished; rescue its decor.
-  reclaimOrphanedDecor(gameState);
   schedulePostcard(horse); // a keepsake note will arrive from its new home later
   return { horse, income, leftBehind };
 }
@@ -642,13 +643,17 @@ export function getActiveWant() {
   return activeWant;
 }
 
-// Wants land on horses in the home paddock (the newest paddockCap(), both rows,
-// all visible on the default view) that are content enough to fancy a little
-// luxury. Keying off the whole home chunk (not just the front row) matters:
-// the front row is usually the freshly-rescued scruffy arrivals, while the
-// recovered horses that actually want treats sit just behind them.
+// Wants land on horses in the home paddock (the newest PADDOCK_CAP rescues,
+// both rows) that are content enough to fancy a little luxury. Keying off the
+// whole home paddock (not just the front row) matters: the front row is
+// usually the freshly-rescued scruffy arrivals, while the recovered horses
+// that actually want treats sit just behind them. Magical horses live in
+// their own paddock and are above wanting things.
 function eligibleWantHorses() {
-  return gameState.horses.slice(-paddockCap()).filter((h) => h.wellbeing >= WANT_MIN_WELLBEING);
+  return gameState.horses
+    .filter((h) => !isMagicalCoat(h.paletteKey))
+    .slice(-PADDOCK_CAP)
+    .filter((h) => h.wellbeing >= WANT_MIN_WELLBEING);
 }
 
 /** Advance the little-needs cycle by dt seconds. One want at a time; spawns
@@ -861,6 +866,20 @@ function maybeOfferRehome(dt, events) {
   const income = rehomeIncome();
   pendingRehome = { horseId: horse.id, income };
   events.push({ type: 'rehome-offer', horseName: horse.name, income });
+}
+
+/** Player-initiated rehoming: ask around for a forever home right now (the
+ *  lever offered when the paddocks are full) instead of waiting for the timer.
+ *  Same offer flow as maybeOfferRehome; returns the rehome-offer event to
+ *  process, or null if no horse can be spared / one is already on offer. */
+export function requestRehome() {
+  if (pendingRehome || gameState.horses.length <= REHOME_MIN_HERD) return null;
+  const thriving = gameState.horses.filter((h) => h.wellbeing >= THRIVING_AT && !isMagicalCoat(h.paletteKey));
+  if (!thriving.length) return null;
+  const horse = randomFrom(thriving);
+  const income = rehomeIncome();
+  pendingRehome = { horseId: horse.id, income };
+  return { type: 'rehome-offer', horseName: horse.name, income };
 }
 
 /** Reward + donate milestones for the rescue and rehome counters. Bonuses land
