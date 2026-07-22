@@ -16,7 +16,7 @@ import {
   buyDecorIn, buyWardrobe, placeDecor, removeDecor, placeWardrobe, removeWardrobe,
   hasNewAffordableItem,
 } from './shop.js';
-import { syncOnLoad, pushCloudSave, getCloudUserId, deleteCloudData } from './cloud.js';
+import { syncOnLoad, pullCloudSave, pushCloudSave, getCloudUserId, deleteCloudData } from './cloud.js';
 import { createSaveCode, previewSaveCode, confirmSaveCode } from './saveCode.js';
 import { linkGoogle, signInWithGoogle, isGoogleLinked } from './google.js';
 import {
@@ -153,58 +153,62 @@ function wireDonateButtons() {
 
 wireDonateButtons();
 
-// Cloud sync is a background enhancement, never a blocker on first paint —
-// Biscuit is already on screen and clickable before this resolves.
-syncOnLoad().then((adopted) => {
-  if (adopted) {
-    resetPaddockView();
-    renderAll(state);
-    save();
-  }
-  // Whichever save won, make sure its leaderboard row is current (and rolled
-  // over to the right month) once the session exists.
-  pushScore();
-  // Returning from a Google redirect. "linked" is the default action for the
-  // one Google button -- if it failed, the near-universal reason is that this
-  // Google account already has a save of its own elsewhere, so offer the
-  // explicit switch rather than silently doing anything with what's here.
-  // A successful link never changes local state (same account, same save),
-  // so it's just a toast. "signin" is that explicit switch completing --
-  // reconciliation above may have just adopted the other account's save.
-  if (googleReturn === 'linked') {
-    if (googleError) {
-      openSync().then(() => { document.getElementById('google-conflict').hidden = false; });
-    } else {
-      showToast('Google connected — this save can follow you now 💛', 'ok');
-    }
-  } else if (googleReturn === 'signin') {
+// "Load other save" and "Keep this game" both already know exactly what
+// should happen to the save -- force-load the other account's, or
+// force-overwrite it -- so neither goes through syncOnLoad()'s "whichever was
+// saved more recently wins" reconciliation. That heuristic is wrong for an
+// explicit load/save action: the local device is usually the one being
+// actively played, so its fresh timestamp would routinely "win" and silently
+// keep the local game (or even push it up over the other account's save)
+// instead of doing what was asked. A session already exists by the time this
+// runs -- the OAuth redirect itself established it -- so neither path needs
+// syncOnLoad() for that either.
+if (googleReturn === 'signin') {
+  pullCloudSave().then((adopted) => {
+    if (adopted) { resetPaddockView(); renderAll(state); save(); }
+    pushScore();
     showToast(adopted ? 'Welcome back! Your Google save is here 💛' : 'Signed in with Google 💛', 'ok');
-  } else if (googleReturn === 'override') {
-    // "Keep my progress instead": we're now signed in as the OTHER account
-    // (reconciliation above already adopted its save) -- overwrite that with
-    // what was stashed before the redirect, then push it up so the cloud
-    // agrees. If the stash is missing (e.g. a stale/replayed URL), there's
-    // nothing to restore; just report the plain sign-in.
-    const stashed = localStorage.getItem(OVERRIDE_STASH_KEY);
-    localStorage.removeItem(OVERRIDE_STASH_KEY);
-    if (stashed) {
-      try {
-        adoptCloudState(JSON.parse(stashed));
-        resetPaddockView();
-        renderAll(state);
-        save();
-        pushCloudSave();
-        pushScore();
-        showToast('Your progress is now saved to this Google account 💛', 'ok');
-      } catch (err) {
-        console.warn('Could not restore the stashed save after overriding:', err);
-        showToast('Signed in with Google, but restoring your other progress failed — sorry!', 'alert');
-      }
-    } else {
-      showToast('Signed in with Google 💛', 'ok');
+  });
+} else if (googleReturn === 'override') {
+  const stashed = localStorage.getItem(OVERRIDE_STASH_KEY);
+  localStorage.removeItem(OVERRIDE_STASH_KEY);
+  if (stashed) {
+    try {
+      adoptCloudState(JSON.parse(stashed));
+      resetPaddockView();
+      renderAll(state);
+      save();
+      pushCloudSave();
+      pushScore();
+      showToast('Your progress is now saved to this Google account 💛', 'ok');
+    } catch (err) {
+      console.warn('Could not restore the stashed save after overriding:', err);
+      showToast('Signed in with Google, but restoring your other progress failed — sorry!', 'alert');
     }
+  } else {
+    showToast('Signed in with Google 💛', 'ok');
   }
-});
+} else {
+  // Cloud sync is a background enhancement, never a blocker on first paint —
+  // Biscuit is already on screen and clickable before this resolves. This is
+  // the normal path (including a successful Google *link*, which never
+  // changes which account owns the save, so the usual reconciliation is fine).
+  syncOnLoad().then((adopted) => {
+    if (adopted) {
+      resetPaddockView();
+      renderAll(state);
+      save();
+    }
+    pushScore();
+    if (googleReturn === 'linked') {
+      if (googleError) {
+        openSync().then(() => { document.getElementById('google-conflict').hidden = false; });
+      } else {
+        showToast('Google connected — this save can follow you now 💛', 'ok');
+      }
+    }
+  });
+}
 
 // ---- input: click (or Enter/Space) on a horse = one care action ----
 
