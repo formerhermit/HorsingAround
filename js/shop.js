@@ -48,7 +48,11 @@ export const FENCE_DECOR_IDS = new Set(['flower-garland', 'bunting']);
 export const STACKABLE_IDS = FENCE_DECOR_IDS;
 
 // Ground/ambient props a single paddock can hold, beyond the fence-line decor.
-export const MAX_EXTRA_DECOR = 3;
+// Props keep their fixed sizes and simply spread across the row (render.js), so
+// a fuller paddock packs the space rather than shrinking anything. At 5, every
+// ground item and statue in the game can be placed across the buildable
+// paddocks plus the magical one.
+export const MAX_EXTRA_DECOR = 5;
 
 // Items that compete for a single slot on a target: a paddock flies the flower
 // garland OR the bunting, a horse wears the ear flower OR the forelock bow --
