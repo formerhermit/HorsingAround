@@ -180,9 +180,40 @@
 
   <div class="confetti-layer" id="confetti" aria-hidden="true"></div>
 
+  <div class="album-overlay" id="privacy-overlay" hidden>
+    <div class="album-modal" id="privacy-modal" role="dialog" aria-modal="true" aria-labelledby="privacy-title">
+      <div class="shop-header">
+        <h2 id="privacy-title">Game privacy</h2>
+        <div class="header-actions">
+          <button class="shop-close" id="privacy-close" aria-label="Close game privacy">×</button>
+        </div>
+      </div>
+      <p class="shop-intro">The short version: this game stores very little about you.</p>
+      <ul class="privacy-list">
+        <li>Your progress is saved <strong>in this browser</strong>, plus an anonymous cloud
+          copy (held with Supabase in the EU, in Stockholm). This is so that if you lose
+          your device, you don't lose your game completely. We do not save your name or
+          other data: just a random player ID.</li>
+        <li><strong>No ads, no tracking, no analytics.</strong> Nothing is sold or shared.</li>
+        <li>Donations happen on <strong>Donorbox's own site</strong> in a new tab. The game
+          never sees your payment details.</li>
+        <li>The share buttons open your own social apps. Nothing from those companies is
+          embedded in this page.</li>
+        <li>The button below deletes your save from this device <strong>and</strong> from
+          the cloud. There is no undo.</li>
+        <li>This game is not directed at children under 14.</li>
+      </ul>
+      <button class="privacy-delete" id="privacy-delete">Delete my save and cloud data</button>
+      <p class="privacy-meta">Your anonymous player ID: <code id="privacy-player-id">…</code></p>
+      <p class="privacy-meta">Questions:
+        <a href="https://github.com/formerhermit/HorsingAround/issues" target="_blank" rel="noopener">open an issue on GitHub</a>.</p>
+    </div>
+  </div>
+
   <footer class="credit">
     Inspired by <a href="https://www.horserescuespain.org/" target="_blank" rel="noopener"><strong>ARCH</strong>
     — the Andalucian Rescue Centre for Horses</a>, a volunteer-run equine rescue charity near Málaga, Spain.
+    · <button class="credit-link" id="privacy-link" aria-haspopup="dialog" aria-controls="privacy-modal">Game privacy</button>
   </footer>
 
   <script type="module" src="js/main.js"></script>

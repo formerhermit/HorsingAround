@@ -31,12 +31,26 @@ create policy "update own save"
   using (auth.uid() = user_id);
 
 /*
+  Self-service erasure: the privacy popup's "delete everything" button removes
+  the player's own saves row directly from the browser. (The anonymous
+  auth.users row itself can only be deleted with the service-role key -- it
+  holds no personal data, just a UUID, so orphaning it is acceptable until
+  email linking exists and an Edge Function takes over full deletion.)
+
+  If your project predates this policy, run these two statements in the SQL
+  editor to enable the delete button.
+*/
+create policy "delete own save"
+  on public.saves for delete
+  using (auth.uid() = user_id);
+
+/*
   Explicit table-level grant, independent of the project's "Automatically
   expose new tables" setting, and works whether that's left on or (per
   Supabase's own recommendation) switched off. RLS above still governs
   which rows are actually reachable.
 */
-grant select, insert, update on public.saves to authenticated;
+grant select, insert, update, delete on public.saves to authenticated;
 
 /*
   Also let the plain (unauthenticated) anon role run a select -- needed so

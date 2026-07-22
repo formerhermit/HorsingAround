@@ -1,6 +1,6 @@
 // main.js — boot the game: load state, render, wire input and persistence.
 
-import { initState, save, gameState, DONATE_MILESTONE } from './state.js';
+import { initState, save, gameState, DONATE_MILESTONE, SAVE_KEY, disableSaving } from './state.js';
 import { careFor, tick, rescueHorse, shareUpdate, rescueCost, acceptRehome, declineRehome, collectOfflineEarnings, collectDuePostcards, collectDueStatues, markPostcardsRead, fulfilWant, grantUnicorn, hasUnicorn } from './game.js';
 import {
   renderAll, renderHUD, renderActions, updateHorseCard,
@@ -15,7 +15,7 @@ import {
   buyDecorIn, buyWardrobe, placeDecor, removeDecor, placeWardrobe, removeWardrobe,
   hasNewAffordableItem,
 } from './shop.js';
-import { syncOnLoad, pushCloudSave } from './cloud.js';
+import { syncOnLoad, pushCloudSave, getCloudUserId, deleteCloudData } from './cloud.js';
 import { initShare } from './share.js';
 import './audio.js';
 
@@ -496,6 +496,65 @@ document.addEventListener('keydown', (event) => {
   if (!document.getElementById('shop-overlay').hidden) closeShop();
   if (!document.getElementById('album-overlay').hidden) closePostcardAlbum();
   if (!document.getElementById('collection-overlay').hidden) closeCollection();
+  if (!document.getElementById('privacy-overlay').hidden) closePrivacy();
+});
+
+// ---- privacy popup ----
+// NOTE: this popup is the game's privacy notice. Any feature that changes what
+// data is collected, stored, or shown publicly (email linking, leaderboard,
+// analytics, ...) must update its copy in the same change.
+
+function closePrivacy() {
+  document.getElementById('privacy-overlay').hidden = true;
+}
+document.getElementById('privacy-link').addEventListener('click', async () => {
+  document.getElementById('privacy-overlay').hidden = false;
+  // Fill in the anonymous cloud id so a player can quote it in a deletion
+  // request; resolves after the popup is already up, so no waiting.
+  const id = await getCloudUserId();
+  document.getElementById('privacy-player-id').textContent =
+    id ?? 'none: playing locally in this browser only';
+});
+document.getElementById('privacy-close').addEventListener('click', closePrivacy);
+document.getElementById('privacy-overlay').addEventListener('click', (event) => {
+  if (event.target.id === 'privacy-overlay') closePrivacy();
+});
+
+// Self-service erasure: two taps (the button re-labels itself as the confirm
+// step, and disarms after a few seconds), then cloud row + local save are
+// wiped and the page reloads into a fresh game. If the cloud half fails, say
+// so and delete nothing -- a half-truthful "all gone" would be worse than an
+// error.
+const deleteBtn = document.getElementById('privacy-delete');
+const DELETE_LABEL = deleteBtn.textContent;
+let deleteArmedTimer = null;
+deleteBtn.addEventListener('click', async () => {
+  if (!deleteArmedTimer) {
+    deleteBtn.textContent = 'Really delete everything? Tap again';
+    deleteBtn.classList.add('is-armed');
+    deleteArmedTimer = setTimeout(() => {
+      deleteArmedTimer = null;
+      deleteBtn.textContent = DELETE_LABEL;
+      deleteBtn.classList.remove('is-armed');
+    }, 6000);
+    return;
+  }
+  clearTimeout(deleteArmedTimer);
+  deleteBtn.disabled = true;
+  deleteBtn.textContent = 'Deleting…';
+  const cloudGone = await deleteCloudData();
+  if (!cloudGone) {
+    deleteBtn.disabled = false;
+    deleteArmedTimer = null;
+    deleteBtn.textContent = 'Couldn’t reach the cloud, nothing deleted. Try again?';
+    deleteBtn.classList.remove('is-armed');
+    return;
+  }
+  // The beforeunload/visibilitychange handlers fire during the reload and
+  // would write the save straight back -- shut saving off before wiping.
+  disableSaving();
+  localStorage.removeItem(SAVE_KEY);
+  location.replace(location.pathname);
 });
 
 // ---- postcard album ----
