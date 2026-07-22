@@ -10,6 +10,10 @@ import {
 } from './state.js';
 import { PALETTE_KEYS, isMagicalCoat } from './horse.js';
 import { attractionBonus, shareMultiplier, PADDOCK_CAP, herdAtCapacity, SHOP_ITEMS, paddockHasRoomFor } from './shop.js';
+import {
+  TRAITS, QUIRK_TRAITS, TRAIT_INFO, isFearTrait, FEAR_OVERCOME_AT,
+  FEAR_CARE_MESSAGES, FEAR_CRIT_MESSAGES,
+} from './traits.js';
 
 // ---- tuning ----
 export const CARE_GAIN = 2;          // wellbeing per care click
@@ -131,38 +135,14 @@ const HORSE_NAMES = [
   'Pipples', 'Boo',
 ];
 
-// Silly-as-seasoning personality traits. Phrased to follow "<name> is ...".
-const TRAITS = [
-  'afraid of buckets',
-  'dramatic about puddles',
-  'prone to falling asleep on your foot',
-  'obsessed with the hose',
-  'suspicious of butterflies',
-  'a dedicated shoelace-nibbler',
-  'very protective of the hay',
-  'convinced the wheelbarrow is a rival',
-  'a secret carrot hoarder',
-  'convinced apples grow specifically for them',
-  'unreasonably picky about hay quality',
-  'willing to trade dignity for a mint',
-  'terrified of plastic bags',
-  'deeply suspicious of umbrellas',
-  'nervous around anything shiny',
-  'unsettled by their own shadow at dusk',
-  'wary of the sound of velcro',
-  'the self-appointed paddock lookout',
-  'a shameless attention hog',
-  'oddly formal with new arrivals',
-  'fiercely loyal to whoever groomed them first',
-  'the gossip, always leaning over the fence',
-  'vain about their mane',
-  'ticklish behind the ears',
-  'an enthusiastic napper',
-  'stubborn about literally everything',
-  'convinced every fence post is new',
-  'allergic to being told what to do',
-  'nosy about anything in your pockets',
-];
+// Personality traits (quirks and fears, with their mechanics) live in
+// traits.js; horse.trait stores the plain text, phrased to follow "<name> is".
+
+// How often a care tap on a revealed quirk lands as that horse's own delighted
+// "trait moment" (crit-sized gain, bespoke copy) instead of generic flavour.
+const TRAIT_MOMENT_CHANCE = 0.18;
+// Supporters who hear about a fear horse's breakthrough and start following.
+const FEAR_BREAKTHROUGH_SUPPORTERS = 5;
 
 // Flavour shown as a floating pop next to the horse on each click.
 // Deliberately money-free: in phase 1 care is time and kindness, not budget.
@@ -209,8 +189,18 @@ export function careFor(horse) {
   // A thriving horse can't recover further, but clicking it should still feel
   // alive — a watching supporter can still leave a tip (rolled below).
   const maxed = horse.wellbeing >= WELLBEING_MAX;
+  const info = TRAIT_INFO[horse.trait];
+  // A still-nervous fear horse below the reveal threshold gets the
+  // trust-building copy instead of brushes and carrots. Same gain, always:
+  // fear changes the texture of care, never its speed.
+  const trustPhase = info?.kind === 'fear' && !horse.fearOvercome && horse.wellbeing < TRAIT_REVEAL_AT;
   const crit = !maxed && Math.random() < CRIT_CHANCE;
-  const gain = maxed ? 0 : (crit ? CRIT_GAIN : CARE_GAIN);
+  // A revealed quirk sometimes turns an ordinary tap into that horse's own
+  // delighted moment: crit-sized gain, bespoke copy (the carrot for the
+  // hoarder, the ear scratch for the ticklish one).
+  const traitMoment = !maxed && !crit && info?.kind === 'quirk' && info.moment
+    && horse.wellbeing >= TRAIT_REVEAL_AT && Math.random() < TRAIT_MOMENT_CHANCE;
+  const gain = maxed ? 0 : (crit || traitMoment ? CRIT_GAIN : CARE_GAIN);
   // Captured before the first-supporter unlock flips it: the click that first
   // unlocks the money side shouldn't also roll a tip on the same tap.
   const moneyUnlocked = gameState.unlocks.moneyUI;
@@ -222,19 +212,26 @@ export function careFor(horse) {
   const events = [];
   // Personality emerges as a horse recovers enough to relax. Assign one here
   // if the horse doesn't have it yet (Biscuit starts without one) so this beat
-  // lands early, well before the donation/rescue/sponsor beats.
+  // lands early, well before the donation/rescue/sponsor beats. Biscuit draws
+  // from the quirk pool only: fears belong to rescues, whose arrival copy
+  // introduces them properly.
   if (before < TRAIT_REVEAL_AT && horse.wellbeing >= TRAIT_REVEAL_AT) {
-    horse.trait ??= randomUnused(TRAITS, gameState.horses.map((h) => h.trait).filter(Boolean));
+    horse.trait ??= randomUnused(QUIRK_TRAITS, gameState.horses.map((h) => h.trait).filter(Boolean));
     // The first couple of these introduce the mechanic in full; after that the
     // "starting to relax" preamble just repeats, so trim to the punchline.
+    // A fear horse's fear was visible from arrival, so its beat is about the
+    // trust built so far rather than a reveal.
     const shown = gameState.stats.traitsRevealed ?? 0;
     gameState.stats.traitsRevealed = shown + 1;
-    events.push({
-      type: 'trait',
-      message: shown < 2
-        ? `${horse.name} is starting to relax — turns out ${horse.name} is ${horse.trait} 🐴`
-        : `Turns out ${horse.name} is ${horse.trait} 🐴`,
-    });
+    let message;
+    if (isFearTrait(horse.trait)) {
+      message = `${horse.name} is starting to relax around you, though still ${horse.trait} 🐴`;
+    } else if (shown < 2) {
+      message = `${horse.name} is starting to relax — turns out ${horse.name} is ${horse.trait} 🐴`;
+    } else {
+      message = `Turns out ${horse.name} is ${horse.trait} 🐴`;
+    }
+    events.push({ type: 'trait', message });
   }
   // First supporter: someone notices a horse doing well, money UI unlocks.
   if (!gameState.unlocks.moneyUI && horse.wellbeing >= CONTENT_AT) {
@@ -259,11 +256,18 @@ export function careFor(horse) {
     tip = { amount, supporter: randomFrom(SUPPORTER_NAMES) };
   }
 
-  const message = maxed
-    ? `${horse.name} is thriving ♥`
-    : (crit ? randomFrom(CRIT_MESSAGES) : randomFrom(CARE_MESSAGES));
+  let message;
+  if (maxed) {
+    message = `${horse.name} is thriving ♥`;
+  } else if (traitMoment) {
+    message = info.moment;
+  } else if (crit) {
+    message = randomFrom(trustPhase ? FEAR_CRIT_MESSAGES : CRIT_MESSAGES);
+  } else {
+    message = randomFrom(trustPhase ? FEAR_CARE_MESSAGES : CARE_MESSAGES);
+  }
 
-  return { gain, crit, message, tip, events };
+  return { gain, crit: crit || traitMoment, message, tip, events };
 }
 
 /** € one *full-charge* shared update brings in at current supporter count. A
@@ -372,8 +376,13 @@ export function rescueHorse() {
   // to get how many rescues have arrived so far.
   const arrivalNo = gameState.stats.horsesRescued - 1;
   let message;
+  const fearInfo = isFearTrait(horse.trait) ? TRAIT_INFO[horse.trait] : null;
   if (rareLabel) {
     message = `✨ ${name} arrives, thin and wary, but look closer: a rare ${rareLabel}! What a treasure 🌟`;
+  } else if (fearInfo) {
+    // A fear is visible from the moment a horse arrives — this line is how the
+    // player meets it, so it always gets said, however many rescues in.
+    message = `${name} arrives: thin, wary, and ${fearInfo.arrival}. Time to get to work 🐴`;
   } else if (arrivalNo <= ARRIVAL_FLAVOUR_LIMIT) {
     message = `${name} arrives: thin, wary, and keeping to the far end of the paddock. Time to get to work 🐴`;
   } else {
@@ -550,6 +559,13 @@ const POSTCARD_TEMPLATES_NOTRAIT = [
   '{name} has settled right in with {adopter}, and could not be happier 💛',
   'A little note to say {name} is thriving with {adopter}. Thank you for everything 🐴',
 ];
+// For a fear horse whose breakthrough happened before it left: the warmest
+// lines in the game, because "still {trait}" would sell its bravery short.
+const POSTCARD_TEMPLATES_BRAVE = [
+  '{name} has settled right in with {adopter}. And guess what: not {trait} anymore, thanks to you 💛',
+  'A little note to say {name} is thriving with {adopter}. And after everything, not {trait} these days 🐴',
+  '{name} sends a happy nicker from their new home with {adopter}. Braver than ever: not {trait} anymore 💛',
+];
 
 function weightedPick(buckets) {
   const total = buckets.reduce((sum, b) => sum + b.weight, 0);
@@ -568,7 +584,9 @@ function schedulePostcard(horse) {
   const bucket = weightedPick(POSTCARD_BUCKETS);
   const delaySec = randomBetween(bucket.min, bucket.max);
   const adopter = randomFrom(ADOPTERS);
-  const templates = horse.trait ? POSTCARD_TEMPLATES : POSTCARD_TEMPLATES_NOTRAIT;
+  const overcameFear = isFearTrait(horse.trait) && horse.fearOvercome;
+  const templates = overcameFear ? POSTCARD_TEMPLATES_BRAVE
+    : horse.trait ? POSTCARD_TEMPLATES : POSTCARD_TEMPLATES_NOTRAIT;
   const message = randomFrom(templates)
     .replaceAll('{name}', horse.name)
     .replaceAll('{adopter}', adopter)
@@ -658,6 +676,7 @@ export function collectDueStatues(state = gameState) {
 // short attraction glow. Ignoring a want never hurts the horse: it just fades
 // untended and the reward goes uncollected. Gentle by design: one want at a
 // time, spaced out, and only on horses already doing well.
+const WANT_TRAIT_BIAS = 0.6;      // chance a quirk's linked need is the one asked for
 const WANT_MIN_GAP = 60;          // seconds between wants, once none is active
 const WANT_MAX_GAP = 150;
 const WANT_TTL = 60;              // a want fades if untended this long
@@ -700,7 +719,10 @@ function eligibleWantHorses() {
   return gameState.horses
     .filter((h) => !isMagicalCoat(h.paletteKey))
     .slice(-PADDOCK_CAP)
-    .filter((h) => h.wellbeing >= WANT_MIN_WELLBEING);
+    .filter((h) => h.wellbeing >= WANT_MIN_WELLBEING)
+    // A horse still working through its fear isn't fancying little luxuries
+    // yet; wants start once the breakthrough lands.
+    .filter((h) => !(isFearTrait(h.trait) && !h.fearOvercome));
 }
 
 /** Advance the little-needs cycle by dt seconds. One want at a time; spawns
@@ -723,9 +745,16 @@ function updateWants(dt, now) {
     return;
   }
   wantCountdown = randomBetween(WANT_MIN_GAP, WANT_MAX_GAP);
+  // The carrot hoarder mostly wants carrots: a quirk with a linked need leans
+  // the bubble that way, with the usual variety the rest of the time.
+  const horse = randomFrom(candidates);
+  const biasedNeed = TRAIT_INFO[horse.trait]?.want;
+  const need = (biasedNeed && Math.random() < WANT_TRAIT_BIAS)
+    ? NEEDS.find((n) => n.id === biasedNeed) ?? randomFrom(NEEDS)
+    : randomFrom(NEEDS);
   activeWant = {
-    horseId: randomFrom(candidates).id,
-    need: randomFrom(NEEDS),
+    horseId: horse.id,
+    need,
     expiresAt: now + WANT_TTL * 1000,
   };
 }
@@ -1008,6 +1037,24 @@ export function tick(dt) {
         pendingSponsors.push({ supporter: horse.sponsor, horseName: horse.name });
       }
     }
+  }
+
+  // A fear horse recovered past the threshold has its breakthrough: the day it
+  // walks right past the thing that scared it. Checked here (like sponsors) so
+  // every path up counts — care taps, the vet topping a horse to 100, all of
+  // it. Fires once per horse; the story fills the share meter on the spot,
+  // because a recovery like this is exactly what you'd post.
+  for (const horse of gameState.horses) {
+    const traitInfo = TRAIT_INFO[horse.trait];
+    if (traitInfo?.kind !== 'fear' || horse.fearOvercome || horse.wellbeing < FEAR_OVERCOME_AT) continue;
+    horse.fearOvercome = true;
+    gameState.supporters += FEAR_BREAKTHROUGH_SUPPORTERS;
+    gameState.lastSharedAt = 0; // share meter: instantly full
+    events.push({
+      type: 'breakthrough',
+      supporters: FEAR_BREAKTHROUGH_SUPPORTERS,
+      message: `💛 ${horse.name} ${traitInfo.breakthrough}. Not scared anymore!`,
+    });
   }
 
   sponsorToastCooldown = Math.max(0, sponsorToastCooldown - dt);

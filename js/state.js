@@ -3,6 +3,7 @@
 
 import { SHOP_ITEMS, STACKABLE_IDS, PADDOCK_CAP, reclaimOrphanedDecor } from './shop.js';
 import { isMagicalCoat } from './horse.js';
+import { isFearTrait, FEAR_OVERCOME_AT } from './traits.js';
 
 export const SAVE_KEY = 'horsing-around:save';
 export const SAVE_VERSION = 1;
@@ -45,6 +46,7 @@ export function createHorse({
     wellbeing,
     rescueOrder,
     trait,
+    fearOvercome: false, // fear-trait horses: whether the breakthrough beat has fired
     cosmetics: [],     // cosmetic ids, e.g. 'halter-red', 'flower' (phase 3)
     sponsor: null,     // supporter name once the horse reaches thriving; permanent income
     real,
@@ -239,6 +241,10 @@ function repair(save) {
     // Upkeep drift is new: date existing horses' care from this load, so an
     // updated save gets its grace period rather than an instant ease-down.
     horse.lastCaredAt ??= Date.now();
+    // The fear-breakthrough arc is new: a fear horse already recovered past
+    // the threshold did its overcoming off-screen, so mark it quietly rather
+    // than greeting a returning player with a flood of retroactive beats.
+    horse.fearOvercome ??= isFearTrait(horse.trait) && horse.wellbeing >= FEAR_OVERCOME_AT;
     // Joya is now reserved for the dog decor item; rename any horse
     if (horse.name === 'Joya') horse.name = 'Billy';
     if (horse.name === 'Pantoja 2' || horse.name === 'Panjota 2') horse.name = 'Binky';
