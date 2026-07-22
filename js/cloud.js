@@ -65,6 +65,19 @@ export async function syncOnLoad() {
   }
 }
 
+/** The anonymous player's cloud identity, for the privacy popup (so a player
+ *  can quote it in a deletion request). Null when not configured / no session. */
+export async function getCloudUserId() {
+  if (!isConfigured()) return null;
+  try {
+    const client = await getClient();
+    const { data: { session } } = await client.auth.getSession();
+    return session?.user.id ?? null;
+  } catch {
+    return null;
+  }
+}
+
 /** Push the current gameState to the cloud. Fire-and-forget; safe to call
  *  before a session exists (e.g. mid-boot) — it just no-ops until one does. */
 export async function pushCloudSave() {

@@ -15,7 +15,7 @@ import {
   buyDecorIn, buyWardrobe, placeDecor, removeDecor, placeWardrobe, removeWardrobe,
   hasNewAffordableItem,
 } from './shop.js';
-import { syncOnLoad, pushCloudSave } from './cloud.js';
+import { syncOnLoad, pushCloudSave, getCloudUserId } from './cloud.js';
 import { initShare } from './share.js';
 import './audio.js';
 
@@ -496,6 +496,28 @@ document.addEventListener('keydown', (event) => {
   if (!document.getElementById('shop-overlay').hidden) closeShop();
   if (!document.getElementById('album-overlay').hidden) closePostcardAlbum();
   if (!document.getElementById('collection-overlay').hidden) closeCollection();
+  if (!document.getElementById('privacy-overlay').hidden) closePrivacy();
+});
+
+// ---- privacy popup ----
+// NOTE: this popup is the game's privacy notice. Any feature that changes what
+// data is collected, stored, or shown publicly (email linking, leaderboard,
+// analytics, ...) must update its copy in the same change.
+
+function closePrivacy() {
+  document.getElementById('privacy-overlay').hidden = true;
+}
+document.getElementById('privacy-link').addEventListener('click', async () => {
+  document.getElementById('privacy-overlay').hidden = false;
+  // Fill in the anonymous cloud id so a player can quote it in a deletion
+  // request; resolves after the popup is already up, so no waiting.
+  const id = await getCloudUserId();
+  document.getElementById('privacy-player-id').textContent =
+    id ?? 'none: playing locally in this browser only';
+});
+document.getElementById('privacy-close').addEventListener('click', closePrivacy);
+document.getElementById('privacy-overlay').addEventListener('click', (event) => {
+  if (event.target.id === 'privacy-overlay') closePrivacy();
 });
 
 // ---- postcard album ----
