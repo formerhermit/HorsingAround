@@ -596,6 +596,12 @@ function handleEvent(e) {
       text: `Visitors Day! ${fig(e.visitors)} people came to meet the horses, and entry donations raised ${fig(`€${Math.round(e.income)}`)} for the rescue 💛${followers}`,
       buttons: [{ label: 'Wonderful!', variant: 'primary' }],
     });
+  } else if (e.type === 'breakthrough') {
+    // A fear horse's big day: the toast tells the story, the supporter pop
+    // shows who it reached, and refreshUI (via processEvents) lights up the
+    // freshly-filled share meter.
+    showToast(e.message);
+    showSupporterPop(e.supporters);
   } else if (e.type === 'supporter-quiet') {
     showSupporterPop(e.count); // subtle chip pop, not a toast
   } else if (e.type === 'supporter-milestone') {
