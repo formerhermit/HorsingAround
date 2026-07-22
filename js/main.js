@@ -520,6 +520,17 @@ document.getElementById('privacy-overlay').addEventListener('click', (event) => 
   if (event.target.id === 'privacy-overlay') closePrivacy();
 });
 
+// Data portability: hand the player their whole save as a JSON download.
+document.getElementById('privacy-export').addEventListener('click', () => {
+  const blob = new Blob([JSON.stringify(gameState, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `horsing-around-save-${new Date().toISOString().slice(0, 10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
 // Self-service erasure: two taps (the button re-labels itself as the confirm
 // step, and disarms after a few seconds), then cloud row + local save are
 // wiped and the page reloads into a fresh game. If the cloud half fails, say

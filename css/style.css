@@ -1802,11 +1802,32 @@ main {
   margin-top: 0.5rem;
 }
 
+.privacy-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0.9rem 0 0.75rem;
+}
+
+/* Neutral action: download reads like the shop's quiet buttons. */
+.privacy-export {
+  padding: 0.45rem 0.9rem;
+  font: inherit;
+  font-size: 0.85rem;
+  color: #5d5344;
+  background: #faf6ee;
+  border: 1px solid #d8c39a;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.privacy-export:hover {
+  background: #f5efe1;
+}
+
 /* Quiet danger button: present but not inviting, and it announces itself
    again (via .is-armed) before actually deleting anything. */
 .privacy-delete {
-  display: block;
-  margin: 0.9rem 0 0.75rem;
   padding: 0.45rem 0.9rem;
   font: inherit;
   font-size: 0.85rem;
