@@ -785,6 +785,48 @@ main {
   background: #5f7d42;
 }
 
+/* Just shared: the button rests while the meter starts refilling. Stays green
+   (a cooldown, not "can't afford") — only dimmed, so it reads as catching
+   its breath rather than broken. */
+.action-btn.share:disabled {
+  background: #93a87c;
+  color: #f1f5e8;
+  box-shadow: 0 3px 8px rgba(61, 52, 40, 0.12);
+}
+
+/* The charge line: fills over SHARE_CHARGE_TIME; payout scales with it. */
+.share-meter {
+  width: 100%;
+  height: 5px;
+  margin-top: 0.25rem;
+  border-radius: 3px;
+  background: rgba(255, 253, 247, 0.35);
+  overflow: hidden;
+}
+
+.share-meter-fill {
+  display: block;
+  height: 100%;
+  width: 0;
+  border-radius: 3px;
+  background: #fffdf7;
+  transition: width 1s linear; /* smooths the once-a-second tick updates */
+}
+
+/* Fully charged: the line turns golden and the button glows an invitation. */
+.action-btn.share.ready .share-meter-fill {
+  background: #f7cd3a;
+}
+
+.action-btn.share.ready {
+  animation: share-ready-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes share-ready-pulse {
+  0%, 100% { box-shadow: 0 3px 8px rgba(61, 52, 40, 0.18); }
+  50% { box-shadow: 0 3px 16px rgba(247, 205, 58, 0.6); }
+}
+
 .money-pop {
   position: absolute;
   top: 0;

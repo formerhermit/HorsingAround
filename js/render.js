@@ -1,7 +1,7 @@
 // render.js — turns gameState into DOM. No game logic lives here.
 
 import { horseFigureHTML, horseImageSrc, wellbeingLabel, wellbeingColor, isShinyCoat, isMagicalCoat, COAT_CATALOG } from './horse.js';
-import { rescueCost, shareValue, FRONT_ROW, getActiveWant } from './game.js';
+import { rescueCost, shareValue, shareCharge, SHARE_READY_AT, FRONT_ROW, getActiveWant } from './game.js';
 import {
   SHOP_ITEMS, isUnlocked, isAffordable, hasNewAffordableItem,
   PADDOCK_CAP, MAGIC_PADDOCK, paddockCount, decorTargets, herdAtCapacity, paddockDecor,
@@ -47,7 +47,9 @@ export function renderActions(state) {
   bar.hidden = !state.unlocks.moneyUI;
   if (bar.hidden) return;
 
-  // Share an update: the active fundraising click.
+  // Share an update: the active fundraising click. The button charges up over
+  // time (a filling line) and the payout scales with the charge, so the label
+  // counts up as it fills and the button rests briefly right after a share.
   let share = bar.querySelector('#share-btn');
   if (!share) {
     share = document.createElement('button');
@@ -55,11 +57,18 @@ export function renderActions(state) {
     share.className = 'action-btn share';
     share.innerHTML = `
       <span class="action-title">📣 Share an update</span>
-      <span class="action-cost"></span>`;
+      <span class="action-cost"></span>
+      <span class="share-meter"><span class="share-meter-fill"></span></span>`;
     bar.appendChild(share);
   }
-  share.querySelector('.action-cost').textContent =
-    `+€${shareValue(state).toFixed(2)} from supporters`;
+  const charge = shareCharge(state);
+  const ready = charge >= 1;
+  share.disabled = charge < SHARE_READY_AT;
+  share.classList.toggle('ready', ready);
+  share.querySelector('.share-meter-fill').style.width = `${(charge * 100).toFixed(1)}%`;
+  share.querySelector('.action-cost').textContent = ready
+    ? `+€${shareValue(state).toFixed(2)} from supporters`
+    : `charging… +€${(shareValue(state) * charge).toFixed(2)}`;
 
   // Rescue: appears with the loneliness beat.
   let rescue = bar.querySelector('#rescue-btn');
@@ -977,7 +986,7 @@ export function showDialog({ emoji = '', text, buttons = [], confetti = false, s
 const CONFETTI_COLORS = ['#F2A6C6', '#F5D949', '#8FC0E8', '#A6D8A0', '#E8917A', '#b0823f'];
 
 /** A one-off confetti burst from the top-centre of the screen. */
-function burstConfetti() {
+export function burstConfetti() {
   const layer = document.getElementById('confetti');
   if (!layer) return;
   for (let i = 0; i < 70; i++) {

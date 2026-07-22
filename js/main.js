@@ -4,7 +4,7 @@ import { initState, save, gameState, adoptCloudState, DONATE_MILESTONE, SAVE_KEY
 import { careFor, tick, rescueHorse, shareUpdate, rescueCost, acceptRehome, declineRehome, requestRehome, collectOfflineEarnings, collectDuePostcards, collectDueStatues, markPostcardsRead, fulfilWant, grantUnicorn, hasUnicorn } from './game.js';
 import {
   renderAll, renderHUD, renderActions, updateHorseCard,
-  showCareFeedback, showTipPop, showToast, showMoneyPop, showSupporterPop, changePaddock, resetPaddockView,
+  showCareFeedback, showTipPop, showToast, showMoneyPop, showSupporterPop, burstConfetti, changePaddock, resetPaddockView,
   showNudgePopup, hideNudgePopup, showDialog,
   renderShopButton, openShopModal, closeShopModal, renderShopModal, shopDecorPaddock, shopWardrobeHorse,
   renderPostcardButton, openPostcardAlbum, closePostcardAlbum,
@@ -566,13 +566,20 @@ horsesEl.addEventListener('click', (event) => {
 
 document.getElementById('actions').addEventListener('click', (event) => {
   if (event.target.closest('#share-btn')) {
-    const { amount } = shareUpdate();
-    showMoneyPop(amount);
+    const result = shareUpdate();
+    if (!result) return; // still recharging (the button should be disabled anyway)
+    showMoneyPop(result.amount);
+    if (result.viral) {
+      // A full-charge share took off: celebrate the jackpot and its new crowd.
+      burstConfetti();
+      showSupporterPop(result.newSupporters);
+      showToast(`🚀 Your update went viral! €${result.amount.toFixed(2)} raised and ${result.newSupporters} new followers 💛`);
+    }
     if (!state.milestones.hasSharedUpdate) {
       state.milestones.hasSharedUpdate = true;
       save();
     }
-    refreshUI(); // dismisses the share nudge, then surfaces the shop nudge
+    refreshUI(); // empties the charge meter; dismisses the share nudge, then surfaces the shop nudge
     return;
   }
   if (event.target.closest('#rescue-btn')) {

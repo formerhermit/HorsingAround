@@ -25,8 +25,19 @@ export const TRAIT_REVEAL_AT = 40;   // wellbeing at which personality shows
 export const SPONSOR_AT = 95;        // "thriving" — earns the horse a sponsor
 export const FIRST_SPONSOR_AT = 88;  // Biscuit sponsors a touch earlier, as its own beat
 export const SPONSOR_RATE = 0.15;    // € per sponsored horse per second
-export const SHARE_BASE = 1;         // € per shared update...
+export const SHARE_BASE = 3;         // € per full-charge shared update...
 export const SHARE_PER_SUPPORTER = 0.3; // ...plus this per supporter
+// Sharing runs on a charge meter (issue #9): the button refills over
+// SHARE_CHARGE_TIME and pays out in proportion to the charge spent, so waiting
+// for a full meter is worth it and mashing the button harvests next to nothing.
+// Below SHARE_READY_AT the button rests -- a short, visible cooldown. And only
+// a full-charge share can go viral: patience, not tap speed, buys the jackpot.
+export const SHARE_CHARGE_TIME = 30; // seconds for the meter to refill fully
+export const SHARE_READY_AT = 0.15;  // charge below which the button rests
+export const VIRAL_CHANCE = 0.1;     // rolled only on a full-charge share
+export const VIRAL_MULT = 5;         // payout multiplier when one takes off
+export const VIRAL_SUPPORTERS_MIN = 3; // new followers a viral share brings...
+export const VIRAL_SUPPORTERS_MAX = 8; // ...up to this many
 export const TIP_CHANCE = 0.02;      // ~1 in 50 care clicks draws a spontaneous tip
 export const TIP_MIN = 2;            // € range a watching supporter chips in on the spot
 export const TIP_MAX = 5;
@@ -242,22 +253,45 @@ export function careFor(horse) {
   return { gain, crit, message, tip, events };
 }
 
-/** € one shared update brings in at current supporter count. A nicer-looking
- *  paddock makes every post perform better — decor items multiply this. */
+/** € one *full-charge* shared update brings in at current supporter count. A
+ *  nicer-looking paddock makes every post perform better — decor items multiply
+ *  this. The actual payout scales with the charge meter (see shareCharge). */
 export function shareValue(state = gameState) {
   return (SHARE_BASE + SHARE_PER_SUPPORTER * state.supporters) * shareMultiplier(state);
+}
+
+/** How charged the share button is, 0..1. The meter rebuilds over
+ *  SHARE_CHARGE_TIME; lastSharedAt is persisted, so a reload doesn't refill it
+ *  (0 — never shared — reads as a full charge, which suits a fresh game). */
+export function shareCharge(state = gameState, now = Date.now()) {
+  return Math.max(0, Math.min(1, (now - (state.lastSharedAt ?? 0)) / (SHARE_CHARGE_TIME * 1000)));
 }
 
 /**
  * The active income lever: share an update about the horses and supporters
  * chip in. Care clicks never mint money — fundraising asks people, and the
- * more supporters you've earned, the more each ask brings in.
+ * more supporters you've earned, the more each ask brings in. The payout is
+ * proportional to the charge spent, and a full-charge share has a small chance
+ * to go viral: a multiplied payout plus a burst of brand-new followers.
+ * Returns { amount, charge, viral, newSupporters }, or null while resting.
  */
-export function shareUpdate() {
-  const amount = shareValue();
+export function shareUpdate(now = Date.now()) {
+  const charge = shareCharge(gameState, now);
+  if (charge < SHARE_READY_AT) return null; // resting; the button is disabled anyway
+  let amount = shareValue() * charge;
+  let viral = false;
+  let newSupporters = 0;
+  if (charge >= 1 && Math.random() < VIRAL_CHANCE) {
+    viral = true;
+    amount *= VIRAL_MULT;
+    newSupporters = VIRAL_SUPPORTERS_MIN
+      + Math.floor(Math.random() * (VIRAL_SUPPORTERS_MAX - VIRAL_SUPPORTERS_MIN + 1));
+    gameState.supporters += newSupporters;
+  }
+  gameState.lastSharedAt = now;
   gameState.coins += amount;
   gameState.stats.totalDonated += amount;
-  return { amount };
+  return { amount, charge, viral, newSupporters };
 }
 
 /** Cost of the next rescue. Escalates with herd size; phase 3 will add

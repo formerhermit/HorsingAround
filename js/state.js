@@ -62,6 +62,7 @@ export function defaultState() {
     // resources
     coins: 0,            // € donated by supporters; spent on hay/vet/rescues.
     supporters: 0,       // people following the rescue; generate passive income later.
+    lastSharedAt: 0,     // when "share an update" was last pressed; drives its charge meter.
 
     horses: [
       createHorse({
@@ -240,6 +241,8 @@ function repair(save) {
   }
   save.shop ??= {};
   save.shop.stock ??= {};
+  // The share charge meter is new; 0 means "never shared", i.e. a full charge.
+  save.lastSharedAt ??= 0;
   // The monthly leaderboard is opt-in and new; existing saves start off it.
   // Unlike the other backfilled nudges, the leaderboard one stays *on* for
   // returning players -- the feature is new to them too, so their next rescue
