@@ -19,6 +19,21 @@ body {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  /* A tap-happy game: rapid clicks were selecting popup/toast text (issue
+     #37). Nothing here is prose worth selecting, so switch selection off
+     globally and opt the few genuinely copyable things back in below. */
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* The bits a player genuinely copies or types into stay selectable: form
+   fields, and the save code they carry to another device. */
+input,
+textarea,
+#sc-code-value {
+  user-select: text;
+  -webkit-user-select: text;
 }
 
 /* ---------- top bar / HUD ---------- */
