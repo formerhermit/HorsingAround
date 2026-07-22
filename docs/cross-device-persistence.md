@@ -117,12 +117,15 @@ Whatever we add, players need a clean way out. Three distinct actions, don't con
    fresh anonymous player. Local, reversible, no data deleted. Easy.
 2. **Unlink the email/identity.** Detach the credential but keep playing anonymously.
    Removes the cross-device link without wiping progress.
-3. **Delete my account and data (GDPR erasure).** Remove the `auth.users` row and — via
-   the existing `on delete cascade` on `saves.user_id` — their save with it. This must be
-   genuinely available, not buried. Because deleting an auth user requires the service-role
-   key, it can't be done straight from the browser: we'd need a tiny **Supabase Edge
-   Function** (or similar server endpoint) that authenticates the caller and deletes *their
-   own* user. A "Delete my save and account" button calls it; we confirm, then it's gone.
+3. **Delete my account and data (GDPR erasure).** *Partially shipped:* the privacy
+   popup's "Delete my save and cloud data" button self-serves deletion of the `saves`
+   row (via an RLS delete policy) plus the local save, then signs out so a fresh
+   anonymous identity is minted on next visit. The orphaned `auth.users` row remains —
+   it holds no personal data, just a UUID, so this is acceptable **while identities are
+   anonymous**. Once email linking (Option A) ships, the email lives in `auth.users`,
+   and full deletion then needs a tiny **Supabase Edge Function** holding the
+   service-role key that authenticates the caller and deletes *their own* user (the
+   `on delete cascade` takes the save with it). That function must ship with Option A.
 
 Also worth offering, and cheap given the save is already one JSON blob:
 

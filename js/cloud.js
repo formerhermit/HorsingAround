@@ -78,6 +78,31 @@ export async function getCloudUserId() {
   }
 }
 
+/**
+ * Self-service erasure for the privacy popup: delete this player's cloud save
+ * and drop the anonymous identity (a fresh one is minted on next visit).
+ * Verifies the row is really gone -- a missing RLS delete policy makes
+ * delete() silently match zero rows, and "we deleted your data" must never be
+ * said on a silent failure. Returns true when the cloud holds nothing.
+ */
+export async function deleteCloudData() {
+  if (!isConfigured()) return true; // nothing in the cloud to delete
+  try {
+    const client = await getClient();
+    const { data: { session } } = await client.auth.getSession();
+    if (!session) return true;
+    const { error } = await client.from('saves').delete().eq('user_id', session.user.id);
+    if (error) throw error;
+    const { data: remaining } = await client.from('saves').select('user_id').maybeSingle();
+    if (remaining) throw new Error('save row still present after delete');
+    await client.auth.signOut();
+    return true;
+  } catch (err) {
+    console.warn('Cloud delete failed:', err);
+    return false;
+  }
+}
+
 /** Push the current gameState to the cloud. Fire-and-forget; safe to call
  *  before a session exists (e.g. mid-boot) — it just no-ops until one does. */
 export async function pushCloudSave() {

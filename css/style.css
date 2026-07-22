@@ -1802,6 +1802,36 @@ main {
   margin-top: 0.5rem;
 }
 
+/* Quiet danger button: present but not inviting, and it announces itself
+   again (via .is-armed) before actually deleting anything. */
+.privacy-delete {
+  display: block;
+  margin: 0.9rem 0 0.75rem;
+  padding: 0.45rem 0.9rem;
+  font: inherit;
+  font-size: 0.85rem;
+  color: #9a4a3a;
+  background: #faf6ee;
+  border: 1px solid #d8b4a8;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.privacy-delete:hover {
+  background: #f6ece6;
+}
+
+.privacy-delete.is-armed {
+  color: #fff;
+  background: #b0503c;
+  border-color: #b0503c;
+}
+
+.privacy-delete:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
 .privacy-meta {
   font-size: 0.8rem;
   color: #8a7d68;

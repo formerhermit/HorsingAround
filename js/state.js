@@ -169,8 +169,16 @@ export function adoptCloudState(cloudState) {
   return gameState;
 }
 
+// Set by the privacy popup's "delete everything" flow: once the save has been
+// wiped, nothing may write it back -- the unload/visibility handlers and the
+// autosave interval all funnel through save(), so one switch covers them all.
+let savingDisabled = false;
+export function disableSaving() {
+  savingDisabled = true;
+}
+
 export function save() {
-  if (!gameState) return;
+  if (!gameState || savingDisabled) return;
   gameState.savedAt = Date.now();
   try {
     localStorage.setItem(SAVE_KEY, JSON.stringify(gameState));
