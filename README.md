@@ -44,7 +44,7 @@ Money comes in a few ways:
 - **Sponsors**: every horse with a sponsor brings in an extra €0.15 a second, forever, on top of that.
 - **Share an update**: a button you press to ask for support. It charges up over about half a minute (watch the little line fill), and the payout scales with the charge, so a full meter is worth the wait: `€3 + €0.30 for every supporter`. Mashing it harvests next to nothing. And once in a while, a full-charge share goes viral: five times the money, plus a little crowd of brand-new followers.
 
-You spend money on two things: **rescuing more horses** and **the shop**.
+You spend money on three things: **rescuing more horses**, **the shop**, and **keeping the place running**. Like the real rescue, the bills never quite stop: the vet calls, horses need shoes, the hay gets delivered, the horse box breaks down. That's the point: caring for rescue horses takes real, ongoing money.
 
 ### Supporters
 
@@ -78,6 +78,13 @@ Spend your funds on nice things.
 - **Paddock decor**: bunting, flower buckets, hay bales, a water trough, even a dog or a cat. Decor makes every "share an update" worth more.
 
 Each paddock gets its own decorations — the magical paddock included — up to a tidy limit. Some choices are one or the other: flower garland *or* bunting, an ear flower *or* a forelock bow. The dog and cat are the big splurges, for when the rescue's really thriving.
+
+### Paddock life
+
+Every so often, rescue life turns up at the gate as an illustrated story card:
+
+- **Bills**: the vet is due for a check-up or a worming treatment, a horse needs new shoes, the hay delivery arrives, or the horse box needs the mechanic. Each one costs a slice of your fund, scaled to where your rescue is at. Paying always feels good: the vet and farrier leave their horse topped up and gleaming, a full hay barn settles the whole herd, and a roadworthy horse box turns a few admiring heads. Saying "not just yet" is always safe; the bill just comes around again later. And a bill never arrives that your fund can't comfortably pay.
+- **Visitors Day**: sometimes the volunteers get together and plan a Visitors Day instead. You get a heads-up a few minutes ahead, and that time matters: on the day, entry donations scale with your supporters, your decor, and above all how much of the herd is thriving. Groom everyone before the visitors arrive and the day can be a triumph.
 
 ### Animals and rare coats
 

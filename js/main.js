@@ -1,7 +1,7 @@
 // main.js — boot the game: load state, render, wire input and persistence.
 
 import { initState, save, gameState, adoptCloudState, DONATE_MILESTONE, SAVE_KEY, disableSaving } from './state.js';
-import { careFor, tick, rescueHorse, shareUpdate, rescueCost, acceptRehome, declineRehome, requestRehome, collectOfflineEarnings, collectDuePostcards, collectDueStatues, markPostcardsRead, fulfilWant, grantUnicorn, hasUnicorn } from './game.js';
+import { careFor, tick, rescueHorse, shareUpdate, rescueCost, acceptRehome, declineRehome, requestRehome, collectOfflineEarnings, collectDuePostcards, collectDueStatues, markPostcardsRead, fulfilWant, grantUnicorn, hasUnicorn, acceptBill, declineBill, hurryPaddockLife } from './game.js';
 import {
   renderAll, renderHUD, renderActions, updateHorseCard,
   showCareFeedback, showTipPop, showToast, showMoneyPop, showSupporterPop, burstConfetti, changePaddock, resetPaddockView,
@@ -442,6 +442,49 @@ grantStatues();
 
 const DONATE_URL = 'https://donorbox.org/donate-to-arch?amount=10';
 
+// ---- paddock life: bills & Visitors Day ----
+// Illustrated story cards (see updatePaddockLife in game.js). Each bill kind
+// maps to its artwork, its dialog copy, its pay-button label, and the warm
+// toast shown once it's paid.
+
+const BILL_ART = {
+  vet: 'assets/events/vet-visit.jpg',
+  farrier: 'assets/events/farrier-visit.jpg',
+  hay: 'assets/events/hay-delivery.jpg',
+  mechanic: 'assets/events/horse-box.jpg',
+};
+
+function billCopy(e) {
+  const fee = fig(`€${e.fee}`);
+  if (e.kind === 'vet') {
+    return {
+      pay: 'Book the vet',
+      text: e.variant === 'worming'
+        ? `${fig(e.horseName)} is due a worming treatment. The vet can pop out today for ${fee}.`
+        : `The vet is due to see ${fig(e.horseName)} for a check-up. She can come out today for ${fee}.`,
+    };
+  }
+  if (e.kind === 'farrier') return {
+    pay: 'Book the farrier',
+    text: `${fig(e.horseName)} needs new shoes! The farrier can come out today for ${fee}.`,
+  };
+  if (e.kind === 'hay') return {
+    pay: 'Pay for the hay',
+    text: `The hay delivery has arrived: enough bales to keep everyone fed and cosy. The bill comes to ${fee}.`,
+  };
+  return {
+    pay: 'Fix the horse box',
+    text: `The horse box needs a repair before it can fetch any more horses. The mechanic can fix it today for ${fee}.`,
+  };
+}
+
+function billPaidToast(res) {
+  if (res.kind === 'vet') return `🩺 ${res.horse?.name ?? 'Everyone'} has a clean bill of health 💛`;
+  if (res.kind === 'farrier') return `✨ ${res.horse?.name ?? 'The herd'}'s new shoes are turning heads!`;
+  if (res.kind === 'hay') return '🌾 The hay barn is full: the whole herd is fed and holding their shine 💛';
+  return '🔧 The horse box is roadworthy again, ready for the next rescue 💛';
+}
+
 /** Turn one event into either a toast or a queued modal dialog. */
 function handleEvent(e) {
   if (e.type === 'rehome-offer') {
@@ -518,6 +561,41 @@ function handleEvent(e) {
         ],
       });
     }
+  } else if (e.type === 'bill') {
+    const copy = billCopy(e);
+    enqueueDialog({
+      emoji: '', image: BILL_ART[e.kind],
+      text: copy.text,
+      buttons: [
+        { label: `${copy.pay} · €${e.fee}`, variant: 'primary', onClick: () => {
+          const res = acceptBill();
+          if (!res?.ok) return;
+          showToast(billPaidToast(res));
+          if (res.kind === 'mechanic') showSupporterPop(3);
+          state.horses.forEach(updateHorseCard); // topped-up bars show right away
+          refreshUI();
+          persist();
+        } },
+        { label: 'Not just yet', variant: 'ghost', onClick: () => declineBill() },
+      ],
+    });
+  } else if (e.type === 'visitors-planning') {
+    enqueueDialog({
+      emoji: '', image: 'assets/events/volunteer-planning.jpg',
+      text: `The volunteers are planning a ${fig('Visitors Day')}! People will be coming to meet the horses very soon. A well-groomed herd and a pretty paddock will make it a day to remember 💛`,
+      buttons: [{ label: "We'll be ready!", variant: 'primary' }],
+    });
+    // The day itself follows in a few minutes; have its artwork ready and waiting.
+    new Image().src = 'assets/events/visitors-day.jpg';
+  } else if (e.type === 'visitors-day') {
+    const followers = e.newSupporters > 0
+      ? ` ${fig(e.newSupporters)} of them liked it so much they started following the rescue!`
+      : '';
+    enqueueDialog({
+      emoji: '', image: 'assets/events/visitors-day.jpg', confetti: true, share: true,
+      text: `Visitors Day! ${fig(e.visitors)} people came to meet the horses, and entry donations raised ${fig(`€${Math.round(e.income)}`)} for the rescue 💛${followers}`,
+      buttons: [{ label: 'Wonderful!', variant: 'primary' }],
+    });
   } else if (e.type === 'supporter-quiet') {
     showSupporterPop(e.count); // subtle chip pop, not a toast
   } else if (e.type === 'supporter-milestone') {
@@ -1176,4 +1254,4 @@ window.matchMedia('(max-width: 560px)').addEventListener('change', () => {
 window.addEventListener('beforeunload', save); // no time for a network call here
 
 // Handy in the console while developing.
-window.HorsingAround = { get state() { return gameState; }, save, pushCloudSave };
+window.HorsingAround = { get state() { return gameState; }, save, pushCloudSave, hurryPaddockLife };

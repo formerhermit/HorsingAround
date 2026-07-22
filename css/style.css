@@ -1762,6 +1762,27 @@ main {
   line-height: 1;
 }
 
+.dialog-emoji[hidden] {
+  display: none;
+}
+
+/* Illustrated banner on paddock-life story cards (vet visit, Visitors Day...). */
+.dialog-image {
+  display: block;
+  width: 100%;
+  border-radius: 14px;
+  margin-bottom: 0.5rem;
+}
+
+.dialog-image[hidden] {
+  display: none;
+}
+
+/* A card with an illustration gets to breathe a little wider than plain ones. */
+.dialog-card:has(.dialog-image:not([hidden])) {
+  max-width: 430px;
+}
+
 .dialog-text {
   font-size: 1.05rem;
   font-weight: 600;

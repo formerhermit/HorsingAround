@@ -941,10 +941,21 @@ export function hideNudgePopup() {
  * A modal event dialog (shop-card styling) with an emoji, a message, and one or
  * two buttons. Each button = { label, variant, onClick }; clicking it closes the
  * dialog and runs onClick. Pass confetti:true for a celebratory burst.
+ * Pass image (a path) for an illustrated story card: the picture becomes the
+ * banner and usually replaces the emoji (pass emoji '' alongside it).
  */
-export function showDialog({ emoji = '', text, buttons = [], confetti = false, share = false }) {
+export function showDialog({ emoji = '', text, buttons = [], confetti = false, share = false, image = null }) {
   const overlay = document.getElementById('dialog-overlay');
+  const img = document.getElementById('dialog-image');
+  if (image) {
+    img.src = image;
+    img.hidden = false;
+  } else {
+    img.hidden = true;
+    img.removeAttribute('src');
+  }
   document.getElementById('dialog-emoji').textContent = emoji;
+  document.getElementById('dialog-emoji').hidden = !emoji;
   // innerHTML so callers can wrap key figures in <span class="fig">. All dialog
   // text is authored in-code (horse names come from a fixed list), never user
   // input, so there's no untrusted markup here.
