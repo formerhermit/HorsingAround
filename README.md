@@ -40,7 +40,7 @@ Money comes in a few ways:
 - **Your first donation**: a one-off €12 the first time any horse reaches "content". It only ever happens once.
 - **Supporters**: everyone following the rescue chips in €0.04 a second, all the time, in the background. A herd of a given size and health sustains only so large a following, so this income settles at a steady level rather than climbing forever, grow and improve the herd to raise it.
 - **Sponsors**: every horse with a sponsor brings in an extra €0.15 a second, forever, on top of that.
-- **Share an update**: a button you press to ask for support. Each press is worth `€1 + €0.30 for every supporter`. The more people follow you, the more each ask brings in.
+- **Share an update**: a button you press to ask for support. It charges up over about half a minute (watch the little line fill), and the payout scales with the charge, so a full meter is worth the wait: `€3 + €0.30 for every supporter`. Mashing it harvests next to nothing. And once in a while, a full-charge share goes viral: five times the money, plus a little crowd of brand-new followers.
 
 You spend money on two things: **rescuing more horses** and **the shop**.
 
