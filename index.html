@@ -231,14 +231,35 @@
           removes them.</li>
         <li>You can download a copy of your save at any time, or delete it from this
           device <strong>and</strong> from the cloud. Deleting has no undo.</li>
-        <li>Getting your game onto another device uses a one-time code, not an email
-          address or an account. Whoever holds the code can load a copy of that save, so
-          treat it like a spare key: share it only with your other device.</li>
+        <li>Want your game on another device? That's a separate
+          <button class="credit-link" id="privacy-to-sync">Save &amp; sign in</button> option
+          (also in the footer) — no email needed.</li>
         <li>This game is not directed at children under 14.</li>
       </ul>
 
+      <div class="privacy-actions">
+        <button class="privacy-export" id="privacy-export">Download my save</button>
+        <button class="privacy-delete" id="privacy-delete">Delete my save and cloud data</button>
+      </div>
+      <p class="privacy-meta">Your anonymous player ID: <code id="privacy-player-id">…</code></p>
+      <p class="privacy-meta">Questions:
+        <a href="https://github.com/formerhermit/HorsingAround/issues" target="_blank" rel="noopener">open an issue on GitHub</a>.</p>
+    </div>
+  </div>
+
+  <div class="album-overlay" id="sync-overlay" hidden>
+    <div class="album-modal" id="sync-modal" role="dialog" aria-modal="true" aria-labelledby="sync-title">
+      <div class="shop-header">
+        <h2 id="sync-title">Save &amp; sign in</h2>
+        <div class="header-actions">
+          <button class="shop-close" id="sync-close" aria-label="Close save and sign in">×</button>
+        </div>
+      </div>
+      <p class="shop-intro">Bring your paddock to another device, or bring another
+        device's paddock here.</p>
+
       <div class="privacy-section">
-        <h3 class="privacy-subhead">Save across devices</h3>
+        <h3 class="privacy-subhead">With a one-time code</h3>
         <p class="privacy-sub-intro">No account, no email. Get a code here, then enter it
           on your other device (or the other way around).</p>
         <div class="privacy-actions">
@@ -271,9 +292,12 @@
             <button class="lb-btn lb-btn-primary" id="sc-confirm-load">Load it here</button>
           </div>
         </div>
+      </div>
 
-        <p class="privacy-sub-intro privacy-sub-intro-spaced">Or, if you'd rather not
-          juggle a code: sign in with a Google account instead.</p>
+      <div class="privacy-section">
+        <h3 class="privacy-subhead">With Google</h3>
+        <p class="privacy-sub-intro">If you'd rather not juggle a code, sign in with a
+          Google account instead.</p>
         <div class="privacy-actions">
           <button class="lb-btn" id="google-signin-btn">Sign in with Google</button>
         </div>
@@ -289,14 +313,6 @@
             no undo.</p>
         </div>
       </div>
-
-      <div class="privacy-actions">
-        <button class="privacy-export" id="privacy-export">Download my save</button>
-        <button class="privacy-delete" id="privacy-delete">Delete my save and cloud data</button>
-      </div>
-      <p class="privacy-meta">Your anonymous player ID: <code id="privacy-player-id">…</code></p>
-      <p class="privacy-meta">Questions:
-        <a href="https://github.com/formerhermit/HorsingAround/issues" target="_blank" rel="noopener">open an issue on GitHub</a>.</p>
     </div>
   </div>
 
@@ -304,6 +320,7 @@
     Inspired by <a href="https://www.horserescuespain.org/" target="_blank" rel="noopener"><strong>ARCH</strong>
     — the Andalucian Rescue Centre for Horses</a>, a volunteer-run equine rescue charity near Málaga, Spain.
     · <button class="credit-link" id="privacy-link" aria-haspopup="dialog" aria-controls="privacy-modal">Game privacy</button>
+    · <button class="credit-link" id="sync-link" aria-haspopup="dialog" aria-controls="sync-modal">Save &amp; sign in</button>
   </footer>
 
   <script type="module" src="js/main.js"></script>

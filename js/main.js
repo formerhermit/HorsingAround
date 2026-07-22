@@ -167,7 +167,7 @@ syncOnLoad().then((adopted) => {
   // reconciliation above may have just adopted the other account's save.
   if (googleReturn === 'linked') {
     if (googleError) {
-      openPrivacy().then(() => { document.getElementById('google-conflict').hidden = false; });
+      openSync().then(() => { document.getElementById('google-conflict').hidden = false; });
     } else {
       showToast('Google connected — this save can follow you now 💛', 'ok');
     }
@@ -560,6 +560,7 @@ document.addEventListener('keydown', (event) => {
   if (!document.getElementById('album-overlay').hidden) closePostcardAlbum();
   if (!document.getElementById('collection-overlay').hidden) closeCollection();
   if (!document.getElementById('privacy-overlay').hidden) closePrivacy();
+  if (!document.getElementById('sync-overlay').hidden) closeSync();
 });
 
 // ---- privacy popup ----
@@ -577,7 +578,27 @@ async function openPrivacy() {
   const id = await getCloudUserId();
   document.getElementById('privacy-player-id').textContent =
     id ?? 'none: playing locally in this browser only';
+}
+document.getElementById('privacy-link').addEventListener('click', openPrivacy);
+document.getElementById('privacy-close').addEventListener('click', closePrivacy);
+document.getElementById('privacy-overlay').addEventListener('click', (event) => {
+  if (event.target.id === 'privacy-overlay') closePrivacy();
+});
+document.getElementById('privacy-to-sync').addEventListener('click', () => {
+  closePrivacy();
+  openSync();
+});
 
+// ---- save & sign in popup ----
+// Cross-device continuity is a distinct thing from the privacy notice --
+// "how do I get my progress somewhere else" isn't a data-practices question,
+// so it gets its own popup rather than living inside Game privacy.
+
+function closeSync() {
+  document.getElementById('sync-overlay').hidden = true;
+}
+async function openSync() {
+  document.getElementById('sync-overlay').hidden = false;
   // Once Google's linked, there's no reason to offer linking it again --
   // swap the button for a plain status line instead. The conflict card is
   // only ever revealed right after a real conflict (see googleReturn
@@ -589,10 +610,10 @@ async function openPrivacy() {
   status.hidden = !linked;
   if (linked) status.textContent = 'Google is connected to this save.';
 }
-document.getElementById('privacy-link').addEventListener('click', openPrivacy);
-document.getElementById('privacy-close').addEventListener('click', closePrivacy);
-document.getElementById('privacy-overlay').addEventListener('click', (event) => {
-  if (event.target.id === 'privacy-overlay') closePrivacy();
+document.getElementById('sync-link').addEventListener('click', openSync);
+document.getElementById('sync-close').addEventListener('click', closeSync);
+document.getElementById('sync-overlay').addEventListener('click', (event) => {
+  if (event.target.id === 'sync-overlay') closeSync();
 });
 
 // Data portability: hand the player their whole save as a JSON download.
@@ -766,7 +787,7 @@ document.getElementById('google-conflict-cancel').addEventListener('click', () =
 // updateRestoreWhisper). Jumps straight to the code-entry step, since anyone
 // who taps this already knows what they want.
 document.getElementById('restore-whisper').addEventListener('click', async () => {
-  await openPrivacy();
+  await openSync();
   openSaveCodeEntry();
 });
 
