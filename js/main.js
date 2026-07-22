@@ -781,6 +781,10 @@ document.getElementById('google-signin-btn').addEventListener('click', () => lin
 document.getElementById('google-conflict-switch').addEventListener('click', () => signInWithGoogle());
 document.getElementById('google-conflict-cancel').addEventListener('click', () => {
   document.getElementById('google-conflict').hidden = true;
+  // The link attempt already failed server-side before this card ever showed
+  // -- there's nothing to undo here, but silently hiding the card and saying
+  // nothing reads as "did that even work?" Confirm the actual outcome.
+  showToast('Kept your current save — Google wasn’t connected.', 'ok');
 });
 
 // The header whisper: quiet, and only ever seen on a brand-new save (see
