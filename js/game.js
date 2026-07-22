@@ -743,6 +743,151 @@ export function fulfilWant(horseId, now = Date.now()) {
   return { need, supporters: WANT_SUPPORTER_BURST };
 }
 
+// ---- paddock life: bills & Visitors Day (issue #50) ----
+// Every so often, running the rescue costs real money: the vet calls, a horse
+// needs shoes, the hay is delivered, the horse box needs fixing. Bills arrive
+// as illustrated popups; paying one always gives a warm payoff, declining is
+// always safe (it just comes around again). And sometimes the volunteers plan
+// a Visitors Day instead: a heads-up popup, a few minutes to groom the herd,
+// then visitors arrive and their entry donations scale with how many horses
+// are thriving. Deliberately gentle: one event at a time, well spaced, bills
+// only ever a fraction of the fund, and nothing bad ever happens to a horse.
+const EVENT_MIN_HORSES = 3;        // paddock life begins once the rescue feels real
+const EVENT_GAP_MIN = 5 * 60;      // seconds between paddock-life events
+const EVENT_GAP_MAX = 9 * 60;
+const EVENT_RETRY_MIN = 60;        // fund too low for a bill: look in again soon
+const EVENT_RETRY_MAX = 120;
+const BILL_SNOOZE_MIN = 180;       // "not just yet": quietly comes around again
+const BILL_SNOOZE_MAX = 300;
+const BILL_AFFORD_MARGIN = 1.5;    // only bill a fund that can pay with room to spare
+const VISITORS_CHANCE = 0.25;      // an event is sometimes a Visitors Day instead
+const VISITORS_DELAY_MIN = 4 * 60; // planning popup -> the day itself
+const VISITORS_DELAY_MAX = 7 * 60;
+const VISITORS_ENTRY_FEE = 2.5;    // € each visitor donates on the day
+const MECHANIC_SUPPORTERS = 3;     // passers-by who admire the freshly fixed box
+
+// Each bill's fee scales with the rescue's stage (via the next rescue's cost),
+// so it stays felt-but-friendly from a three-horse paddock to a full rescue.
+export const BILLS = {
+  vet:      { fraction: 0.08, min: 6 },   // a named horse's check-up / worming
+  farrier:  { fraction: 0.10, min: 8 },   // a named horse needs new shoes
+  hay:      { fraction: 0.15, min: 10 },  // the hay delivery for the whole herd
+  mechanic: { fraction: 0.20, min: 12 },  // the horse box needs a repair
+};
+
+let eventCountdown = randomBetween(EVENT_GAP_MIN, EVENT_GAP_MAX);
+let pendingBill = null;   // { kind, fee, horseId } while a bill popup is up (not persisted)
+let visitorsDayAt = 0;    // timestamp the planned Visitors Day arrives; 0 = none planned
+
+export function billFee(kind, state = gameState) {
+  const bill = BILLS[kind];
+  return Math.max(bill.min, Math.round(rescueCost(state) * bill.fraction));
+}
+
+/** Advance paddock life by dt seconds: fire the planned Visitors Day when due,
+ *  otherwise count down to the next event (a bill, or a Visitors Day plan). */
+function updatePaddockLife(dt, now, events) {
+  if (visitorsDayAt && now >= visitorsDayAt) {
+    visitorsDayAt = 0;
+    events.push(runVisitorsDay());
+    return;
+  }
+  // One thing at a time: no new event while a bill is up or a day is planned.
+  if (pendingBill || visitorsDayAt) return;
+  if (gameState.horses.length < EVENT_MIN_HORSES) return;
+  eventCountdown -= dt;
+  if (eventCountdown > 0) return;
+  eventCountdown = randomBetween(EVENT_GAP_MIN, EVENT_GAP_MAX);
+
+  if (Math.random() < VISITORS_CHANCE) {
+    visitorsDayAt = now + randomBetween(VISITORS_DELAY_MIN, VISITORS_DELAY_MAX) * 1000;
+    events.push({ type: 'visitors-planning' });
+    return;
+  }
+
+  const kind = randomFrom(Object.keys(BILLS));
+  const fee = billFee(kind);
+  // Never bill a fund that would struggle to pay: skip and look in again soon.
+  if (gameState.coins < fee * BILL_AFFORD_MARGIN) {
+    eventCountdown = randomBetween(EVENT_RETRY_MIN, EVENT_RETRY_MAX);
+    return;
+  }
+  let horse = null;
+  if (kind === 'vet' || kind === 'farrier') {
+    const candidates = gameState.horses.filter((h) => !isMagicalCoat(h.paletteKey));
+    if (!candidates.length) return;
+    horse = randomFrom(candidates);
+  }
+  pendingBill = { kind, fee, horseId: horse?.id ?? null };
+  events.push({
+    type: 'bill', kind, fee, horseName: horse?.name ?? null,
+    // The vet visits for one of two reasons, purely for copy variety.
+    variant: kind === 'vet' ? (Math.random() < 0.5 ? 'checkup' : 'worming') : null,
+  });
+}
+
+/** Pay the pending bill. Every payment lands a warm payoff: the vet and
+ *  farrier leave their horse topped up (the farrier's new shoes turn heads for
+ *  a while too), the hay settles the whole herd, and the fixed horse box wins
+ *  a few admirers. Returns { ok, kind, fee, horse } or null. */
+export function acceptBill(now = Date.now()) {
+  if (!pendingBill) return null;
+  const { kind, fee, horseId } = pendingBill;
+  pendingBill = null;
+  if (gameState.coins < fee) return { ok: false, kind, fee, horse: null };
+  gameState.coins -= fee;
+  const horse = gameState.horses.find((h) => h.id === horseId) ?? null;
+  if (kind === 'vet' || kind === 'farrier') {
+    if (horse) {
+      horse.wellbeing = WELLBEING_MAX;
+      horse.lastCaredAt = now;
+    }
+    if (kind === 'farrier') glowUntil = now + WANT_GLOW_DURATION * 1000;
+  } else if (kind === 'hay') {
+    for (const h of gameState.horses) {
+      if (isMagicalCoat(h.paletteKey)) continue;
+      h.wellbeing = Math.min(WELLBEING_MAX, h.wellbeing + 2);
+      h.lastCaredAt = now; // well fed: the whole herd holds its shine a while
+    }
+  } else if (kind === 'mechanic') {
+    gameState.supporters += MECHANIC_SUPPORTERS;
+  }
+  return { ok: true, kind, fee, horse };
+}
+
+/** Decline the pending bill. Always safe: nothing happens to any horse, the
+ *  bill just quietly comes around again a few minutes later. */
+export function declineBill() {
+  pendingBill = null;
+  eventCountdown = randomBetween(BILL_SNOOZE_MIN, BILL_SNOOZE_MAX);
+}
+
+/** The planned Visitors Day arrives: entry donations scale with the supporter
+ *  base, the herd size, and above all how much of the herd is thriving, so the
+ *  pre-day grooming ritual (and the paddock decor) genuinely pays. */
+function runVisitorsDay() {
+  const herd = gameState.horses.filter((h) => !isMagicalCoat(h.paletteKey));
+  const thrivingFrac = herd.length
+    ? herd.filter((h) => h.wellbeing >= THRIVING_AT).length / herd.length
+    : 0;
+  const visitors = Math.max(6, Math.round(
+    (gameState.supporters * 0.6 + herd.length * 2) * (0.6 + 0.6 * thrivingFrac),
+  ));
+  const income = visitors * VISITORS_ENTRY_FEE * shareMultiplier(gameState);
+  const newSupporters = Math.round(visitors * 0.05);
+  gameState.coins += income;
+  gameState.stats.totalDonated += income;
+  gameState.supporters += newSupporters;
+  return { type: 'visitors-day', visitors, income, newSupporters };
+}
+
+/** Dev helper (console): make the next paddock-life beat land on the next
+ *  tick — the planned Visitors Day if one is armed, else a fresh event. */
+export function hurryPaddockLife() {
+  if (visitorsDayAt) visitorsDayAt = Date.now();
+  else eventCountdown = 0;
+}
+
 // Not persisted: restarting the wait after a reload is harmless.
 let lonelyCountdown = LONELY_DELAY;
 
@@ -911,6 +1056,7 @@ export function tick(dt) {
   maybeOfferRehome(dt, events);
   checkMilestones(events);
   updateWants(dt, Date.now()); // the little-needs cycle (bubbles drawn by main)
+  updatePaddockLife(dt, Date.now(), events); // bills & Visitors Day story cards
 
   return events;
 }
