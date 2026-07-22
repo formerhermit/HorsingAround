@@ -1,7 +1,8 @@
 // state.js — single source of truth for everything the game knows,
 // plus localStorage persistence.
 
-import { SHOP_ITEMS, STACKABLE_IDS, reclaimOrphanedDecor } from './shop.js';
+import { SHOP_ITEMS, STACKABLE_IDS, PADDOCK_CAP, reclaimOrphanedDecor } from './shop.js';
+import { isMagicalCoat } from './horse.js';
 
 export const SAVE_KEY = 'horsing-around:save';
 export const SAVE_VERSION = 1;
@@ -75,6 +76,11 @@ export function defaultState() {
     // upgrade id -> count owned. Both tracks (care capacity + support) share
     // this map; the upgrade definitions themselves live in game data, not state.
     upgrades: {},
+
+    // Regular paddocks the rescue owns, 8 horse spaces each. More can be
+    // built (see shop.js PADDOCK_PRICES); the magical paddock is separate,
+    // free, and implied by having a magical horse.
+    paddocksOwned: 1,
 
     // permanent decor purchases, keyed by paddock slot index (0 = home).
     // Wardrobe lives on each horse; item definitions live in shop.js.
@@ -352,7 +358,14 @@ function repair(save) {
     });
     if (save.shop.decorByPaddock[p].length === 0) delete save.shop.decorByPaddock[p];
   }
-  // Sweep up any decor stranded in paddocks the herd has since shrunk past.
+  // Paddocks used to be a viewport artifact (a phone split the same herd into
+  // more of them than a desktop). They're now owned things: grant however many
+  // this herd needs, free — never shrink a count the player already has.
+  const regularHerd = (save.horses ?? []).filter((h) => !isMagicalCoat(h.paletteKey)).length;
+  save.paddocksOwned = Math.max(save.paddocksOwned ?? 1, Math.ceil(regularHerd / PADDOCK_CAP), 1);
+
+  // Sweep up any decor stranded in paddocks that no longer exist (mobile saves
+  // could have decorated up to six of them under the viewport model).
   reclaimOrphanedDecor(save);
 
   return save;

@@ -4,7 +4,7 @@ import { horseFigureHTML, horseImageSrc, wellbeingLabel, wellbeingColor, isShiny
 import { rescueCost, shareValue, FRONT_ROW, getActiveWant } from './game.js';
 import {
   SHOP_ITEMS, isUnlocked, isAffordable, hasNewAffordableItem,
-  paddockCap, paddockCount, paddockDecor,
+  PADDOCK_CAP, MAGIC_PADDOCK, paddockCount, decorTargets, herdAtCapacity, paddockDecor,
   horseHasItem, isDecorInPaddock, paddockHasRoomFor,
   paddockExclusiveRival, horseExclusiveRival, EXCLUSIVE_GROUPS,
   STACKABLE_IDS, stockCount, decorLocation,
@@ -73,9 +73,16 @@ export function renderActions(state) {
     bar.appendChild(rescue);
   }
   if (rescue) {
-    const cost = rescueCost(state);
-    rescue.querySelector('.action-cost').textContent = `€${cost}`;
-    rescue.disabled = state.coins < cost;
+    // At capacity the button stays enabled: tapping it explains the options
+    // (rehome a horse, build a paddock) instead of silently refusing.
+    if (herdAtCapacity(state)) {
+      rescue.querySelector('.action-cost').textContent = 'The paddocks are full';
+      rescue.disabled = false;
+    } else {
+      const cost = rescueCost(state);
+      rescue.querySelector('.action-cost').textContent = `€${cost}`;
+      rescue.disabled = state.coins < cost;
+    }
   }
 }
 
@@ -431,12 +438,12 @@ export function renderShopModal(state) {
   }
 
   // --- decor: choose a paddock, then decorate it ---
-  const total = paddockCount(state);
-  shopPaddockTarget = Math.min(Math.max(0, shopPaddockTarget), total - 1);
-  if (total > 1) {
+  const targets = decorTargets(state); // owned paddocks + the magical one if it exists
+  if (!targets.includes(shopPaddockTarget)) shopPaddockTarget = 0;
+  if (targets.length > 1) {
     decorTarget.append(targetSelector({
       id: 'shop-paddock-select', label: 'Decorating', state,
-      options: Array.from({ length: total }, (_, p) => ({ value: p, text: paddockLabel(p) })),
+      options: targets.map((p) => ({ value: p, text: paddockLabel(p) })),
       selected: shopPaddockTarget, onChange: (v) => { shopPaddockTarget = Number(v); },
     }));
   }
@@ -496,49 +503,77 @@ const FRONT_SCALES = [1, 0.82, 0.68]; // newest first
 const BACK_SCALE = 0.48;
 // A scale-1 card is one --horse-unit wide (set in CSS, viewport-responsive).
 
-// paddockCap() (how many horses fill a paddock before older ones roll over --
-// viewport-dependent) lives in shop.js so decor rules can count paddocks;
-// imported above.
+// A paddock always holds PADDOCK_CAP horses (a real, owned, decorated place —
+// see shop.js), but a narrow phone can only show a couple before the front row
+// wraps and shoves the newest arrivals below the fold. So the *view* is what
+// adapts to the viewport: on mobile the nav arrows page through a paddock a
+// few horses at a time, instead of splitting the herd into different paddocks
+// per device.
+const NARROW_VIEW_QUERY = '(max-width: 560px)'; // matches the style.css breakpoint
+function viewCap() {
+  return (typeof window !== 'undefined' && window.matchMedia(NARROW_VIEW_QUERY).matches)
+    ? 2 : PADDOCK_CAP;
+}
 
 /** Human label for a paddock slot, matching the on-scene label wording. */
 function paddockLabel(index) {
+  if (index === MAGIC_PADDOCK) return '✨ Magical paddock';
   return index === 0 ? 'Home paddock' : `Paddock ${index + 1}`;
 }
 
-// Which paddock is on screen. 0 = home paddock (newest arrivals). Not
-// persisted: every session starts at home.
-let currentPaddock = 0;
+// Which view is on screen. 0 = start of the home paddock (newest arrivals).
+// Not persisted: every session starts at home.
+let currentView = 0;
 
 /** Jump back to the home paddock (e.g. when a new horse arrives). */
 export function resetPaddockView() {
-  currentPaddock = 0;
+  currentView = 0;
 }
 
 export function changePaddock(delta, state) {
-  currentPaddock += delta;
+  currentView += delta;
   renderPaddock(state);
 }
 
-/** Split the herd, newest first, into paddocks of up to paddockCap().
- *  Never leaves a single horse alone — herd animals, even in the UI. */
-function paddockChunks(state) {
-  const cap = paddockCap();
-  const newestFirst = [...state.horses].reverse();
-  const chunks = [];
-  for (let i = 0; i < newestFirst.length; i += cap) {
-    chunks.push(newestFirst.slice(i, i + cap));
+/** Flatten the owned paddocks (plus the magical one, if a magical horse lives
+ *  there) into the strip of views the nav arrows page through. Paddock
+ *  membership is fixed — the newest PADDOCK_CAP rescues are the home paddock,
+ *  the next oldest are paddock 2, and so on — while each paddock spans one
+ *  view on a wide screen and several on a phone. Never leaves a single horse
+ *  alone in a view — herd animals, even in the UI. */
+function paddockViews(state) {
+  const cap = viewCap();
+  const views = [];
+  const pushViews = (paddock, horses, isMagic) => {
+    const newestFirst = [...horses].reverse();
+    const chunks = [];
+    for (let i = 0; i < newestFirst.length; i += cap) {
+      chunks.push(newestFirst.slice(i, i + cap));
+    }
+    if (!chunks.length) chunks.push([]); // an owned paddock shows even while empty
+    const last = chunks[chunks.length - 1];
+    if (chunks.length > 1 && last.length === 1) {
+      last.unshift(chunks[chunks.length - 2].pop());
+    }
+    chunks.forEach((chunk, i) =>
+      views.push({ paddock, horses: chunk, view: i, viewCount: chunks.length, isMagic }));
+  };
+  const regular = state.horses.filter((h) => !isMagicalCoat(h.paletteKey));
+  for (let p = 0; p < paddockCount(state); p++) {
+    const end = Math.max(0, regular.length - p * PADDOCK_CAP);
+    const start = Math.max(0, regular.length - (p + 1) * PADDOCK_CAP);
+    pushViews(p, regular.slice(start, end), false);
   }
-  const last = chunks[chunks.length - 1];
-  if (chunks.length > 1 && last.length === 1) {
-    last.unshift(chunks[chunks.length - 2].pop());
-  }
-  return chunks;
+  const magical = state.horses.filter((h) => isMagicalCoat(h.paletteKey));
+  if (magical.length) pushViews(MAGIC_PADDOCK, magical, true);
+  return views;
 }
 
 function renderPaddock(state) {
-  const chunks = paddockChunks(state);
-  currentPaddock = Math.max(0, Math.min(currentPaddock, chunks.length - 1));
-  const chunk = chunks[currentPaddock]; // newest-first within the paddock
+  const views = paddockViews(state);
+  currentView = Math.max(0, Math.min(currentView, views.length - 1));
+  const { paddock, horses, view, viewCount, isMagic } = views[currentView];
+  const chunk = horses; // newest-first within the view
 
   // oldest→newest left to right, newest (largest) rightmost
   const front = chunk.slice(0, FRONT_COUNT).reverse();
@@ -555,22 +590,24 @@ function renderPaddock(state) {
     frontRow.append(horseCard(h, FRONT_SCALES[rank] ?? BACK_SCALE, false, h.wardrobe));
   });
 
-  const children = [backRow, groundDecorRow(state, currentPaddock), frontRow];
-  const butterflies = butterfliesOverlay(state, currentPaddock);
+  const children = [backRow, groundDecorRow(state, paddock, view, viewCount), frontRow];
+  const butterflies = butterfliesOverlay(state, paddock);
   if (butterflies) children.unshift(butterflies); // behind the horses
   document.getElementById('horses').replaceChildren(...children);
-  renderPaddockDecor(state, currentPaddock);
+  renderPaddockDecor(state, paddock);
+  document.getElementById('paddock').classList.toggle('magic-paddock', isMagic);
 
-  // edge arrows + label, only when there is more than one paddock
+  // edge arrows + label, only when there is more than one view
   const older = document.getElementById('nav-older');
   const newer = document.getElementById('nav-newer');
   const label = document.getElementById('paddock-label');
-  older.hidden = currentPaddock >= chunks.length - 1;
-  newer.hidden = currentPaddock === 0;
-  label.hidden = chunks.length < 2;
-  label.textContent = currentPaddock === 0
-    ? `Home paddock · 1 of ${chunks.length}`
-    : `Paddock ${currentPaddock + 1} of ${chunks.length} · old friends`;
+  older.hidden = currentView >= views.length - 1;
+  newer.hidden = currentView === 0;
+  label.hidden = views.length < 2;
+  let text = paddockLabel(paddock);
+  if (viewCount > 1) text += ` · ${view + 1} of ${viewCount}`;
+  else if (!isMagic && paddock > 0) text += ' · old friends';
+  label.textContent = text;
 
   renderWantBubbles(state); // re-attach the want bubble to the freshly-built card
 }
@@ -676,9 +713,13 @@ function groundImage(id, cx) {
 /** Build the ground-props row for one paddock. Always present (even empty) so
  *  its height is reserved from the first render -- buying the first ground prop
  *  must never make the paddock grow. Grounded props spread evenly across the
- *  row. Fence decor (garland/bunting) and butterflies are drawn elsewhere. */
-function groundDecorRow(state, paddock) {
-  const props = paddockDecor(state, paddock).filter((id) => GROUND_IMAGES[id]);
+ *  row; when a paddock spans several views (narrow screens) they deal out
+ *  round-robin so every view feels dressed. Fence decor (garland/bunting) and
+ *  butterflies are drawn elsewhere. */
+function groundDecorRow(state, paddock, view = 0, viewCount = 1) {
+  const props = paddockDecor(state, paddock)
+    .filter((id) => GROUND_IMAGES[id])
+    .filter((_, i) => i % viewCount === view);
   const images = props
     .map((id, i) => groundImage(id, (900 * (i + 1)) / (props.length + 1)))
     .join('');

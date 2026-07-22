@@ -1,4 +1,7 @@
 // shop.js — the Tack room: wardrobe & paddock decor, plus the stores.
+
+import { isMagicalCoat } from './horse.js';
+
 //
 // You own at most one of each item (buy once), and move it around freely:
 // place it on a horse / in a paddock, or take it off back into your stores to
@@ -9,23 +12,30 @@
 // while placed; wardrobe boosts a horse's supporter appeal while worn. Unlocking
 // is gated by herd size; locked items don't exist in the shop UI at all.
 
-// A paddock holds at most this many horses before older ones roll to the next
-// paddock over. It's viewport-dependent: a wide screen fits the whole layered
-// herd, but a narrow phone can only show a couple of horses before the front
-// row wraps and shoves the newest arrivals (the ones you tap) below the fold.
-// So on mobile the cap drops right down and older horses roll to the next
-// paddock, reachable with the ‹ nav arrow — the newest always stay on screen
-// with the action buttons. Lives here (not render.js) so decor rules can count
-// paddocks without importing the renderer.
-export const PADDOCK_CAP_WIDE = 8;
-export const PADDOCK_CAP_NARROW = 2;
-// Matches the 560px layout breakpoint in style.css.
-const NARROW_PADDOCK_QUERY = '(max-width: 560px)';
+// A paddock holds this many horses. Deliberately NOT viewport-dependent: a
+// paddock is a real thing the player owns (bought, decorated, saved), so it
+// must mean the same on every device — a narrow phone shows a paddock a couple
+// of horses at a time instead of splitting the herd differently (see
+// render.js's view paging). Lives here (not render.js) so decor rules can
+// count paddocks without importing the renderer.
+export const PADDOCK_CAP = 8;
 
-/** How many horses fill a paddock right now, given the viewport width. */
-export function paddockCap() {
-  return (typeof window !== 'undefined' && window.matchMedia(NARROW_PADDOCK_QUERY).matches)
-    ? PADDOCK_CAP_NARROW : PADDOCK_CAP_WIDE;
+// The rescue starts with the home paddock; more can be built. Prices keyed by
+// which paddock number the purchase would be: the second is a mid-game save-up
+// (the herd needs it around the 8th rescue), the third an end-game sink priced
+// with the companions.
+export const MAX_PADDOCKS = 3;
+export const PADDOCK_PRICES = { 2: 2500, 3: 75000 };
+
+// Decor slot index of the magical paddock — the free home of the magical gift
+// horses (unicorn, rainbow, golden pegasus). It exists only while a magical
+// horse does, never holds rescues, and never counts toward herd capacity.
+// Safely clear of the regular paddock indices (0..MAX_PADDOCKS-1).
+export const MAGIC_PADDOCK = 9;
+
+/** Whether the herd includes a magical gift horse (=> the magical paddock exists). */
+export function hasMagicalHorse(state) {
+  return state.horses.some((h) => isMagicalCoat(h.paletteKey));
 }
 
 // Fence-line decor hangs above the horses and never crowds them, so it doesn't
@@ -110,9 +120,37 @@ export const SHOP_ITEMS = [
   { id: 'statue-gold', name: 'Golden statue', category: 'decor', price: 0, gift: true, requiresHorses: 0, shareBonus: 0.06 },
 ];
 
-/** How many paddocks the herd currently fills (home paddock always counts). */
+/** How many regular paddocks the rescue owns (home paddock always counts).
+ *  The magical paddock is separate — see MAGIC_PADDOCK. */
 export function paddockCount(state) {
-  return Math.max(1, Math.ceil(state.horses.length / paddockCap()));
+  return Math.max(1, state.paddocksOwned ?? 1);
+}
+
+/** How many horses the owned paddocks hold. Magical gift horses live in their
+ *  own paddock and don't count against this. */
+export function herdCapacity(state) {
+  return paddockCount(state) * PADDOCK_CAP;
+}
+
+/** Whether every paddock space is taken (rescuing needs a rehoming or a new
+ *  paddock first). */
+export function herdAtCapacity(state) {
+  const regular = state.horses.filter((h) => !isMagicalCoat(h.paletteKey)).length;
+  return regular >= herdCapacity(state);
+}
+
+/** Price of the next paddock the player could build, or null at the max. */
+export function nextPaddockPrice(state) {
+  return PADDOCK_PRICES[paddockCount(state) + 1] ?? null;
+}
+
+/** Build the next paddock: 8 more spaces and a fresh spot to decorate. */
+export function buyPaddock(state) {
+  const price = nextPaddockPrice(state);
+  if (price === null || state.coins < price) return { ok: false };
+  state.coins -= price;
+  state.paddocksOwned = paddockCount(state) + 1;
+  return { ok: true, price, count: state.paddocksOwned };
 }
 
 export function isUnlocked(item, state) {
@@ -200,11 +238,15 @@ export function paddockHasRoomFor(item, state, paddock) {
  *  regardless of affordability — the shop picker's option list. */
 export function paddocksOpenFor(item, state) {
   if (item.category !== 'decor' || !isUnlocked(item, state)) return [];
-  const open = [];
-  for (let p = 0; p < paddockCount(state); p++) {
-    if (paddockHasRoomFor(item, state, p)) open.push(p);
-  }
-  return open;
+  return decorTargets(state).filter((p) => paddockHasRoomFor(item, state, p));
+}
+
+/** Every paddock index decor can target right now: the owned regular paddocks,
+ *  plus the magical paddock while a magical horse lives there. */
+export function decorTargets(state) {
+  const targets = Array.from({ length: paddockCount(state) }, (_, p) => p);
+  if (hasMagicalHorse(state)) targets.push(MAGIC_PADDOCK);
+  return targets;
 }
 
 export function canBuyDecorIn(item, state, paddock) {
@@ -252,12 +294,14 @@ export function removeDecor(itemId, paddock, state) {
   return { ok: true, item };
 }
 
-/** Move every decor item in paddocks that no longer exist (the herd shrank past
- *  them) back into the stores, so nothing is orphaned. Silent by design. */
+/** Move every decor item in paddocks that no longer exist back into the
+ *  stores, so nothing is orphaned. Handles saves written before paddocks were
+ *  owned things (when a phone-sized viewport could split the herd across six
+ *  of them). Silent by design. */
 export function reclaimOrphanedDecor(state) {
-  const live = paddockCount(state);
+  const live = decorTargets(state);
   for (const p of Object.keys(state.shop.decorByPaddock ?? {})) {
-    if (Number(p) < live) continue;
+    if (live.includes(Number(p))) continue;
     for (const id of state.shop.decorByPaddock[p]) addToStock(id, state);
     delete state.shop.decorByPaddock[p];
   }
