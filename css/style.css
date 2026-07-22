@@ -1753,6 +1753,121 @@ main {
   70% { transform: scale(1.08); }
 }
 
+/* ---------- monthly leaderboard ---------- */
+
+.lb-join-text {
+  font-size: 0.9rem;
+  color: #5d5344;
+  margin: 0.25rem 0 0.5rem;
+}
+
+.lb-name-preview {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #4a6741;
+  text-align: center;
+  background: #fffdf7;
+  border: 1px dashed #cdbfa3;
+  border-radius: 12px;
+  padding: 0.6rem 1rem;
+  margin: 0 0 0.75rem;
+}
+
+.lb-join-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.lb-btn {
+  padding: 0.45rem 0.9rem;
+  font: inherit;
+  font-size: 0.85rem;
+  color: #5d5344;
+  background: #faf6ee;
+  border: 1px solid #d8c39a;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.lb-btn:hover {
+  background: #f5efe1;
+}
+
+.lb-btn-primary {
+  color: #fff;
+  background: #6d8a5b;
+  border-color: #6d8a5b;
+}
+
+.lb-btn-primary:hover {
+  background: #5d7a4c;
+}
+
+.lb-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.lb-list {
+  list-style: none;
+  margin: 0.25rem 0 0.75rem;
+  padding: 0;
+}
+
+.lb-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  padding: 0.4rem 0.6rem;
+  border-radius: 8px;
+  font-size: 0.92rem;
+}
+
+.lb-row:nth-child(even) {
+  background: #f5efe1;
+}
+
+.lb-you {
+  background: #e8efe2;
+  font-weight: 600;
+}
+
+.lb-rank {
+  min-width: 1.6rem;
+  text-align: center;
+}
+
+.lb-name {
+  flex: 1;
+}
+
+.lb-score {
+  color: #6d8a5b;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.lb-status {
+  color: #8a7d68;
+  font-size: 0.9rem;
+  padding: 0.75rem 0.25rem;
+}
+
+/* "Leave the board" reads as a footnote action, like the delete button's
+   quieter cousin. */
+.lb-leave {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  font-size: inherit;
+  color: #9a4a3a;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
 /* ---------- footer ---------- */
 
 .credit {

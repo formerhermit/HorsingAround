@@ -16,6 +16,10 @@ import {
   hasNewAffordableItem,
 } from './shop.js';
 import { syncOnLoad, pushCloudSave, getCloudUserId, deleteCloudData } from './cloud.js';
+import {
+  monthLabel, generateName, rolloverIfNeeded, recordRescue,
+  pushScore, joinBoard, fetchBoard, leaveBoard,
+} from './leaderboard.js';
 import { initShare } from './share.js';
 import './audio.js';
 
@@ -130,10 +134,14 @@ wireDonateButtons();
 // Cloud sync is a background enhancement, never a blocker on first paint —
 // Biscuit is already on screen and clickable before this resolves.
 syncOnLoad().then((adopted) => {
-  if (!adopted) return;
-  resetPaddockView();
-  renderAll(state);
-  save();
+  if (adopted) {
+    resetPaddockView();
+    renderAll(state);
+    save();
+  }
+  // Whichever save won, make sure its leaderboard row is current (and rolled
+  // over to the right month) once the session exists.
+  pushScore();
 });
 
 // ---- input: click (or Enter/Space) on a horse = one care action ----
@@ -458,6 +466,7 @@ document.getElementById('actions').addEventListener('click', (event) => {
   if (event.target.closest('#rescue-btn')) {
     const { ok, reason, events } = rescueHorse();
     if (ok) {
+      recordRescue(); // count it toward this month's leaderboard
       state.milestones.hasRescuedAgain = true; // resolves the rescue nudge
       resetPaddockView(); // always show the new arrival
       renderAll(state);
@@ -583,19 +592,24 @@ document.getElementById('album-overlay').addEventListener('click', (event) => {
 
 // ---- collection book ----
 
-// Switch between the Collection and Stats tabs inside the collection modal.
+// Switch between the tabs inside the collection modal.
+const COLLECTION_TABS = {
+  collection:  { tab: 'tab-collection',  panel: 'panel-collection',  title: 'Collection' },
+  stats:       { tab: 'tab-stats',       panel: 'panel-stats',       title: 'Stats' },
+  leaderboard: { tab: 'tab-leaderboard', panel: 'panel-leaderboard', title: 'Top rescuers' },
+};
+
 function showCollectionTab(name) {
-  const isStats = name === 'stats';
-  document.getElementById('panel-collection').hidden = isStats;
-  document.getElementById('panel-stats').hidden = !isStats;
-  const tabC = document.getElementById('tab-collection');
-  const tabS = document.getElementById('tab-stats');
-  tabC.classList.toggle('is-active', !isStats);
-  tabS.classList.toggle('is-active', isStats);
-  tabC.setAttribute('aria-selected', String(!isStats));
-  tabS.setAttribute('aria-selected', String(isStats));
-  document.getElementById('collection-title').textContent = isStats ? 'Stats' : 'Collection';
-  if (isStats) renderStats(state);
+  for (const [key, ids] of Object.entries(COLLECTION_TABS)) {
+    const active = key === name;
+    document.getElementById(ids.panel).hidden = !active;
+    const tab = document.getElementById(ids.tab);
+    tab.classList.toggle('is-active', active);
+    tab.setAttribute('aria-selected', String(active));
+  }
+  document.getElementById('collection-title').textContent = COLLECTION_TABS[name].title;
+  if (name === 'stats') renderStats(state);
+  if (name === 'leaderboard') renderLeaderboardPanel();
 }
 
 document.getElementById('collection-btn').addEventListener('click', () => {
@@ -609,6 +623,98 @@ document.getElementById('collection-btn').addEventListener('click', () => {
 });
 document.getElementById('tab-collection').addEventListener('click', () => showCollectionTab('collection'));
 document.getElementById('tab-stats').addEventListener('click', () => showCollectionTab('stats'));
+document.getElementById('tab-leaderboard').addEventListener('click', () => showCollectionTab('leaderboard'));
+
+// ---- monthly leaderboard panel ----
+
+let lbPreviewName = null; // the generated name on offer in the join card
+
+async function renderLeaderboardPanel() {
+  rolloverIfNeeded();
+  const lb = state.leaderboard;
+  document.getElementById('leaderboard-intro').textContent =
+    `Top rescuers for ${monthLabel()}. The board starts fresh on the 1st of each month.`;
+  document.getElementById('leaderboard-join').hidden = lb.optedIn;
+  document.getElementById('leaderboard-board').hidden = !lb.optedIn;
+
+  if (!lb.optedIn) {
+    lbPreviewName ??= generateName();
+    document.getElementById('lb-name-preview').textContent = lbPreviewName;
+    return;
+  }
+
+  document.getElementById('lb-own-name').textContent = lb.name;
+  const list = document.getElementById('lb-list');
+  list.innerHTML = '<li class="lb-status">Loading the board…</li>';
+  await pushScore(); // our row should be current before we read
+  const rows = await fetchBoard();
+  if (!rows) {
+    list.innerHTML = '<li class="lb-status">Couldn\'t reach the board just now. Try again in a bit.</li>';
+    return;
+  }
+  if (rows.length === 0) {
+    list.innerHTML = '<li class="lb-status">Nobody on the board yet this month.</li>';
+    return;
+  }
+  list.innerHTML = '';
+  rows.forEach((row, i) => {
+    const li = document.createElement('li');
+    li.className = 'lb-row' + (row.you ? ' lb-you' : '');
+    const rank = document.createElement('span');
+    rank.className = 'lb-rank';
+    rank.textContent = ['🥇', '🥈', '🥉'][i] ?? `${i + 1}`;
+    const name = document.createElement('span');
+    name.className = 'lb-name';
+    name.textContent = row.name + (row.you ? ' (you)' : '');
+    const score = document.createElement('span');
+    score.className = 'lb-score';
+    score.textContent = `${row.rescues} ${row.rescues === 1 ? 'rescue' : 'rescues'}`;
+    li.append(rank, name, score);
+    list.appendChild(li);
+  });
+}
+
+document.getElementById('lb-reroll').addEventListener('click', () => {
+  lbPreviewName = generateName();
+  document.getElementById('lb-name-preview').textContent = lbPreviewName;
+});
+
+document.getElementById('lb-join').addEventListener('click', async () => {
+  const btn = document.getElementById('lb-join');
+  btn.disabled = true;
+  btn.textContent = 'Joining…';
+  // The database enforces one name per month; on a collision quietly reroll,
+  // falling back to a numbered variant so joining never dead-ends.
+  let name = lbPreviewName ?? generateName();
+  let result = 'error';
+  for (let attempt = 0; attempt < 6; attempt++) {
+    result = await joinBoard(name);
+    if (result !== 'taken') break;
+    name = attempt < 3 ? generateName() : `${generateName()} ${2 + Math.floor(Math.random() * 97)}`;
+  }
+  btn.disabled = false;
+  btn.textContent = 'Join the board';
+  if (result !== 'ok') {
+    showToast('Couldn\'t reach the board just now. Try again in a bit.', 'alert');
+    return;
+  }
+  lbPreviewName = null;
+  persist();
+  renderLeaderboardPanel();
+});
+
+document.getElementById('lb-leave').addEventListener('click', async () => {
+  const btn = document.getElementById('lb-leave');
+  btn.disabled = true;
+  const ok = await leaveBoard();
+  btn.disabled = false;
+  if (!ok) {
+    showToast('Couldn\'t reach the board just now. Try again in a bit.', 'alert');
+    return;
+  }
+  persist();
+  renderLeaderboardPanel();
+});
 document.getElementById('collection-close').addEventListener('click', closeCollection);
 document.getElementById('collection-overlay').addEventListener('click', (event) => {
   if (event.target.id === 'collection-overlay') closeCollection();

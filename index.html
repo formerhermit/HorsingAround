@@ -139,11 +139,13 @@
         </div>
       </div>
 
-      <div class="modal-tabs" role="tablist" aria-label="Collection and stats">
+      <div class="modal-tabs" role="tablist" aria-label="Collection, stats and top rescuers">
         <button class="modal-tab is-active" id="tab-collection" role="tab"
                 aria-selected="true" aria-controls="panel-collection">📖 Collection</button>
         <button class="modal-tab" id="tab-stats" role="tab"
                 aria-selected="false" aria-controls="panel-stats">📊 Stats</button>
+        <button class="modal-tab" id="tab-leaderboard" role="tab"
+                aria-selected="false" aria-controls="panel-leaderboard">🏆 Top rescuers</button>
       </div>
 
       <div class="modal-panel" id="panel-collection" role="tabpanel" aria-labelledby="tab-collection">
@@ -157,6 +159,29 @@
       <div class="modal-panel" id="panel-stats" role="tabpanel" aria-labelledby="tab-stats" hidden>
         <p class="shop-intro">A little record of everything you've done for the herd 💛</p>
         <div class="stats-list" id="stats-list"></div>
+      </div>
+
+      <div class="modal-panel" id="panel-leaderboard" role="tabpanel" aria-labelledby="tab-leaderboard" hidden>
+        <p class="shop-intro" id="leaderboard-intro"></p>
+
+        <div id="leaderboard-join" hidden>
+          <p class="lb-join-text">Join this month's board and rescue alongside everyone else.
+            You'll appear as:</p>
+          <p class="lb-name-preview" id="lb-name-preview"></p>
+          <div class="lb-join-actions">
+            <button class="lb-btn" id="lb-reroll">🎲 Try another name</button>
+            <button class="lb-btn lb-btn-primary" id="lb-join">Join the board</button>
+          </div>
+          <p class="privacy-meta">Your stable name and rescue count will be visible to
+            everyone who plays. Names are made up by the game, and you can leave the
+            board at any time.</p>
+        </div>
+
+        <div id="leaderboard-board" hidden>
+          <ol class="lb-list" id="lb-list"></ol>
+          <p class="privacy-meta">You're on the board as <strong id="lb-own-name"></strong>.
+            <button class="lb-leave" id="lb-leave">Leave the board</button></p>
+        </div>
       </div>
     </div>
   </div>
@@ -199,6 +224,9 @@
           never sees your payment details.</li>
         <li>The share buttons open your own social apps. Nothing from those companies is
           embedded in this page.</li>
+        <li>If you join the monthly Top rescuers board, your stable name (made up by the
+          game) and rescue count are visible to everyone who plays. Leaving the board
+          removes them.</li>
         <li>You can download a copy of your save at any time, or delete it from this
           device <strong>and</strong> from the cloud. Deleting has no undo.</li>
         <li>This game is not directed at children under 14.</li>
