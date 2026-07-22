@@ -67,6 +67,35 @@ export async function syncOnLoad() {
   }
 }
 
+/**
+ * Force-adopt whatever's in the current session's cloud row, ignoring local
+ * timestamps entirely -- unlike syncOnLoad()'s "newer wins" reconciliation,
+ * which is wrong here: after "Load other save" (js/google.js's signInWithGoogle
+ * 'signin' path), the local device is often the one being actively played, so
+ * its fresh savedAt would routinely "win" and silently keep the local game
+ * instead of loading the other account's, which is the opposite of what an
+ * explicit load action should do. Assumes a session already exists (true by
+ * the time this runs post-OAuth-redirect); never writes, so it's safe to call
+ * even if there's nothing to adopt. Returns true if a row was found and adopted.
+ */
+export async function pullCloudSave() {
+  if (!isConfigured()) return false;
+  try {
+    const client = await getClient();
+    const { data: row, error } = await client
+      .from('saves')
+      .select('game_state')
+      .maybeSingle();
+    if (error) throw error;
+    if (!row) return false;
+    adoptCloudState(row.game_state);
+    return true;
+  } catch (err) {
+    console.warn('Could not load the other account’s save:', err);
+    return false;
+  }
+}
+
 /** The anonymous player's cloud identity, for the privacy popup (so a player
  *  can quote it in a deletion request). Null when not configured / no session. */
 export async function getCloudUserId() {
