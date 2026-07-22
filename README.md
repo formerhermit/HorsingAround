@@ -81,6 +81,10 @@ Most rescues arrive as an everyday horse or donkey. Just occasionally a rarer on
 
 Tap the book up top to open your collection: every coat there is to find, which ones you've already welcomed home, and dimmed silhouettes for the ones you haven't. It fills in as your rescue grows.
 
+### Top rescuers
+
+Tap the book up top and there's a third tab alongside Collection and Stats: a monthly leaderboard of everyone playing. It's opt-in, so nobody appears until they join, and joining gives you a made-up stable name (like "Velvet Canter") rather than anything you type yourself — no real names, nothing to moderate. The board starts fresh on the 1st of every month; leave any time from the same tab.
+
 ### Little celebrations
 
 The game cheers you on. Hit 5, 25, 50 (and beyond) rescues, or rehomings, and you'll get a pat on the back and a bit of extra cash. Reach 10 rescues and there's confetti, plus a gentle nudge toward the real ARCH, with a magical friend in it for you if you help (more on that below).
@@ -94,6 +98,19 @@ The newest three horses stand up front, and older ones move to the back as the h
 The horses in the game are pretend, but ARCH's are real. A banner sits permanently at the foot of the screen, a standing reminder that links straight to [ARCH's donation page](https://donorbox.org/donate-to-arch?amount=10), because a real donation pays for real hay.
 
 Around your tenth rescue, the game offers a **unicorn**. Donate to the real rescue and a one-of-a-kind magical friend comes to live in your paddock, shimmering away and quietly charming new supporters. It's honour-based, on the donate click, and it's a gift, so it never counts toward a rescue's cost. And it's not a single missable moment: if you wave off that first offer, tapping any Donate button brings it back, so the unicorn stays winnable.
+
+## Playing on more than one device
+
+The footer has a **Save & sign in** link with two no-email ways to carry your paddock to another device:
+
+- **A one-time code.** Get a code on one device, enter it on the other, and that save copies across. No account, nothing to remember afterwards — the code only works once and expires in an hour.
+- **Google sign-in.** Attach a Google account to your save so it follows you automatically. If you sign in with a Google account that already has a save of its own, the game asks which one you want to keep rather than silently picking for you.
+
+A quiet hint ("Played before on another device?") appears for anyone starting a genuinely new save, and fades away on its own once you've settled in.
+
+## Your privacy
+
+The footer's **Game privacy** link lays out, in plain language, exactly what the game keeps (very little: a random anonymous ID, and your progress) and what it doesn't (no ads, no tracking, no analytics, no names). From there you can download a copy of your save at any time, or delete everything — local and cloud — with no undo.
 
 ## Under the hood
 
@@ -110,10 +127,13 @@ js/render.js           turns the game state into what you see on screen
 js/main.js             starts it all up and handles your taps
 js/audio.js            the background music
 js/cloud.js            optional cloud-save syncing
+js/leaderboard.js      the monthly Top rescuers board
+js/saveCode.js         one-time save codes for moving between devices
+js/google.js           optional Google sign-in, alongside save codes
 js/config.js           Supabase keys (safe to commit, protected by RLS)
 assets/                horse art and decor images
 audio/soundtrack.mp3   the music
-supabase/schema.sql    database setup for cloud saves
+supabase/schema.sql    database setup: saves, leaderboard, save codes
 ```
 
 Your progress saves to your browser on its own. Cloud saving is optional. The game runs on browser storage alone, and only talks to Supabase if `js/config.js` has real keys in it.
@@ -131,12 +151,21 @@ Then visit `http://localhost:8642`. Add `?reset` to the URL to wipe your local s
 ### Cloud saves (optional)
 
 1. Create a Supabase project.
-2. Run `supabase/schema.sql` in the SQL editor.
+2. Run `supabase/schema.sql` in the SQL editor — it covers saves, the monthly leaderboard, and the one-time save-code system in one go.
 3. Turn on anonymous sign-ins (Authentication → Sign In / Providers → Anonymous Sign-Ins).
 4. Pop your project URL and publishable key into `js/config.js`.
 
 Every save is scoped to its own anonymous user, so players never see each other's data.
 
+### Google sign-in (optional, alongside cloud saves)
+
+1. In Google Cloud Console, create an OAuth client and add Supabase's callback URL (`https://<your-project-ref>.supabase.co/auth/v1/callback`) as an authorized redirect URI.
+2. In Supabase, turn on the Google provider (Authentication → Sign In / Providers → Google) and paste in the Client ID and Secret.
+3. Turn on **Allow manual linking** in the same Auth settings — without it, attaching Google to an existing save fails outright.
+
+Without a verified custom domain, Google's consent screen will show your raw Supabase project URL rather than the game's name. That's expected, not a misconfiguration — it's just what Google shows while there's no branded domain behind the login.
+
 ## What's next
 
-- Leaderboard
+- Translations (Spanish)
+- Migrate to permanent hosting
