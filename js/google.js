@@ -38,16 +38,26 @@ function redirectTarget(marker) {
   return `${location.origin}${location.pathname}?google=${marker}`;
 }
 
+/**
+ * Both return true the instant the browser starts navigating to Google --
+ * which, on success, is the last thing the caller ever sees, since the page
+ * unloads. Only a failure (not configured, or Supabase rejecting the request
+ * outright -- e.g. manual linking still off) returns false *without*
+ * navigating anywhere, which is exactly the case the caller needs to catch
+ * and show feedback for, or a click just silently does nothing.
+ */
 export async function linkGoogle() {
-  if (!isConfigured()) return;
+  if (!isConfigured()) return false;
   const client = await getClient();
-  await client.auth.linkIdentity({ provider: 'google', options: { redirectTo: redirectTarget('linked') } });
+  const { error } = await client.auth.linkIdentity({ provider: 'google', options: { redirectTo: redirectTarget('linked') } });
+  return !error;
 }
 
 export async function signInWithGoogle(marker = 'signin') {
-  if (!isConfigured()) return;
+  if (!isConfigured()) return false;
   const client = await getClient();
-  await client.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: redirectTarget(marker) } });
+  const { error } = await client.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: redirectTarget(marker) } });
+  return !error;
 }
 
 /** Is the current session's account already linked to Google? Drives the

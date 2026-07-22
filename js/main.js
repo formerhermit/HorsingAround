@@ -807,14 +807,38 @@ scConfirmLoad.addEventListener('click', async () => {
 // handling above), and only then does the conflict card offer a real choice:
 // load that other save here, or save this device's game there instead
 // (overwriting what that account had).
-document.getElementById('google-signin-btn').addEventListener('click', () => linkGoogle());
-document.getElementById('google-conflict-load').addEventListener('click', () => signInWithGoogle('signin'));
-document.getElementById('google-conflict-override').addEventListener('click', () => {
+// A full-page redirect can take a visible moment to actually kick in (a
+// network round trip to build the authorize URL happens before the browser
+// navigates anywhere) -- with no feedback in between, a click looked like it
+// did nothing. Give every Google button an immediate "Redirecting…" state,
+// and if the call comes back false (it failed before ever navigating --
+// misconfigured, or Supabase rejecting the request outright), restore the
+// button and say so, rather than leaving it stuck with no explanation.
+async function runGoogleRedirect(button, attempt) {
+  const label = button.textContent;
+  button.disabled = true;
+  button.textContent = 'Redirecting to Google…';
+  const started = await attempt();
+  if (!started) {
+    button.disabled = false;
+    button.textContent = label;
+    showToast('Couldn’t reach Google just now. Try again in a bit.', 'alert');
+  }
+  // If it did start, the page is already navigating away -- nothing left to do.
+}
+
+document.getElementById('google-signin-btn').addEventListener('click', (e) => {
+  runGoogleRedirect(e.target, () => linkGoogle());
+});
+document.getElementById('google-conflict-load').addEventListener('click', (e) => {
+  runGoogleRedirect(e.target, () => signInWithGoogle('signin'));
+});
+document.getElementById('google-conflict-override').addEventListener('click', (e) => {
   // Stash this device's save before the redirect -- nothing in memory
   // survives it, and main.js's googleReturn handling reads this back once
   // we're signed in as the other account.
   localStorage.setItem(OVERRIDE_STASH_KEY, JSON.stringify(gameState));
-  signInWithGoogle('override');
+  runGoogleRedirect(e.target, () => signInWithGoogle('override'));
 });
 // No separate cancel action here -- the modal's own × (sync-close) already
 // dismisses the card without doing anything, and the conflict card's own
