@@ -16,7 +16,7 @@ import {
   buyDecorIn, buyWardrobe, placeDecor, removeDecor, placeWardrobe, removeWardrobe,
   hasNewAffordableItem,
 } from './shop.js';
-import { syncOnLoad, pullCloudSave, pushCloudSave, getCloudUserId, deleteCloudData } from './cloud.js';
+import { syncOnLoad, pullCloudSave, pushCloudSave, getCloudUserId, deleteCloudData, getClient } from './cloud.js';
 import { createSaveCode, previewSaveCode, confirmSaveCode } from './saveCode.js';
 import { linkGoogle, signInWithGoogle, isGoogleLinked } from './google.js';
 import {
@@ -38,15 +38,28 @@ const state = initState({ reset });
 // Which Google flow (if any) we're returning from, per the ?google= marker
 // google.js adds to its redirect URL -- see js/google.js for why this is
 // simpler than timing an onAuthStateChange listener against Supabase's own
-// URL-token parsing on boot. Read once, then scrub it from the address bar.
-// Supabase appends its own error/error_description on a failed link -- check
-// both query and hash, since which one depends on the OAuth flow type.
+// URL-token parsing on boot. Supabase appends its own error/error_description
+// on a failed link -- check both query and hash, since which one depends on
+// the OAuth flow type.
+//
+// Read these now, but do NOT scrub the URL yet: Supabase's client reads its
+// own session-establishing parameters (a PKCE ?code=... or an implicit-flow
+// #access_token=...) from this exact URL when it's constructed a moment from
+// now, inside getClient()'s dynamic import. Wiping the query/hash early --
+// which a first version of this code did, via history.replaceState(null, '',
+// location.pathname) run synchronously here -- silently deleted those
+// parameters before Supabase ever saw them, so "signin"/"override" always
+// fell back to whatever session already existed instead of the one just
+// signed into. The cleanup call now happens later, after getClient() has
+// definitely run.
 const googleQuery = new URLSearchParams(location.search);
 const googleHash = new URLSearchParams(location.hash.replace(/^#/, ''));
 const googleReturn = googleQuery.get('google');
 const googleError = googleQuery.get('error_description') || googleQuery.get('error')
   || googleHash.get('error_description') || googleHash.get('error');
-if (googleReturn) history.replaceState(null, '', location.pathname);
+function scrubGoogleReturnUrl() {
+  if (googleReturn) history.replaceState(null, '', location.pathname);
+}
 
 // "Keep my progress instead" on the Google conflict card stashes this
 // device's save here before switching accounts, since the redirect to
@@ -160,55 +173,66 @@ wireDonateButtons();
 // explicit load/save action: the local device is usually the one being
 // actively played, so its fresh timestamp would routinely "win" and silently
 // keep the local game (or even push it up over the other account's save)
-// instead of doing what was asked. A session already exists by the time this
-// runs -- the OAuth redirect itself established it -- so neither path needs
-// syncOnLoad() for that either.
-if (googleReturn === 'signin') {
-  pullCloudSave().then((adopted) => {
-    if (adopted) { resetPaddockView(); renderAll(state); save(); }
-    pushScore();
-    showToast(adopted ? 'Welcome back! Your Google save is here 💛' : 'Signed in with Google 💛', 'ok');
-  });
-} else if (googleReturn === 'override') {
-  const stashed = localStorage.getItem(OVERRIDE_STASH_KEY);
-  localStorage.removeItem(OVERRIDE_STASH_KEY);
-  if (stashed) {
-    try {
-      adoptCloudState(JSON.parse(stashed));
-      resetPaddockView();
-      renderAll(state);
-      save();
-      pushCloudSave();
+// instead of doing what was asked.
+//
+// getSession() is awaited first (and only then is the URL scrubbed) because
+// constructing the client is what makes Supabase read window.location for
+// its own session-establishing parameters (a PKCE ?code=... or an implicit
+// #access_token=...), and getSession() is documented to always wait for that
+// detection to finish before resolving. Scrubbing any earlier would silently
+// delete those parameters before Supabase ever saw them, so a
+// "signin"/"override" return would just fall back to whatever session
+// already existed instead of the new one.
+getClient().then((client) => client.auth.getSession()).then(() => {
+  scrubGoogleReturnUrl();
+
+  if (googleReturn === 'signin') {
+    pullCloudSave().then((adopted) => {
+      if (adopted) { resetPaddockView(); renderAll(state); save(); }
       pushScore();
-      showToast('Your progress is now saved to this Google account 💛', 'ok');
-    } catch (err) {
-      console.warn('Could not restore the stashed save after overriding:', err);
-      showToast('Signed in with Google, but restoring your other progress failed — sorry!', 'alert');
+      showToast(adopted ? 'Welcome back! Your Google save is here 💛' : 'Signed in with Google 💛', 'ok');
+    });
+  } else if (googleReturn === 'override') {
+    const stashed = localStorage.getItem(OVERRIDE_STASH_KEY);
+    localStorage.removeItem(OVERRIDE_STASH_KEY);
+    if (stashed) {
+      try {
+        adoptCloudState(JSON.parse(stashed));
+        resetPaddockView();
+        renderAll(state);
+        save();
+        pushCloudSave();
+        pushScore();
+        showToast('Your progress is now saved to this Google account 💛', 'ok');
+      } catch (err) {
+        console.warn('Could not restore the stashed save after overriding:', err);
+        showToast('Signed in with Google, but restoring your other progress failed — sorry!', 'alert');
+      }
+    } else {
+      showToast('Signed in with Google 💛', 'ok');
     }
   } else {
-    showToast('Signed in with Google 💛', 'ok');
-  }
-} else {
-  // Cloud sync is a background enhancement, never a blocker on first paint —
-  // Biscuit is already on screen and clickable before this resolves. This is
-  // the normal path (including a successful Google *link*, which never
-  // changes which account owns the save, so the usual reconciliation is fine).
-  syncOnLoad().then((adopted) => {
-    if (adopted) {
-      resetPaddockView();
-      renderAll(state);
-      save();
-    }
-    pushScore();
-    if (googleReturn === 'linked') {
-      if (googleError) {
-        openSync().then(() => { document.getElementById('google-conflict').hidden = false; });
-      } else {
-        showToast('Google connected — this save can follow you now 💛', 'ok');
+    // Cloud sync is a background enhancement, never a blocker on first paint —
+    // Biscuit is already on screen and clickable before this resolves. This is
+    // the normal path (including a successful Google *link*, which never
+    // changes which account owns the save, so the usual reconciliation is fine).
+    syncOnLoad().then((adopted) => {
+      if (adopted) {
+        resetPaddockView();
+        renderAll(state);
+        save();
       }
-    }
-  });
-}
+      pushScore();
+      if (googleReturn === 'linked') {
+        if (googleError) {
+          openSync().then(() => { document.getElementById('google-conflict').hidden = false; });
+        } else {
+          showToast('Google connected — this save can follow you now 💛', 'ok');
+        }
+      }
+    });
+  }
+});
 
 // ---- input: click (or Enter/Space) on a horse = one care action ----
 
