@@ -204,14 +204,17 @@ function pendingNudge() {
   const m = state.milestones;
   const candidates = [];
   if (leftBehindPending && !m.leftBehindShown) candidates.push('left-behind');
+  // Armed by collecting a rescue milestone, then persisted. It outranks the
+  // shop/collection nudges: those re-assert themselves every session until
+  // resolved, whereas this introduction belongs to the milestone moment --
+  // behind the shop nudge it would wait forever for a player who never opens
+  // the Tack room. (Share/rescue can't collide: both are long done by the
+  // time a milestone is collectable.)
+  if (m.leaderboardNudgeQueued && !m.leaderboardNudgeShown && !state.leaderboard.optedIn) candidates.push('leaderboard');
   if (state.unlocks.moneyUI && !m.hasSharedUpdate) candidates.push('share');
   if (state.unlocks.rescue && !m.hasRescuedAgain && state.coins >= rescueCost(state)) candidates.push('rescue');
   if (state.unlocks.moneyUI && !m.shopIntroDone && hasNewAffordableItem(state)) candidates.push('shop');
   if (state.stats.horsesRescued >= 8 && !m.collectionIntroDone) candidates.push('collection');
-  // Armed by collecting a rescue milestone, then persisted -- so it patiently
-  // waits out any higher-priority nudge (and survives reloads) rather than
-  // being lost if its moment was taken.
-  if (m.leaderboardNudgeQueued && !m.leaderboardNudgeShown && !state.leaderboard.optedIn) candidates.push('leaderboard');
   return candidates.find((id) => !snoozedNudges.has(id)) ?? null;
 }
 
