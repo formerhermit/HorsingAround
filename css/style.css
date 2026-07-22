@@ -1753,6 +1753,67 @@ main {
   70% { transform: scale(1.08); }
 }
 
+/* ---------- restore whisper (header) ---------- */
+
+.restore-whisper {
+  display: block;
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0.15rem 0 0;
+  font: inherit;
+  font-size: 0.78rem;
+  color: #a99a7c;
+  cursor: pointer;
+  text-align: left;
+}
+
+.restore-whisper-link {
+  text-decoration: underline;
+  text-decoration-color: #d8c39a;
+  color: #a3763a;
+}
+
+.restore-whisper:hover .restore-whisper-link {
+  color: #8a5f28;
+}
+
+/* ---------- save-across-devices (privacy popup) ---------- */
+
+.privacy-section {
+  border-top: 1px solid #ece3cf;
+  margin-top: 0.9rem;
+  padding-top: 0.9rem;
+}
+
+.privacy-subhead {
+  margin: 0 0 0.3rem;
+  font-size: 1rem;
+  color: #3d3428;
+}
+
+.privacy-sub-intro {
+  margin: 0 0 0.6rem;
+  font-size: 0.88rem;
+  color: #5d5344;
+}
+
+.sc-input {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  font: inherit;
+  font-size: 1.1rem;
+  letter-spacing: 0.06em;
+  text-align: center;
+  text-transform: uppercase;
+  padding: 0.5rem;
+  margin-bottom: 0.6rem;
+  border: 1px solid #d8c39a;
+  border-radius: 10px;
+  background: #fffdf7;
+}
+
 /* ---------- monthly leaderboard ---------- */
 
 .lb-join-text {

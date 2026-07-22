@@ -27,6 +27,8 @@
     <div class="title-block">
       <h1>Horsing Around</h1>
       <p class="tagline">a little rescue paddock</p>
+      <button class="restore-whisper" id="restore-whisper" hidden>Played before on another
+        device? <span class="restore-whisper-link">Restore your game</span></button>
     </div>
     <div class="hud" id="hud">
       <div class="chip" id="chip-funds" title="Money donated by supporters — spent on hay, vet care and rescues">
@@ -229,8 +231,48 @@
           removes them.</li>
         <li>You can download a copy of your save at any time, or delete it from this
           device <strong>and</strong> from the cloud. Deleting has no undo.</li>
+        <li>Getting your game onto another device uses a one-time code, not an email
+          address or an account. Whoever holds the code can load a copy of that save, so
+          treat it like a spare key: share it only with your other device.</li>
         <li>This game is not directed at children under 14.</li>
       </ul>
+
+      <div class="privacy-section">
+        <h3 class="privacy-subhead">Save across devices</h3>
+        <p class="privacy-sub-intro">No account, no email. Get a code here, then enter it
+          on your other device (or the other way around).</p>
+        <div class="privacy-actions">
+          <button class="lb-btn" id="sc-get-code">Get a code for this device</button>
+          <button class="lb-btn" id="sc-open-entry">I have a code from another device</button>
+        </div>
+
+        <div id="sc-code-display" hidden>
+          <p class="lb-name-preview" id="sc-code-value">…</p>
+          <p class="privacy-meta">Enter this on your other device within the hour.
+            Getting a new code cancels this one.</p>
+        </div>
+
+        <div id="sc-code-entry" hidden>
+          <p class="lb-join-text">Enter the code shown on your other device:</p>
+          <input type="text" id="sc-code-input" class="sc-input" placeholder="XXXX-XXXX-XXXX"
+                 autocapitalize="characters" autocomplete="off" spellcheck="false">
+          <div class="lb-join-actions">
+            <button class="lb-btn lb-btn-primary" id="sc-code-submit">Look it up</button>
+          </div>
+          <p class="privacy-meta lb-status" id="sc-code-error" hidden></p>
+        </div>
+
+        <div id="sc-confirm" hidden>
+          <p class="lb-join-text" id="sc-confirm-text"></p>
+          <p class="privacy-meta">This replaces the game currently on this device. There's
+            no undo.</p>
+          <div class="lb-join-actions">
+            <button class="lb-btn" id="sc-confirm-cancel">Cancel</button>
+            <button class="lb-btn lb-btn-primary" id="sc-confirm-load">Load it here</button>
+          </div>
+        </div>
+      </div>
+
       <div class="privacy-actions">
         <button class="privacy-export" id="privacy-export">Download my save</button>
         <button class="privacy-delete" id="privacy-delete">Delete my save and cloud data</button>

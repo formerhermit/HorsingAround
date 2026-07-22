@@ -1,6 +1,6 @@
 // main.js — boot the game: load state, render, wire input and persistence.
 
-import { initState, save, gameState, DONATE_MILESTONE, SAVE_KEY, disableSaving } from './state.js';
+import { initState, save, gameState, adoptCloudState, DONATE_MILESTONE, SAVE_KEY, disableSaving } from './state.js';
 import { careFor, tick, rescueHorse, shareUpdate, rescueCost, acceptRehome, declineRehome, collectOfflineEarnings, collectDuePostcards, collectDueStatues, markPostcardsRead, fulfilWant, grantUnicorn, hasUnicorn } from './game.js';
 import {
   renderAll, renderHUD, renderActions, updateHorseCard,
@@ -10,12 +10,14 @@ import {
   renderPostcardButton, openPostcardAlbum, closePostcardAlbum,
   renderWantBubbles, showWantFulfilled,
   renderCollectionButton, openCollection, closeCollection, renderStats,
+  formatDate,
 } from './render.js';
 import {
   buyDecorIn, buyWardrobe, placeDecor, removeDecor, placeWardrobe, removeWardrobe,
   hasNewAffordableItem,
 } from './shop.js';
 import { syncOnLoad, pushCloudSave, getCloudUserId, deleteCloudData } from './cloud.js';
+import { createSaveCode, previewSaveCode, confirmSaveCode } from './saveCode.js';
 import {
   monthLabel, generateName, rolloverIfNeeded, recordRescue,
   pushScore, joinBoard, fetchBoard, leaveBoard,
@@ -151,6 +153,7 @@ function refreshUI() {
   renderActions(state);
   renderShopButton(state);
   updateOnboardingNudges();
+  updateRestoreWhisper();
 }
 
 // Three big centred call-to-action popups that teach the core loop, each with a
@@ -537,14 +540,15 @@ document.addEventListener('keydown', (event) => {
 function closePrivacy() {
   document.getElementById('privacy-overlay').hidden = true;
 }
-document.getElementById('privacy-link').addEventListener('click', async () => {
+async function openPrivacy() {
   document.getElementById('privacy-overlay').hidden = false;
   // Fill in the anonymous cloud id so a player can quote it in a deletion
   // request; resolves after the popup is already up, so no waiting.
   const id = await getCloudUserId();
   document.getElementById('privacy-player-id').textContent =
     id ?? 'none: playing locally in this browser only';
-});
+}
+document.getElementById('privacy-link').addEventListener('click', openPrivacy);
 document.getElementById('privacy-close').addEventListener('click', closePrivacy);
 document.getElementById('privacy-overlay').addEventListener('click', (event) => {
   if (event.target.id === 'privacy-overlay') closePrivacy();
@@ -597,6 +601,138 @@ deleteBtn.addEventListener('click', async () => {
   localStorage.removeItem(SAVE_KEY);
   location.replace(location.pathname);
 });
+
+// ---- save across devices (issue #25): no-email cross-device transfer ----
+// A code minted for this save copies it onto whichever device redeems it.
+// Not a sign-in -- see js/saveCode.js for why, and supabase/schema.sql for
+// the security-definer functions that do the actual work.
+
+const scGetCodeBtn = document.getElementById('sc-get-code');
+const scCodeDisplay = document.getElementById('sc-code-display');
+const scCodeValue = document.getElementById('sc-code-value');
+const scCodeEntry = document.getElementById('sc-code-entry');
+const scCodeInput = document.getElementById('sc-code-input');
+const scCodeSubmit = document.getElementById('sc-code-submit');
+const scCodeError = document.getElementById('sc-code-error');
+const scConfirm = document.getElementById('sc-confirm');
+const scConfirmText = document.getElementById('sc-confirm-text');
+const scConfirmLoad = document.getElementById('sc-confirm-load');
+
+let scPreviewedState = null; // the game_state previewSaveCode found, awaiting confirm
+let scPreviewedCode = null;
+
+function scResetPanels() {
+  scCodeDisplay.hidden = true;
+  scCodeEntry.hidden = true;
+  scConfirm.hidden = true;
+  scCodeError.hidden = true;
+  scCodeInput.value = '';
+  scPreviewedState = null;
+  scPreviewedCode = null;
+}
+
+scGetCodeBtn.addEventListener('click', async () => {
+  scResetPanels();
+  scGetCodeBtn.disabled = true;
+  scGetCodeBtn.textContent = 'Getting a code…';
+  const code = await createSaveCode();
+  scGetCodeBtn.disabled = false;
+  scGetCodeBtn.textContent = 'Get a code for this device';
+  if (!code) {
+    showToast('Couldn’t reach the service just now. Try again in a bit.', 'alert');
+    return;
+  }
+  scCodeValue.textContent = code;
+  scCodeDisplay.hidden = false;
+});
+
+function openSaveCodeEntry() {
+  scResetPanels();
+  scCodeEntry.hidden = false;
+  scCodeInput.focus();
+}
+document.getElementById('sc-open-entry').addEventListener('click', openSaveCodeEntry);
+
+scCodeSubmit.addEventListener('click', async () => {
+  const code = scCodeInput.value.trim();
+  if (!code) return;
+  scCodeSubmit.disabled = true;
+  scCodeSubmit.textContent = 'Looking up…';
+  const result = await previewSaveCode(code);
+  scCodeSubmit.disabled = false;
+  scCodeSubmit.textContent = 'Look it up';
+  if (!result.ok) {
+    scCodeError.hidden = false;
+    scCodeError.textContent = result.reason === 'invalid'
+      ? 'That code isn’t valid, or it’s expired. Double-check it, or get a new one on the other device.'
+      : 'Couldn’t reach the service just now. Try again in a bit.';
+    return;
+  }
+  scCodeError.hidden = true;
+  scPreviewedState = result.gameState;
+  scPreviewedCode = code;
+  const horseCount = result.gameState?.horses?.length ?? 0;
+  const since = result.gameState?.stats?.startedAt ? formatDate(result.gameState.stats.startedAt) : null;
+  scConfirmText.textContent = `Found a paddock with ${horseCount} ${horseCount === 1 ? 'horse' : 'horses'}` +
+    (since ? `, caring since ${since}` : '') + '. Load it here?';
+  scCodeEntry.hidden = true;
+  scConfirm.hidden = false;
+});
+
+document.getElementById('sc-confirm-cancel').addEventListener('click', scResetPanels);
+
+scConfirmLoad.addEventListener('click', async () => {
+  if (!scPreviewedCode || !scPreviewedState) return;
+  scConfirmLoad.disabled = true;
+  scConfirmLoad.textContent = 'Loading…';
+  const result = await confirmSaveCode(scPreviewedCode);
+  scConfirmLoad.disabled = false;
+  scConfirmLoad.textContent = 'Load it here';
+  if (result !== 'ok') {
+    showToast(result === 'invalid'
+      ? 'That code just expired or was already used. Get a fresh one on the other device.'
+      : 'Couldn’t reach the service just now. Try again in a bit.', 'alert');
+    return;
+  }
+  adoptCloudState(scPreviewedState);
+  state.milestones.restoreWhisperRetired = true; // they've got their real game now
+  scResetPanels();
+  closePrivacy();
+  resetPaddockView();
+  renderAll(state);
+  refreshUI();
+  save();
+  pushCloudSave(); // this device's cloud row should reflect the adopted state too
+  showToast('Welcome back! Your paddock is here 💛', 'ok');
+});
+
+// The header whisper: quiet, and only ever seen on a brand-new save (see
+// updateRestoreWhisper). Jumps straight to the code-entry step, since anyone
+// who taps this already knows what they want.
+document.getElementById('restore-whisper').addEventListener('click', async () => {
+  await openPrivacy();
+  openSaveCodeEntry();
+});
+
+const RESTORE_WHISPER_MS = 10 * 60 * 1000; // 10 minutes of play retires it
+function updateRestoreWhisper() {
+  const whisper = document.getElementById('restore-whisper');
+  const m = state.milestones;
+  if (m.restoreWhisperRetired) {
+    whisper.hidden = true;
+    return;
+  }
+  const outgrown = state.stats.horsesRescued > 1 // more than just Biscuit
+    || Date.now() - state.stats.startedAt > RESTORE_WHISPER_MS;
+  if (outgrown) {
+    m.restoreWhisperRetired = true;
+    whisper.hidden = true;
+    save();
+    return;
+  }
+  whisper.hidden = false;
+}
+updateRestoreWhisper();
 
 // ---- postcard album ----
 
