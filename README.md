@@ -60,9 +60,13 @@ Once your first horse is settled, the game nudges you to bring home a friend. No
 
 One rule: you can't rescue a new horse if it would push a horse that **isn't thriving yet** to the back of the paddock. Look after the ones you've got first.
 
+And like the real rescue, space is the limit: each paddock holds **8 horses**, and when every space is taken you can't bring anyone else home. The game offers you the two honest ways out on the spot: find a thriving horse a forever home, or build another paddock.
+
 ### Rehome horses
 
 Every so often, a thriving horse is ready for a forever home. You'll get an offer with a small adoption fee (roughly 10% of your next rescue's cost). Say **yes** and the horse trots off happily and the fee goes into your fund. Say **not now** and they stay put. Offers stop once you're down to two horses, so the paddock never empties out.
+
+When the rescue is full you don't have to wait for an offer: the full-paddocks popup lets you **ask around for a forever home** there and then.
 
 ### The shop
 
@@ -71,7 +75,7 @@ Spend your funds on nice things.
 - **Wardrobe**: scarves, boots, flowers and bows for a chosen horse. A dressed-up horse turns more heads, so it attracts supporters faster.
 - **Paddock decor**: bunting, flower buckets, hay bales, a water trough, even a dog or a cat. Decor makes every "share an update" worth more.
 
-Each paddock gets its own decorations, up to a tidy limit. Some choices are one or the other: flower garland *or* bunting, an ear flower *or* a forelock bow. The dog and cat are the big splurges, for when the rescue's really thriving.
+Each paddock gets its own decorations — the magical paddock included — up to a tidy limit. Some choices are one or the other: flower garland *or* bunting, an ear flower *or* a forelock bow. The dog and cat are the big splurges, for when the rescue's really thriving.
 
 ### Animals and rare coats
 
@@ -89,15 +93,21 @@ Tap the book up top and there's a third tab alongside Collection and Stats: a mo
 
 The game cheers you on. Hit 5, 25, 50 (and beyond) rescues, or rehomings, and you'll get a pat on the back and a bit of extra cash. Reach 10 rescues and there's confetti, plus a gentle nudge toward the real ARCH, with a magical friend in it for you if you help (more on that below).
 
-### The paddock
+### The paddocks
 
-The newest three horses stand up front, and older ones move to the back as the herd grows, then into extra paddocks you can flick between. Nobody disappears. The horses you rescued early are still there, just further back.
+The newest three horses stand up front, and older ones move to the back as the herd grows. Nobody disappears. The horses you rescued early are still there, just further back.
+
+Every paddock holds 8 horses, on every device — the newest 8 live in the **home paddock**, older friends in the paddocks beyond it, reachable with the ‹ › arrows. On a phone the same paddocks are just shown a couple of horses at a time ("Home paddock · 2 of 4"), so your rescue looks the same wherever you play it.
+
+You start with the home paddock and can build up to two more when the rescue needs the space: the second is a mid-game save-up, the third a proper end-game splurge. Each one is 8 more horse spaces and a fresh spot to decorate.
+
+And if a magical friend comes to live with you, a **magical paddock** appears all by itself — free, sparkling, and home to the magical horses only.
 
 ## Helping the real ARCH
 
 The horses in the game are pretend, but ARCH's are real. A banner sits permanently at the foot of the screen, a standing reminder that links straight to [ARCH's donation page](https://donorbox.org/donate-to-arch?amount=10), because a real donation pays for real hay.
 
-Around your tenth rescue, the game offers a **unicorn**. Donate to the real rescue and a one-of-a-kind magical friend comes to live in your paddock, shimmering away and quietly charming new supporters. It's honour-based, on the donate click, and it's a gift, so it never counts toward a rescue's cost. And it's not a single missable moment: if you wave off that first offer, tapping any Donate button brings it back, so the unicorn stays winnable.
+Around your tenth rescue, the game offers a **unicorn**. Donate to the real rescue and a one-of-a-kind magical friend comes to live in its own magical paddock, shimmering away and quietly charming new supporters. It's honour-based, on the donate click, and it's a gift, so it never counts toward a rescue's cost. And it's not a single missable moment: if you wave off that first offer, tapping any Donate button brings it back, so the unicorn stays winnable.
 
 ## Playing on more than one device
 
