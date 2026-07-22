@@ -383,12 +383,16 @@ function showWelcomeBack(summary) {
       ? `${fig('1')} new supporter found the rescue`
       : `${fig(summary.newSupporters)} new supporters found the rescue`);
   }
-  // A random horse "missed you" — the personal touch that makes it warm.
+  // A random horse "missed you" — the personal touch that makes it warm. If the
+  // herd eased down while you were gone, the same line invites the top-up.
   const horse = state.horses[Math.floor(Math.random() * state.horses.length)];
   const earnings = parts.length === 2 ? `${parts[0]} and ${parts[1]}` : parts[0];
+  const missedYou = (summary.drifted ?? 0) > 0
+    ? `${horse.name} missed you, and the herd would love a little top-up of care 🐴`
+    : `${horse.name} missed you 🐴`;
   enqueueDialog({
     emoji: '💛',
-    text: `Welcome back! While you were away (${formatAway(summary.awaySeconds)}), ${earnings}. ${horse.name} missed you 🐴`,
+    text: `Welcome back! While you were away (${formatAway(summary.awaySeconds)}), ${earnings}. ${missedYou}`,
     buttons: [{ label: 'Lovely!', variant: 'primary' }],
   });
 }
