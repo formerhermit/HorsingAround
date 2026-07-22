@@ -1798,6 +1798,10 @@ main {
   color: #5d5344;
 }
 
+.privacy-sub-intro-spaced {
+  margin-top: 0.9rem;
+}
+
 .sc-input {
   display: block;
   width: 100%;

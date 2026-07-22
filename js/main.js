@@ -18,6 +18,7 @@ import {
 } from './shop.js';
 import { syncOnLoad, pushCloudSave, getCloudUserId, deleteCloudData } from './cloud.js';
 import { createSaveCode, previewSaveCode, confirmSaveCode } from './saveCode.js';
+import { linkGoogle, signInWithGoogle, isGoogleLinked } from './google.js';
 import {
   monthLabel, generateName, rolloverIfNeeded, recordRescue,
   pushScore, joinBoard, fetchBoard, leaveBoard,
@@ -33,6 +34,19 @@ const fig = (v) => `<span class="fig">${v}</span>`;
 // Visit index.html?reset to discard the save during development.
 const reset = new URLSearchParams(location.search).has('reset');
 const state = initState({ reset });
+
+// Which Google flow (if any) we're returning from, per the ?google= marker
+// google.js adds to its redirect URL -- see js/google.js for why this is
+// simpler than timing an onAuthStateChange listener against Supabase's own
+// URL-token parsing on boot. Read once, then scrub it from the address bar.
+// Supabase appends its own error/error_description on a failed link -- check
+// both query and hash, since which one depends on the OAuth flow type.
+const googleQuery = new URLSearchParams(location.search);
+const googleHash = new URLSearchParams(location.hash.replace(/^#/, ''));
+const googleReturn = googleQuery.get('google');
+const googleError = googleQuery.get('error_description') || googleQuery.get('error')
+  || googleHash.get('error_description') || googleHash.get('error');
+if (googleReturn) history.replaceState(null, '', location.pathname);
 
 // Captured before save() stamps a fresh time: how long ago the last session was.
 const lastPlayedAt = state.savedAt;
@@ -144,6 +158,22 @@ syncOnLoad().then((adopted) => {
   // Whichever save won, make sure its leaderboard row is current (and rolled
   // over to the right month) once the session exists.
   pushScore();
+  // Returning from a Google redirect. "linked" is the default action for the
+  // one Google button -- if it failed, the near-universal reason is that this
+  // Google account already has a save of its own elsewhere, so offer the
+  // explicit switch rather than silently doing anything with what's here.
+  // A successful link never changes local state (same account, same save),
+  // so it's just a toast. "signin" is that explicit switch completing --
+  // reconciliation above may have just adopted the other account's save.
+  if (googleReturn === 'linked') {
+    if (googleError) {
+      openPrivacy().then(() => { document.getElementById('google-conflict').hidden = false; });
+    } else {
+      showToast('Google connected — this save can follow you now 💛', 'ok');
+    }
+  } else if (googleReturn === 'signin') {
+    showToast(adopted ? 'Welcome back! Your Google save is here 💛' : 'Signed in with Google 💛', 'ok');
+  }
 });
 
 // ---- input: click (or Enter/Space) on a horse = one care action ----
@@ -547,6 +577,17 @@ async function openPrivacy() {
   const id = await getCloudUserId();
   document.getElementById('privacy-player-id').textContent =
     id ?? 'none: playing locally in this browser only';
+
+  // Once Google's linked, there's no reason to offer linking it again --
+  // swap the button for a plain status line instead. The conflict card is
+  // only ever revealed right after a real conflict (see googleReturn
+  // handling above), so a normal open always starts with it hidden.
+  document.getElementById('google-conflict').hidden = true;
+  const linked = await isGoogleLinked();
+  document.getElementById('google-signin-btn').hidden = linked;
+  const status = document.getElementById('google-status');
+  status.hidden = !linked;
+  if (linked) status.textContent = 'Google is connected to this save.';
 }
 document.getElementById('privacy-link').addEventListener('click', openPrivacy);
 document.getElementById('privacy-close').addEventListener('click', closePrivacy);
@@ -704,6 +745,21 @@ scConfirmLoad.addEventListener('click', async () => {
   save();
   pushCloudSave(); // this device's cloud row should reflect the adopted state too
   showToast('Welcome back! Your paddock is here 💛', 'ok');
+});
+
+// Google sign-in: the same two-flow split as save codes, since a single
+// button can't tell "attach Google here" from "sign in from elsewhere"
+// apart. Both redirect away immediately -- see js/google.js for why the
+// feedback toast happens on the *next* load instead of here.
+// One button, one safe default: always try to attach Google to this save
+// first. If that Google account turns out to already have a save of its own,
+// Supabase reports it as an error on the redirect back (see googleReturn
+// handling above), and only THEN does the game offer the explicit switch --
+// "Load that save here instead" -- as its own confirmed action.
+document.getElementById('google-signin-btn').addEventListener('click', () => linkGoogle());
+document.getElementById('google-conflict-switch').addEventListener('click', () => signInWithGoogle());
+document.getElementById('google-conflict-cancel').addEventListener('click', () => {
+  document.getElementById('google-conflict').hidden = true;
 });
 
 // The header whisper: quiet, and only ever seen on a brand-new save (see
