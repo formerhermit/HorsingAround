@@ -125,6 +125,7 @@ export function defaultState() {
       statuesGiven: [],         // postcard-milestone statue ids already awarded
       leaderboardNudgeQueued: false, // a rescue milestone armed the leaderboard nudge...
       leaderboardNudgeShown: false,  // ...and it has been shown (or the board was found)
+      restoreWhisperRetired: false,  // the "played before? restore your game" header hint
     },
 
     leaderboard: {
@@ -240,6 +241,9 @@ function repair(save) {
   save.leaderboard ??= { optedIn: false, name: null, month: null, rescues: 0 };
   save.milestones.leaderboardNudgeQueued ??= false;
   save.milestones.leaderboardNudgeShown ??= false;
+  // The restore whisper is only for a brand-new save on a fresh device -- an
+  // existing save already has its data, so returning players never see it.
+  save.milestones.restoreWhisperRetired ??= true;
   // Existing saves belong to players who've already figured out how to
   // play -- only a brand-new defaultState() should get the onboarding nudges.
   save.milestones.introToastShown ??= true;

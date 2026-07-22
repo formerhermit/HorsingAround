@@ -214,7 +214,7 @@ function formatPlaytime(seconds) {
 }
 
 /** A date like "21 Jul 2026" for the "caring since" line. */
-function formatDate(ts) {
+export function formatDate(ts) {
   return new Date(ts).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
 }
 

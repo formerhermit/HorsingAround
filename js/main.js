@@ -1,6 +1,6 @@
 // main.js — boot the game: load state, render, wire input and persistence.
 
-import { initState, save, gameState, DONATE_MILESTONE, SAVE_KEY, disableSaving } from './state.js';
+import { initState, save, gameState, adoptCloudState, DONATE_MILESTONE, SAVE_KEY, disableSaving } from './state.js';
 import { careFor, tick, rescueHorse, shareUpdate, rescueCost, acceptRehome, declineRehome, collectOfflineEarnings, collectDuePostcards, collectDueStatues, markPostcardsRead, fulfilWant, grantUnicorn, hasUnicorn } from './game.js';
 import {
   renderAll, renderHUD, renderActions, updateHorseCard,
@@ -10,12 +10,15 @@ import {
   renderPostcardButton, openPostcardAlbum, closePostcardAlbum,
   renderWantBubbles, showWantFulfilled,
   renderCollectionButton, openCollection, closeCollection, renderStats,
+  formatDate,
 } from './render.js';
 import {
   buyDecorIn, buyWardrobe, placeDecor, removeDecor, placeWardrobe, removeWardrobe,
   hasNewAffordableItem,
 } from './shop.js';
 import { syncOnLoad, pushCloudSave, getCloudUserId, deleteCloudData } from './cloud.js';
+import { createSaveCode, previewSaveCode, confirmSaveCode } from './saveCode.js';
+import { linkGoogle, signInWithGoogle, isGoogleLinked } from './google.js';
 import {
   monthLabel, generateName, rolloverIfNeeded, recordRescue,
   pushScore, joinBoard, fetchBoard, leaveBoard,
@@ -31,6 +34,19 @@ const fig = (v) => `<span class="fig">${v}</span>`;
 // Visit index.html?reset to discard the save during development.
 const reset = new URLSearchParams(location.search).has('reset');
 const state = initState({ reset });
+
+// Which Google flow (if any) we're returning from, per the ?google= marker
+// google.js adds to its redirect URL -- see js/google.js for why this is
+// simpler than timing an onAuthStateChange listener against Supabase's own
+// URL-token parsing on boot. Read once, then scrub it from the address bar.
+// Supabase appends its own error/error_description on a failed link -- check
+// both query and hash, since which one depends on the OAuth flow type.
+const googleQuery = new URLSearchParams(location.search);
+const googleHash = new URLSearchParams(location.hash.replace(/^#/, ''));
+const googleReturn = googleQuery.get('google');
+const googleError = googleQuery.get('error_description') || googleQuery.get('error')
+  || googleHash.get('error_description') || googleHash.get('error');
+if (googleReturn) history.replaceState(null, '', location.pathname);
 
 // Captured before save() stamps a fresh time: how long ago the last session was.
 const lastPlayedAt = state.savedAt;
@@ -142,6 +158,22 @@ syncOnLoad().then((adopted) => {
   // Whichever save won, make sure its leaderboard row is current (and rolled
   // over to the right month) once the session exists.
   pushScore();
+  // Returning from a Google redirect. "linked" is the default action for the
+  // one Google button -- if it failed, the near-universal reason is that this
+  // Google account already has a save of its own elsewhere, so offer the
+  // explicit switch rather than silently doing anything with what's here.
+  // A successful link never changes local state (same account, same save),
+  // so it's just a toast. "signin" is that explicit switch completing --
+  // reconciliation above may have just adopted the other account's save.
+  if (googleReturn === 'linked') {
+    if (googleError) {
+      openSync().then(() => { document.getElementById('google-conflict').hidden = false; });
+    } else {
+      showToast('Google connected — this save can follow you now 💛', 'ok');
+    }
+  } else if (googleReturn === 'signin') {
+    showToast(adopted ? 'Welcome back! Your Google save is here 💛' : 'Signed in with Google 💛', 'ok');
+  }
 });
 
 // ---- input: click (or Enter/Space) on a horse = one care action ----
@@ -151,6 +183,7 @@ function refreshUI() {
   renderActions(state);
   renderShopButton(state);
   updateOnboardingNudges();
+  updateRestoreWhisper();
 }
 
 // Three big centred call-to-action popups that teach the core loop, each with a
@@ -527,6 +560,7 @@ document.addEventListener('keydown', (event) => {
   if (!document.getElementById('album-overlay').hidden) closePostcardAlbum();
   if (!document.getElementById('collection-overlay').hidden) closeCollection();
   if (!document.getElementById('privacy-overlay').hidden) closePrivacy();
+  if (!document.getElementById('sync-overlay').hidden) closeSync();
 });
 
 // ---- privacy popup ----
@@ -537,17 +571,49 @@ document.addEventListener('keydown', (event) => {
 function closePrivacy() {
   document.getElementById('privacy-overlay').hidden = true;
 }
-document.getElementById('privacy-link').addEventListener('click', async () => {
+async function openPrivacy() {
   document.getElementById('privacy-overlay').hidden = false;
   // Fill in the anonymous cloud id so a player can quote it in a deletion
   // request; resolves after the popup is already up, so no waiting.
   const id = await getCloudUserId();
   document.getElementById('privacy-player-id').textContent =
     id ?? 'none: playing locally in this browser only';
-});
+}
+document.getElementById('privacy-link').addEventListener('click', openPrivacy);
 document.getElementById('privacy-close').addEventListener('click', closePrivacy);
 document.getElementById('privacy-overlay').addEventListener('click', (event) => {
   if (event.target.id === 'privacy-overlay') closePrivacy();
+});
+document.getElementById('privacy-to-sync').addEventListener('click', () => {
+  closePrivacy();
+  openSync();
+});
+
+// ---- save & sign in popup ----
+// Cross-device continuity is a distinct thing from the privacy notice --
+// "how do I get my progress somewhere else" isn't a data-practices question,
+// so it gets its own popup rather than living inside Game privacy.
+
+function closeSync() {
+  document.getElementById('sync-overlay').hidden = true;
+}
+async function openSync() {
+  document.getElementById('sync-overlay').hidden = false;
+  // Once Google's linked, there's no reason to offer linking it again --
+  // swap the button for a plain status line instead. The conflict card is
+  // only ever revealed right after a real conflict (see googleReturn
+  // handling above), so a normal open always starts with it hidden.
+  document.getElementById('google-conflict').hidden = true;
+  const linked = await isGoogleLinked();
+  document.getElementById('google-signin-btn').hidden = linked;
+  const status = document.getElementById('google-status');
+  status.hidden = !linked;
+  if (linked) status.textContent = 'Google is connected to this save.';
+}
+document.getElementById('sync-link').addEventListener('click', openSync);
+document.getElementById('sync-close').addEventListener('click', closeSync);
+document.getElementById('sync-overlay').addEventListener('click', (event) => {
+  if (event.target.id === 'sync-overlay') closeSync();
 });
 
 // Data portability: hand the player their whole save as a JSON download.
@@ -597,6 +663,153 @@ deleteBtn.addEventListener('click', async () => {
   localStorage.removeItem(SAVE_KEY);
   location.replace(location.pathname);
 });
+
+// ---- save across devices (issue #25): no-email cross-device transfer ----
+// A code minted for this save copies it onto whichever device redeems it.
+// Not a sign-in -- see js/saveCode.js for why, and supabase/schema.sql for
+// the security-definer functions that do the actual work.
+
+const scGetCodeBtn = document.getElementById('sc-get-code');
+const scCodeDisplay = document.getElementById('sc-code-display');
+const scCodeValue = document.getElementById('sc-code-value');
+const scCodeEntry = document.getElementById('sc-code-entry');
+const scCodeInput = document.getElementById('sc-code-input');
+const scCodeSubmit = document.getElementById('sc-code-submit');
+const scCodeError = document.getElementById('sc-code-error');
+const scConfirm = document.getElementById('sc-confirm');
+const scConfirmText = document.getElementById('sc-confirm-text');
+const scConfirmLoad = document.getElementById('sc-confirm-load');
+
+let scPreviewedState = null; // the game_state previewSaveCode found, awaiting confirm
+let scPreviewedCode = null;
+
+function scResetPanels() {
+  scCodeDisplay.hidden = true;
+  scCodeEntry.hidden = true;
+  scConfirm.hidden = true;
+  scCodeError.hidden = true;
+  scCodeInput.value = '';
+  scPreviewedState = null;
+  scPreviewedCode = null;
+}
+
+scGetCodeBtn.addEventListener('click', async () => {
+  scResetPanels();
+  scGetCodeBtn.disabled = true;
+  scGetCodeBtn.textContent = 'Getting a code…';
+  const code = await createSaveCode();
+  scGetCodeBtn.disabled = false;
+  scGetCodeBtn.textContent = 'Get a code for this device';
+  if (!code) {
+    showToast('Couldn’t reach the service just now. Try again in a bit.', 'alert');
+    return;
+  }
+  scCodeValue.textContent = code;
+  scCodeDisplay.hidden = false;
+});
+
+function openSaveCodeEntry() {
+  scResetPanels();
+  scCodeEntry.hidden = false;
+  scCodeInput.focus();
+}
+document.getElementById('sc-open-entry').addEventListener('click', openSaveCodeEntry);
+
+scCodeSubmit.addEventListener('click', async () => {
+  const code = scCodeInput.value.trim();
+  if (!code) return;
+  scCodeSubmit.disabled = true;
+  scCodeSubmit.textContent = 'Looking up…';
+  const result = await previewSaveCode(code);
+  scCodeSubmit.disabled = false;
+  scCodeSubmit.textContent = 'Look it up';
+  if (!result.ok) {
+    scCodeError.hidden = false;
+    scCodeError.textContent = result.reason === 'invalid'
+      ? 'That code isn’t valid, or it’s expired. Double-check it, or get a new one on the other device.'
+      : 'Couldn’t reach the service just now. Try again in a bit.';
+    return;
+  }
+  scCodeError.hidden = true;
+  scPreviewedState = result.gameState;
+  scPreviewedCode = code;
+  const horseCount = result.gameState?.horses?.length ?? 0;
+  const since = result.gameState?.stats?.startedAt ? formatDate(result.gameState.stats.startedAt) : null;
+  scConfirmText.textContent = `Found a paddock with ${horseCount} ${horseCount === 1 ? 'horse' : 'horses'}` +
+    (since ? `, caring since ${since}` : '') + '. Load it here?';
+  scCodeEntry.hidden = true;
+  scConfirm.hidden = false;
+});
+
+document.getElementById('sc-confirm-cancel').addEventListener('click', scResetPanels);
+
+scConfirmLoad.addEventListener('click', async () => {
+  if (!scPreviewedCode || !scPreviewedState) return;
+  scConfirmLoad.disabled = true;
+  scConfirmLoad.textContent = 'Loading…';
+  const result = await confirmSaveCode(scPreviewedCode);
+  scConfirmLoad.disabled = false;
+  scConfirmLoad.textContent = 'Load it here';
+  if (result !== 'ok') {
+    showToast(result === 'invalid'
+      ? 'That code just expired or was already used. Get a fresh one on the other device.'
+      : 'Couldn’t reach the service just now. Try again in a bit.', 'alert');
+    return;
+  }
+  adoptCloudState(scPreviewedState);
+  state.milestones.restoreWhisperRetired = true; // they've got their real game now
+  scResetPanels();
+  closePrivacy();
+  resetPaddockView();
+  renderAll(state);
+  refreshUI();
+  save();
+  pushCloudSave(); // this device's cloud row should reflect the adopted state too
+  showToast('Welcome back! Your paddock is here 💛', 'ok');
+});
+
+// Google sign-in: the same two-flow split as save codes, since a single
+// button can't tell "attach Google here" from "sign in from elsewhere"
+// apart. Both redirect away immediately -- see js/google.js for why the
+// feedback toast happens on the *next* load instead of here.
+// One button, one safe default: always try to attach Google to this save
+// first. If that Google account turns out to already have a save of its own,
+// Supabase reports it as an error on the redirect back (see googleReturn
+// handling above), and only THEN does the game offer the explicit switch --
+// "Load that save here instead" -- as its own confirmed action.
+document.getElementById('google-signin-btn').addEventListener('click', () => linkGoogle());
+document.getElementById('google-conflict-switch').addEventListener('click', () => signInWithGoogle());
+document.getElementById('google-conflict-cancel').addEventListener('click', () => {
+  document.getElementById('google-conflict').hidden = true;
+});
+
+// The header whisper: quiet, and only ever seen on a brand-new save (see
+// updateRestoreWhisper). Jumps straight to the code-entry step, since anyone
+// who taps this already knows what they want.
+document.getElementById('restore-whisper').addEventListener('click', async () => {
+  await openSync();
+  openSaveCodeEntry();
+});
+
+const RESTORE_WHISPER_MS = 10 * 60 * 1000; // 10 minutes of play retires it
+function updateRestoreWhisper() {
+  const whisper = document.getElementById('restore-whisper');
+  const m = state.milestones;
+  if (m.restoreWhisperRetired) {
+    whisper.hidden = true;
+    return;
+  }
+  const outgrown = state.stats.horsesRescued > 1 // more than just Biscuit
+    || Date.now() - state.stats.startedAt > RESTORE_WHISPER_MS;
+  if (outgrown) {
+    m.restoreWhisperRetired = true;
+    whisper.hidden = true;
+    save();
+    return;
+  }
+  whisper.hidden = false;
+}
+updateRestoreWhisper();
 
 // ---- postcard album ----
 
