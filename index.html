@@ -20,7 +20,10 @@
   <meta name="twitter:description" content="Look after a paddock of rescue horses, and help the real ones at ARCH. Come and play 💛">
   <meta name="twitter:image" content="https://formerhermit.github.io/HorsingAround/Horsing-Around-Revamped.png">
 
-  <link rel="stylesheet" href="css/style.css">
+  <!-- ?v= busts stale browser caches on deploy: bump it whenever CSS or JS
+       change together, or players can get new JS with old CSS (an unstyled
+       magical paddock, say). -->
+  <link rel="stylesheet" href="css/style.css?v=20260722">
 </head>
 <body>
   <header class="topbar">
@@ -324,6 +327,6 @@
     · <button class="credit-link" id="sync-link" aria-haspopup="dialog" aria-controls="sync-modal">Save &amp; sign in</button>
   </footer>
 
-  <script type="module" src="js/main.js"></script>
+  <script type="module" src="js/main.js?v=20260722"></script>
 </body>
 </html>

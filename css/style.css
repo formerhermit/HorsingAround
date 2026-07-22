@@ -381,6 +381,11 @@ main {
   flex-wrap: wrap;
   gap: 1rem;
   margin-top: 12px;
+  /* Reserve the front row's height even with no horses in it (a freshly built
+     paddock, still empty), sized to one scale-1 card with its text block --
+     otherwise an empty paddock renders shorter than its neighbours and the
+     scene jumps while paging. */
+  min-height: calc(var(--horse-unit) * 1.483);
 }
 
 /* Ground props (trough, buckets, bales, balls) sit in the gap between the two
