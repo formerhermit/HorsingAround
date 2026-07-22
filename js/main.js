@@ -180,6 +180,10 @@ function nudgeConfig(id) {
     emoji: '🧣', dir: 'up-right',
     text: `${leftBehindHorseName} has gone to their new home, but left their outfit behind. It's waiting in your Tack room up top, ready for another horse.`,
   };
+  if (id === 'leaderboard') return {
+    emoji: '🏆', dir: 'up-right',
+    text: "Rescuers like you are on this month's Top rescuers board. It lives in the book up top, if you'd like to join in.",
+  };
   return {
     emoji: '🛍️', dir: 'up-right',
     text: 'The Tack room is open! Tap the button up top to dress your horses and decorate the paddock.',
@@ -191,6 +195,10 @@ const snoozedNudges = new Set(); // nudge ids dismissed this session
 // explainer on the next nudge sweep. Cleared (and never repeated) once seen.
 let leftBehindPending = false;
 let leftBehindHorseName = '';
+// Collecting a rescue-count milestone queues the one-time "there's a
+// leaderboard" nudge -- the milestone popup is proof they're the kind of
+// player the board is for.
+let leaderboardNudgePending = false;
 
 /** The highest-priority onboarding goal that's outstanding and not snoozed, or
  *  null. Rescue and shop only surface once they're actually actionable -- enough
@@ -204,6 +212,7 @@ function pendingNudge() {
   if (state.unlocks.rescue && !m.hasRescuedAgain && state.coins >= rescueCost(state)) candidates.push('rescue');
   if (state.unlocks.moneyUI && !m.shopIntroDone && hasNewAffordableItem(state)) candidates.push('shop');
   if (state.stats.horsesRescued >= 8 && !m.collectionIntroDone) candidates.push('collection');
+  if (leaderboardNudgePending && !m.leaderboardNudgeShown && !state.leaderboard.optedIn) candidates.push('leaderboard');
   return candidates.find((id) => !snoozedNudges.has(id)) ?? null;
 }
 
@@ -221,6 +230,7 @@ document.getElementById('nudge-dismiss').addEventListener('click', () => {
   if (id) snoozedNudges.add(id);
   if (id === 'collection') { state.milestones.collectionIntroDone = true; save(); }
   if (id === 'left-behind') { state.milestones.leftBehindShown = true; leftBehindPending = false; save(); }
+  if (id === 'leaderboard') { state.milestones.leaderboardNudgeShown = true; leaderboardNudgePending = false; save(); }
   hideNudgePopup();
 });
 
@@ -359,7 +369,13 @@ function handleEvent(e) {
     enqueueDialog({
       emoji: '🎉', share: true,
       text: `You have rescued ${fig(e.count)} horses. What an amazing job you're doing! Here's ${fig(`€${e.bonus}`)} extra to keep up the good work.`,
-      buttons: [{ label: 'Collect', variant: 'primary' }],
+      buttons: [{ label: 'Collect', variant: 'primary', onClick: () => {
+        // First rescue milestone doubles as the leaderboard's introduction.
+        if (!state.milestones.leaderboardNudgeShown && !state.leaderboard.optedIn) {
+          leaderboardNudgePending = true;
+          updateOnboardingNudges();
+        }
+      } }],
     });
   } else if (e.type === 'rehome-milestone') {
     enqueueDialog({
@@ -632,6 +648,12 @@ let lbPreviewName = null; // the generated name on offer in the join card
 async function renderLeaderboardPanel() {
   rolloverIfNeeded();
   const lb = state.leaderboard;
+  // They've found the board; the milestone nudge needn't ever fire.
+  if (!state.milestones.leaderboardNudgeShown) {
+    state.milestones.leaderboardNudgeShown = true;
+    leaderboardNudgePending = false;
+    save();
+  }
   document.getElementById('leaderboard-intro').textContent =
     `Top rescuers for ${monthLabel()}. The board starts fresh on the 1st of each month.`;
   document.getElementById('leaderboard-join').hidden = lb.optedIn;
