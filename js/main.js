@@ -195,10 +195,6 @@ const snoozedNudges = new Set(); // nudge ids dismissed this session
 // explainer on the next nudge sweep. Cleared (and never repeated) once seen.
 let leftBehindPending = false;
 let leftBehindHorseName = '';
-// Collecting a rescue-count milestone queues the one-time "there's a
-// leaderboard" nudge -- the milestone popup is proof they're the kind of
-// player the board is for.
-let leaderboardNudgePending = false;
 
 /** The highest-priority onboarding goal that's outstanding and not snoozed, or
  *  null. Rescue and shop only surface once they're actually actionable -- enough
@@ -212,7 +208,10 @@ function pendingNudge() {
   if (state.unlocks.rescue && !m.hasRescuedAgain && state.coins >= rescueCost(state)) candidates.push('rescue');
   if (state.unlocks.moneyUI && !m.shopIntroDone && hasNewAffordableItem(state)) candidates.push('shop');
   if (state.stats.horsesRescued >= 8 && !m.collectionIntroDone) candidates.push('collection');
-  if (leaderboardNudgePending && !m.leaderboardNudgeShown && !state.leaderboard.optedIn) candidates.push('leaderboard');
+  // Armed by collecting a rescue milestone, then persisted -- so it patiently
+  // waits out any higher-priority nudge (and survives reloads) rather than
+  // being lost if its moment was taken.
+  if (m.leaderboardNudgeQueued && !m.leaderboardNudgeShown && !state.leaderboard.optedIn) candidates.push('leaderboard');
   return candidates.find((id) => !snoozedNudges.has(id)) ?? null;
 }
 
@@ -230,7 +229,7 @@ document.getElementById('nudge-dismiss').addEventListener('click', () => {
   if (id) snoozedNudges.add(id);
   if (id === 'collection') { state.milestones.collectionIntroDone = true; save(); }
   if (id === 'left-behind') { state.milestones.leftBehindShown = true; leftBehindPending = false; save(); }
-  if (id === 'leaderboard') { state.milestones.leaderboardNudgeShown = true; leaderboardNudgePending = false; save(); }
+  if (id === 'leaderboard') { state.milestones.leaderboardNudgeShown = true; save(); }
   hideNudgePopup();
 });
 
@@ -371,8 +370,11 @@ function handleEvent(e) {
       text: `You have rescued ${fig(e.count)} horses. What an amazing job you're doing! Here's ${fig(`€${e.bonus}`)} extra to keep up the good work.`,
       buttons: [{ label: 'Collect', variant: 'primary', onClick: () => {
         // First rescue milestone doubles as the leaderboard's introduction.
+        // Queued persistently: if another onboarding nudge holds the slot
+        // right now, this one shows at a later sweep instead of being lost.
         if (!state.milestones.leaderboardNudgeShown && !state.leaderboard.optedIn) {
-          leaderboardNudgePending = true;
+          state.milestones.leaderboardNudgeQueued = true;
+          save();
           updateOnboardingNudges();
         }
       } }],
@@ -651,7 +653,6 @@ async function renderLeaderboardPanel() {
   // They've found the board; the milestone nudge needn't ever fire.
   if (!state.milestones.leaderboardNudgeShown) {
     state.milestones.leaderboardNudgeShown = true;
-    leaderboardNudgePending = false;
     save();
   }
   document.getElementById('leaderboard-intro').textContent =

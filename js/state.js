@@ -123,7 +123,8 @@ export function defaultState() {
       collectionIntroDone: false, // the "check your collection" nudge fired once
       leftBehindShown: false,   // the one-time "a rehomed horse left clothes in your stores" nudge
       statuesGiven: [],         // postcard-milestone statue ids already awarded
-      leaderboardNudgeShown: false, // the one-time "join the Top rescuers board" nudge
+      leaderboardNudgeQueued: false, // a rescue milestone armed the leaderboard nudge...
+      leaderboardNudgeShown: false,  // ...and it has been shown (or the board was found)
     },
 
     leaderboard: {
@@ -237,6 +238,7 @@ function repair(save) {
   // returning players -- the feature is new to them too, so their next rescue
   // milestone should mention it.
   save.leaderboard ??= { optedIn: false, name: null, month: null, rescues: 0 };
+  save.milestones.leaderboardNudgeQueued ??= false;
   save.milestones.leaderboardNudgeShown ??= false;
   // Existing saves belong to players who've already figured out how to
   // play -- only a brand-new defaultState() should get the onboarding nudges.
