@@ -53,6 +53,53 @@ create policy "delete own save"
 grant select, insert, update, delete on public.saves to authenticated;
 
 /*
+  Monthly "Top rescuers" leaderboard (issue #15). Rows are keyed
+  (user_id, month) so the board "resets" at midnight on the 1st simply by
+  querying the new month: nothing is deleted, and past months are kept.
+  Months follow Europe/Madrid time (ARCH's clock). Identity is the anonymous
+  auth user; display_name is only a label the player chose from the
+  name generator.
+
+  Run this whole block in the SQL editor when deploying the leaderboard.
+*/
+create table if not exists public.leaderboard (
+  user_id uuid not null references auth.users (id) on delete cascade,
+  month text not null,
+  display_name text not null check (char_length(display_name) between 3 and 40),
+  rescues integer not null default 0,
+  updated_at timestamptz not null default now(),
+  primary key (user_id, month)
+);
+
+alter table public.leaderboard enable row level security;
+
+/* Publicly readable -- that's the point of a leaderboard -- but each player
+   can only write their own rows. */
+create policy "board is public"
+  on public.leaderboard for select
+  using (true);
+
+create policy "insert own entry"
+  on public.leaderboard for insert
+  with check (auth.uid() = user_id);
+
+create policy "update own entry"
+  on public.leaderboard for update
+  using (auth.uid() = user_id);
+
+create policy "delete own entry"
+  on public.leaderboard for delete
+  using (auth.uid() = user_id);
+
+/* One stable name per month, case-insensitively; the client rerolls the
+   generator when it hits this. */
+create unique index if not exists leaderboard_month_name
+  on public.leaderboard (month, lower(display_name));
+
+grant select on public.leaderboard to anon;
+grant select, insert, update, delete on public.leaderboard to authenticated;
+
+/*
   Also let the plain (unauthenticated) anon role run a select -- needed so
   the GitHub Actions keep-alive ping (which holds only the publishable key,
   no signed-in user) can touch the database with a clean 200 instead of

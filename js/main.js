@@ -16,6 +16,10 @@ import {
   hasNewAffordableItem,
 } from './shop.js';
 import { syncOnLoad, pushCloudSave, getCloudUserId, deleteCloudData } from './cloud.js';
+import {
+  monthLabel, generateName, rolloverIfNeeded, recordRescue,
+  pushScore, joinBoard, fetchBoard, leaveBoard,
+} from './leaderboard.js';
 import { initShare } from './share.js';
 import './audio.js';
 
@@ -130,10 +134,14 @@ wireDonateButtons();
 // Cloud sync is a background enhancement, never a blocker on first paint —
 // Biscuit is already on screen and clickable before this resolves.
 syncOnLoad().then((adopted) => {
-  if (!adopted) return;
-  resetPaddockView();
-  renderAll(state);
-  save();
+  if (adopted) {
+    resetPaddockView();
+    renderAll(state);
+    save();
+  }
+  // Whichever save won, make sure its leaderboard row is current (and rolled
+  // over to the right month) once the session exists.
+  pushScore();
 });
 
 // ---- input: click (or Enter/Space) on a horse = one care action ----
@@ -172,6 +180,10 @@ function nudgeConfig(id) {
     emoji: '🧣', dir: 'up-right',
     text: `${leftBehindHorseName} has gone to their new home, but left their outfit behind. It's waiting in your Tack room up top, ready for another horse.`,
   };
+  if (id === 'leaderboard') return {
+    emoji: '🏆', dir: 'up-right',
+    text: "Rescuers like you are on this month's Top rescuers board. It lives in the book up top, if you'd like to join in.",
+  };
   return {
     emoji: '🛍️', dir: 'up-right',
     text: 'The Tack room is open! Tap the button up top to dress your horses and decorate the paddock.',
@@ -183,6 +195,10 @@ const snoozedNudges = new Set(); // nudge ids dismissed this session
 // explainer on the next nudge sweep. Cleared (and never repeated) once seen.
 let leftBehindPending = false;
 let leftBehindHorseName = '';
+// Collecting a rescue-count milestone queues the one-time "there's a
+// leaderboard" nudge -- the milestone popup is proof they're the kind of
+// player the board is for.
+let leaderboardNudgePending = false;
 
 /** The highest-priority onboarding goal that's outstanding and not snoozed, or
  *  null. Rescue and shop only surface once they're actually actionable -- enough
@@ -196,6 +212,7 @@ function pendingNudge() {
   if (state.unlocks.rescue && !m.hasRescuedAgain && state.coins >= rescueCost(state)) candidates.push('rescue');
   if (state.unlocks.moneyUI && !m.shopIntroDone && hasNewAffordableItem(state)) candidates.push('shop');
   if (state.stats.horsesRescued >= 8 && !m.collectionIntroDone) candidates.push('collection');
+  if (leaderboardNudgePending && !m.leaderboardNudgeShown && !state.leaderboard.optedIn) candidates.push('leaderboard');
   return candidates.find((id) => !snoozedNudges.has(id)) ?? null;
 }
 
@@ -213,6 +230,7 @@ document.getElementById('nudge-dismiss').addEventListener('click', () => {
   if (id) snoozedNudges.add(id);
   if (id === 'collection') { state.milestones.collectionIntroDone = true; save(); }
   if (id === 'left-behind') { state.milestones.leftBehindShown = true; leftBehindPending = false; save(); }
+  if (id === 'leaderboard') { state.milestones.leaderboardNudgeShown = true; leaderboardNudgePending = false; save(); }
   hideNudgePopup();
 });
 
@@ -351,7 +369,13 @@ function handleEvent(e) {
     enqueueDialog({
       emoji: '🎉', share: true,
       text: `You have rescued ${fig(e.count)} horses. What an amazing job you're doing! Here's ${fig(`€${e.bonus}`)} extra to keep up the good work.`,
-      buttons: [{ label: 'Collect', variant: 'primary' }],
+      buttons: [{ label: 'Collect', variant: 'primary', onClick: () => {
+        // First rescue milestone doubles as the leaderboard's introduction.
+        if (!state.milestones.leaderboardNudgeShown && !state.leaderboard.optedIn) {
+          leaderboardNudgePending = true;
+          updateOnboardingNudges();
+        }
+      } }],
     });
   } else if (e.type === 'rehome-milestone') {
     enqueueDialog({
@@ -458,6 +482,7 @@ document.getElementById('actions').addEventListener('click', (event) => {
   if (event.target.closest('#rescue-btn')) {
     const { ok, reason, events } = rescueHorse();
     if (ok) {
+      recordRescue(); // count it toward this month's leaderboard
       state.milestones.hasRescuedAgain = true; // resolves the rescue nudge
       resetPaddockView(); // always show the new arrival
       renderAll(state);
@@ -520,6 +545,17 @@ document.getElementById('privacy-overlay').addEventListener('click', (event) => 
   if (event.target.id === 'privacy-overlay') closePrivacy();
 });
 
+// Data portability: hand the player their whole save as a JSON download.
+document.getElementById('privacy-export').addEventListener('click', () => {
+  const blob = new Blob([JSON.stringify(gameState, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `horsing-around-save-${new Date().toISOString().slice(0, 10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
 // Self-service erasure: two taps (the button re-labels itself as the confirm
 // step, and disarms after a few seconds), then cloud row + local save are
 // wiped and the page reloads into a fresh game. If the cloud half fails, say
@@ -572,19 +608,24 @@ document.getElementById('album-overlay').addEventListener('click', (event) => {
 
 // ---- collection book ----
 
-// Switch between the Collection and Stats tabs inside the collection modal.
+// Switch between the tabs inside the collection modal.
+const COLLECTION_TABS = {
+  collection:  { tab: 'tab-collection',  panel: 'panel-collection',  title: 'Collection' },
+  stats:       { tab: 'tab-stats',       panel: 'panel-stats',       title: 'Stats' },
+  leaderboard: { tab: 'tab-leaderboard', panel: 'panel-leaderboard', title: 'Top rescuers' },
+};
+
 function showCollectionTab(name) {
-  const isStats = name === 'stats';
-  document.getElementById('panel-collection').hidden = isStats;
-  document.getElementById('panel-stats').hidden = !isStats;
-  const tabC = document.getElementById('tab-collection');
-  const tabS = document.getElementById('tab-stats');
-  tabC.classList.toggle('is-active', !isStats);
-  tabS.classList.toggle('is-active', isStats);
-  tabC.setAttribute('aria-selected', String(!isStats));
-  tabS.setAttribute('aria-selected', String(isStats));
-  document.getElementById('collection-title').textContent = isStats ? 'Stats' : 'Collection';
-  if (isStats) renderStats(state);
+  for (const [key, ids] of Object.entries(COLLECTION_TABS)) {
+    const active = key === name;
+    document.getElementById(ids.panel).hidden = !active;
+    const tab = document.getElementById(ids.tab);
+    tab.classList.toggle('is-active', active);
+    tab.setAttribute('aria-selected', String(active));
+  }
+  document.getElementById('collection-title').textContent = COLLECTION_TABS[name].title;
+  if (name === 'stats') renderStats(state);
+  if (name === 'leaderboard') renderLeaderboardPanel();
 }
 
 document.getElementById('collection-btn').addEventListener('click', () => {
@@ -598,6 +639,104 @@ document.getElementById('collection-btn').addEventListener('click', () => {
 });
 document.getElementById('tab-collection').addEventListener('click', () => showCollectionTab('collection'));
 document.getElementById('tab-stats').addEventListener('click', () => showCollectionTab('stats'));
+document.getElementById('tab-leaderboard').addEventListener('click', () => showCollectionTab('leaderboard'));
+
+// ---- monthly leaderboard panel ----
+
+let lbPreviewName = null; // the generated name on offer in the join card
+
+async function renderLeaderboardPanel() {
+  rolloverIfNeeded();
+  const lb = state.leaderboard;
+  // They've found the board; the milestone nudge needn't ever fire.
+  if (!state.milestones.leaderboardNudgeShown) {
+    state.milestones.leaderboardNudgeShown = true;
+    leaderboardNudgePending = false;
+    save();
+  }
+  document.getElementById('leaderboard-intro').textContent =
+    `Top rescuers for ${monthLabel()}. The board starts fresh on the 1st of each month.`;
+  document.getElementById('leaderboard-join').hidden = lb.optedIn;
+  document.getElementById('leaderboard-board').hidden = !lb.optedIn;
+
+  if (!lb.optedIn) {
+    lbPreviewName ??= generateName();
+    document.getElementById('lb-name-preview').textContent = lbPreviewName;
+    return;
+  }
+
+  document.getElementById('lb-own-name').textContent = lb.name;
+  const list = document.getElementById('lb-list');
+  list.innerHTML = '<li class="lb-status">Loading the board…</li>';
+  await pushScore(); // our row should be current before we read
+  const rows = await fetchBoard();
+  if (!rows) {
+    list.innerHTML = '<li class="lb-status">Couldn\'t reach the board just now. Try again in a bit.</li>';
+    return;
+  }
+  if (rows.length === 0) {
+    list.innerHTML = '<li class="lb-status">Nobody on the board yet this month.</li>';
+    return;
+  }
+  list.innerHTML = '';
+  rows.forEach((row, i) => {
+    const li = document.createElement('li');
+    li.className = 'lb-row' + (row.you ? ' lb-you' : '');
+    const rank = document.createElement('span');
+    rank.className = 'lb-rank';
+    rank.textContent = ['🥇', '🥈', '🥉'][i] ?? `${i + 1}`;
+    const name = document.createElement('span');
+    name.className = 'lb-name';
+    name.textContent = row.name + (row.you ? ' (you)' : '');
+    const score = document.createElement('span');
+    score.className = 'lb-score';
+    score.textContent = `${row.rescues} ${row.rescues === 1 ? 'rescue' : 'rescues'}`;
+    li.append(rank, name, score);
+    list.appendChild(li);
+  });
+}
+
+document.getElementById('lb-reroll').addEventListener('click', () => {
+  lbPreviewName = generateName();
+  document.getElementById('lb-name-preview').textContent = lbPreviewName;
+});
+
+document.getElementById('lb-join').addEventListener('click', async () => {
+  const btn = document.getElementById('lb-join');
+  btn.disabled = true;
+  btn.textContent = 'Joining…';
+  // The database enforces one name per month; on a collision quietly reroll,
+  // falling back to a numbered variant so joining never dead-ends.
+  let name = lbPreviewName ?? generateName();
+  let result = 'error';
+  for (let attempt = 0; attempt < 6; attempt++) {
+    result = await joinBoard(name);
+    if (result !== 'taken') break;
+    name = attempt < 3 ? generateName() : `${generateName()} ${2 + Math.floor(Math.random() * 97)}`;
+  }
+  btn.disabled = false;
+  btn.textContent = 'Join the board';
+  if (result !== 'ok') {
+    showToast('Couldn\'t reach the board just now. Try again in a bit.', 'alert');
+    return;
+  }
+  lbPreviewName = null;
+  persist();
+  renderLeaderboardPanel();
+});
+
+document.getElementById('lb-leave').addEventListener('click', async () => {
+  const btn = document.getElementById('lb-leave');
+  btn.disabled = true;
+  const ok = await leaveBoard();
+  btn.disabled = false;
+  if (!ok) {
+    showToast('Couldn\'t reach the board just now. Try again in a bit.', 'alert');
+    return;
+  }
+  persist();
+  renderLeaderboardPanel();
+});
 document.getElementById('collection-close').addEventListener('click', closeCollection);
 document.getElementById('collection-overlay').addEventListener('click', (event) => {
   if (event.target.id === 'collection-overlay') closeCollection();

@@ -14,11 +14,13 @@ import { gameState, adoptCloudState } from './state.js';
 
 let clientPromise = null;
 
-function isConfigured() {
+// Shared with leaderboard.js, which talks to its own table over the same
+// client and session.
+export function isConfigured() {
   return SUPABASE_URL.startsWith('https://') && !SUPABASE_URL.includes('YOUR-PROJECT');
 }
 
-function getClient() {
+export function getClient() {
   if (!clientPromise) {
     clientPromise = import('https://esm.sh/@supabase/supabase-js@2')
       .then(({ createClient }) => createClient(SUPABASE_URL, SUPABASE_ANON_KEY));
@@ -95,6 +97,10 @@ export async function deleteCloudData() {
     if (error) throw error;
     const { data: remaining } = await client.from('saves').select('user_id').maybeSingle();
     if (remaining) throw new Error('save row still present after delete');
+    // Leaderboard entries go too (all months). PGRST205 = the table doesn't
+    // exist yet on this deployment, which just means there's nothing to delete.
+    const lbDel = await client.from('leaderboard').delete().eq('user_id', session.user.id);
+    if (lbDel.error && lbDel.error.code !== 'PGRST205') throw lbDel.error;
     await client.auth.signOut();
     return true;
   } catch (err) {

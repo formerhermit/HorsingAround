@@ -294,7 +294,10 @@ for them — you only take on the blocklist work if there's real demand.
    with the 14+ gate on the email step.
 3. Ship alongside: consent copy in the popup, an erasure Edge Function, unlink, and
    save export. (Non-negotiable pairing — see above.)
-4. **Leaderboard (#15)**: opt-in, generated stable names, public-read table, weekly or
-   periodic framing. Can ship before or after 2–3; only the erasure cascade is shared.
+4. **Leaderboard (#15)**: *shipped* — opt-in, generated stable names (unique per month,
+   enforced by the database with client-side reroll on collision), public-read
+   `leaderboard` table keyed (user_id, month), monthly board following Europe/Madrid
+   time, third tab in the collection book. Leaving the board deletes the rows, and the
+   privacy popup's delete button removes them too.
 5. Optional later: save-code path (Option C), custom leaderboard names with a
    blocklist, QR hand-off (D), OAuth (B) only with clear demand.

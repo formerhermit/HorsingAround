@@ -123,6 +123,14 @@ export function defaultState() {
       collectionIntroDone: false, // the "check your collection" nudge fired once
       leftBehindShown: false,   // the one-time "a rehomed horse left clothes in your stores" nudge
       statuesGiven: [],         // postcard-milestone statue ids already awarded
+      leaderboardNudgeShown: false, // the one-time "join the Top rescuers board" nudge
+    },
+
+    leaderboard: {
+      optedIn: false, // joined the public monthly board
+      name: null,     // generated stable name shown on it
+      month: null,    // 'YYYY-MM' (Europe/Madrid) the counter below belongs to
+      rescues: 0,     // rescues made in that month
     },
 
     stats: {
@@ -224,6 +232,12 @@ function repair(save) {
   }
   save.shop ??= {};
   save.shop.stock ??= {};
+  // The monthly leaderboard is opt-in and new; existing saves start off it.
+  // Unlike the other backfilled nudges, the leaderboard one stays *on* for
+  // returning players -- the feature is new to them too, so their next rescue
+  // milestone should mention it.
+  save.leaderboard ??= { optedIn: false, name: null, month: null, rescues: 0 };
+  save.milestones.leaderboardNudgeShown ??= false;
   // Existing saves belong to players who've already figured out how to
   // play -- only a brand-new defaultState() should get the onboarding nudges.
   save.milestones.introToastShown ??= true;
