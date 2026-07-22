@@ -137,7 +137,7 @@ create or replace function public.create_save_code()
 returns text
 language plpgsql
 security definer
-set search_path = public
+set search_path = public, extensions
 as $$
 declare
   plain_code text;
@@ -169,7 +169,7 @@ create or replace function public.preview_save_code(input_code text)
 returns jsonb
 language plpgsql
 security definer
-set search_path = public
+set search_path = public, extensions
 as $$
 declare
   target_user uuid;
@@ -201,7 +201,7 @@ create or replace function public.confirm_save_code(input_code text)
 returns void
 language plpgsql
 security definer
-set search_path = public
+set search_path = public, extensions
 as $$
 declare
   target_user uuid;
