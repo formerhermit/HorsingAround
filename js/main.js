@@ -1,7 +1,7 @@
 // main.js — boot the game: load state, render, wire input and persistence.
 
 import { initState, save, gameState, adoptCloudState, DONATE_MILESTONE, SAVE_KEY, disableSaving } from './state.js';
-import { careFor, tick, rescueHorse, shareUpdate, rescueCost, acceptRehome, declineRehome, requestRehome, collectOfflineEarnings, collectDuePostcards, collectDueStatues, markPostcardsRead, fulfilWant, grantUnicorn, hasUnicorn, acceptBill, declineBill, hurryPaddockLife } from './game.js';
+import { careFor, tick, rescueHorse, shareUpdate, rescueCost, acceptRehome, declineRehome, requestRehome, collectOfflineEarnings, collectDuePostcards, collectDueStatues, markPostcardsRead, fulfilWant, grantUnicorn, hasUnicorn, acceptBill, declineBill, scheduleVisitorsDay, hurryPaddockLife } from './game.js';
 import {
   renderAll, renderHUD, renderActions, updateHorseCard,
   showCareFeedback, showTipPop, showToast, showMoneyPop, showSupporterPop, burstConfetti, changePaddock, resetPaddockView,
@@ -583,7 +583,9 @@ function handleEvent(e) {
     enqueueDialog({
       emoji: '', image: 'assets/events/volunteer-planning.jpg',
       text: `The volunteers are planning a ${fig('Visitors Day')}! People will be coming to meet the horses very soon. A well-groomed herd and a pretty paddock will make it a day to remember 💛`,
-      buttons: [{ label: "We'll be ready!", variant: 'primary' }],
+      // The countdown to the day starts from this dismissal (issue #53), so
+      // the preparation window belongs to the player, not to a background tab.
+      buttons: [{ label: "We'll be ready!", variant: 'primary', onClick: () => scheduleVisitorsDay() }],
     });
     // The day itself follows in a few minutes; have its artwork ready and waiting.
     new Image().src = 'assets/events/visitors-day.jpg';

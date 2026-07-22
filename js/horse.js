@@ -130,8 +130,9 @@ function costumeMarkup(wardrobe = [], coat = 'bay') {
     const off = SCARF_OFFSET[coat];
     const open = off ? `<g transform="translate(${off.dx},${off.dy})">` : '';
     const close = off ? '</g>' : '';
-    m += `${open}<path d="M300,188 Q345,179 390,179 Q401,191 397,203 Q394,213 388,216 Q345,220 303,214 Q295,202 300,188 Z" fill="#D9534F"/>`;
-    m += `<path d="M382,213 Q378,239 385,259 Q397,241 396,211 Z" fill="#C0392B"/>${close}`;
+    // Sunny yellow, matching the paddock flowers (issue #54).
+    m += `${open}<path d="M300,188 Q345,179 390,179 Q401,191 397,203 Q394,213 388,216 Q345,220 303,214 Q295,202 300,188 Z" fill="#F7CD3A"/>`;
+    m += `<path d="M382,213 Q378,239 385,259 Q397,241 396,211 Z" fill="#E0A81E"/>${close}`;
   }
   if (wardrobe.includes('ear-flower')) {
     // a small daisy tucked at the base of the forward ear
@@ -151,10 +152,11 @@ function costumeMarkup(wardrobe = [], coat = 'bay') {
     m += `<rect x="${bx - 6}" y="${by - 7}" width="12" height="14" rx="4" fill="#E0A81E"/>`;
   }
   if (wardrobe.includes('saddle-blanket')) {
-    // a cloth draped over the back behind the withers, hanging down the barrel
-    m += `<path d="M175,200 Q230,189 278,195 Q288,199 286,238 Q284,272 277,282 Q228,289 179,283 Q170,273 168,238 Q166,199 175,200 Z" fill="#3F7FD6"/>`;
+    // a cloth draped over the back behind the withers, hanging down the barrel.
+    // Cozy purple, the same family as the ear flower's petals (issue #54).
+    m += `<path d="M175,200 Q230,189 278,195 Q288,199 286,238 Q284,272 277,282 Q228,289 179,283 Q170,273 168,238 Q166,199 175,200 Z" fill="#A971D6"/>`;
     // light trim stripe near the hem
-    m += `<path d="M173,266 Q228,277 282,266" fill="none" stroke="#BFDBF7" stroke-width="7" stroke-linecap="round"/>`;
+    m += `<path d="M173,266 Q228,277 282,266" fill="none" stroke="#E6D6F5" stroke-width="7" stroke-linecap="round"/>`;
   }
   const legs = LEG_POSITIONS[coat] ?? DEFAULT_LEGS;
   // leg wraps first so boots layer in front of them when both are worn
@@ -167,12 +169,13 @@ function costumeMarkup(wardrobe = [], coat = 'bay') {
     }
   }
   if (wardrobe.includes('boots')) {
-    // a boot over each lower leg + hoof: body, cuff band, darker sole
+    // a boot over each lower leg + hoof: body, cuff band, darker sole.
+    // Same cozy purple family as the saddle blanket (issue #54).
     for (const [x0, x1] of legs) {
       const w = x1 - x0;
-      m += `<rect x="${x0 - 3}" y="414" width="${w + 6}" height="52" rx="8" fill="#3F7FD6"/>`;
-      m += `<rect x="${x0 - 5}" y="409" width="${w + 10}" height="12" rx="5" fill="#5B97E8"/>`;
-      m += `<rect x="${x0 - 3}" y="457" width="${w + 6}" height="10" rx="4" fill="#2C5AA0"/>`;
+      m += `<rect x="${x0 - 3}" y="414" width="${w + 6}" height="52" rx="8" fill="#A971D6"/>`;
+      m += `<rect x="${x0 - 5}" y="409" width="${w + 10}" height="12" rx="5" fill="#BE8FE0"/>`;
+      m += `<rect x="${x0 - 3}" y="457" width="${w + 6}" height="10" rx="4" fill="#7E51AE"/>`;
     }
   }
   return m;

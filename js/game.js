@@ -805,31 +805,50 @@ export const BILLS = {
 };
 
 let eventCountdown = randomBetween(EVENT_GAP_MIN, EVENT_GAP_MAX);
-let pendingBill = null;   // { kind, fee, horseId } while a bill popup is up (not persisted)
-let visitorsDayAt = 0;    // timestamp the planned Visitors Day arrives; 0 = none planned
+let pendingBill = null;        // { kind, fee, horseId } while a bill popup is up (not persisted)
+// The Visitors Day chain (issue #53): `visitorsPlanned` flips when the planning
+// popup is queued, but the countdown to the day only starts when the player
+// dismisses that popup (scheduleVisitorsDay, called by main.js), and it counts
+// live tick seconds, not wall-clock time. A backgrounded tab barely ticks, so
+// the preparation window is genuinely the player's, however long the popup sat
+// unseen or the tab sat idle.
+let visitorsPlanned = false;
+let visitorsDayCountdown = 0;  // live seconds until the day, once scheduled; 0 = not started
 
 export function billFee(kind, state = gameState) {
   const bill = BILLS[kind];
   return Math.max(bill.min, Math.round(rescueCost(state) * bill.fraction));
 }
 
+/** Start the countdown to the planned Visitors Day. Called by main.js when
+ *  the planning popup is dismissed, so the preparation time starts from the
+ *  moment the player has actually read the heads-up. */
+export function scheduleVisitorsDay() {
+  if (!visitorsPlanned || visitorsDayCountdown > 0) return;
+  visitorsDayCountdown = randomBetween(VISITORS_DELAY_MIN, VISITORS_DELAY_MAX);
+}
+
 /** Advance paddock life by dt seconds: fire the planned Visitors Day when due,
  *  otherwise count down to the next event (a bill, or a Visitors Day plan). */
 function updatePaddockLife(dt, now, events) {
-  if (visitorsDayAt && now >= visitorsDayAt) {
-    visitorsDayAt = 0;
-    events.push(runVisitorsDay());
-    return;
+  if (visitorsPlanned && visitorsDayCountdown > 0) {
+    visitorsDayCountdown -= dt;
+    if (visitorsDayCountdown <= 0) {
+      visitorsPlanned = false;
+      visitorsDayCountdown = 0;
+      events.push(runVisitorsDay());
+      return;
+    }
   }
   // One thing at a time: no new event while a bill is up or a day is planned.
-  if (pendingBill || visitorsDayAt) return;
+  if (pendingBill || visitorsPlanned) return;
   if (gameState.horses.length < EVENT_MIN_HORSES) return;
   eventCountdown -= dt;
   if (eventCountdown > 0) return;
   eventCountdown = randomBetween(EVENT_GAP_MIN, EVENT_GAP_MAX);
 
   if (Math.random() < VISITORS_CHANCE) {
-    visitorsDayAt = now + randomBetween(VISITORS_DELAY_MIN, VISITORS_DELAY_MAX) * 1000;
+    visitorsPlanned = true; // countdown starts when the popup is dismissed
     events.push({ type: 'visitors-planning' });
     return;
   }
@@ -913,7 +932,7 @@ function runVisitorsDay() {
 /** Dev helper (console): make the next paddock-life beat land on the next
  *  tick — the planned Visitors Day if one is armed, else a fresh event. */
 export function hurryPaddockLife() {
-  if (visitorsDayAt) visitorsDayAt = Date.now();
+  if (visitorsPlanned) visitorsDayCountdown = Math.min(visitorsDayCountdown || 1, 1);
   else eventCountdown = 0;
 }
 

@@ -4,8 +4,11 @@
     {
       "name": "horsing-around",
       "runtimeExecutable": "sh",
-      "runtimeArgs": ["-c", "python3 -m http.server \"$PORT\""],
-      "port": 8642,
+      "runtimeArgs": [
+        "-c",
+        "python3 .claude/dev-server.py \"$PORT\""
+      ],
+      "port": 8653,
       "autoPort": true
     }
   ]
