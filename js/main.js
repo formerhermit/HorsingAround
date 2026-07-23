@@ -1090,19 +1090,19 @@ document.getElementById('tab-leaderboard').addEventListener('click', () => showC
 
 // The champion's rosette (issue #66): worn on the board by last month's
 // winner until the next one is crowned. Inline SVG in the game's flat style —
-// golden scalloped rosette, warm ribbon tails.
+// cozy purple, the same family as the ear flower, boots and saddle blanket.
 const ROSETTE_SVG = `
 <svg class="lb-rosette" viewBox="0 0 24 30" aria-label="last month's champion" role="img">
-  <path d="M8 14 L4.5 27 L10 23.5 Z" fill="#D9534F"/>
-  <path d="M16 14 L19.5 27 L14 23.5 Z" fill="#C0392B"/>
-  <g fill="#F7CD3A">
+  <path d="M8 14 L4.5 27 L10 23.5 Z" fill="#8A5BB8"/>
+  <path d="M16 14 L19.5 27 L14 23.5 Z" fill="#6E4497"/>
+  <g fill="#A971D6">
     <circle cx="19" cy="11" r="3.6"/><circle cx="16.9" cy="16" r="3.6"/>
     <circle cx="12" cy="18" r="3.6"/><circle cx="7.1" cy="16" r="3.6"/>
     <circle cx="5" cy="11" r="3.6"/><circle cx="7.1" cy="6" r="3.6"/>
     <circle cx="12" cy="4" r="3.6"/><circle cx="16.9" cy="6" r="3.6"/>
   </g>
-  <circle cx="12" cy="11" r="6.6" fill="#F7CD3A"/>
-  <circle cx="12" cy="11" r="4.4" fill="#FFF3D6" stroke="#E0A81E" stroke-width="1.2"/>
+  <circle cx="12" cy="11" r="6.6" fill="#A971D6"/>
+  <circle cx="12" cy="11" r="4.4" fill="#F0E6FA" stroke="#7E51AE" stroke-width="1.2"/>
 </svg>`;
 
 let lbPreviewName = null; // the generated name on offer in the join card
