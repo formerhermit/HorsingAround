@@ -14,6 +14,10 @@ import {
   TRAITS, QUIRK_TRAITS, TRAIT_INFO, isFearTrait, FEAR_OVERCOME_AT,
   FEAR_CARE_MESSAGES, FEAR_CRIT_MESSAGES,
 } from './traits.js';
+import {
+  billDiscount, adoptionMultiplier, rescueDiscount, rescueWellbeingBonus,
+  eventDrawMultiplier, supporterCapMultiplier, driftGraceMultiplier,
+} from './facilities.js';
 
 // ---- tuning ----
 export const CARE_GAIN = 2;          // wellbeing per care click
@@ -95,7 +99,8 @@ function attractionPerSecond() {
 // herd raises the ceiling.
 const SUPPORTER_CAP_PER_PULL = 450;
 function supporterCapacity() {
-  return herdPull() * SUPPORTER_CAP_PER_PULL;
+  // The Visitor centre lifts the ceiling a modest 15% (issue #48).
+  return herdPull() * SUPPORTER_CAP_PER_PULL * supporterCapMultiplier(gameState);
 }
 /** How readily new supporters still arrive: 1 with an empty following, easing to
  *  0 as it fills toward capacity. */
@@ -320,12 +325,20 @@ export function shareUpdate(now = Date.now()) {
   return { amount, charge, viral, newSupporters };
 }
 
-/** Cost of the next rescue. Escalates with herd size; phase 3 will add
- *  paddock-space and hay-budget gates on top. Magical gift horses (the unicorn,
- *  rainbow and golden) are gifts, not rescues, so they don't count toward it. */
+/** Base cost of the next rescue. Escalates with herd size. Magical gift horses
+ *  (the unicorn, rainbow and golden) are gifts, not rescues, so they don't
+ *  count toward it. This is the *scaling* figure that bills, adoption fees and
+ *  milestone bonuses are sized from; what the player actually pays for a rescue
+ *  is rescuePrice() below (the second horsebox discounts it). */
 export function rescueCost(state = gameState) {
   const rescued = state.horses.filter((h) => !isMagicalCoat(h.paletteKey)).length;
   return Math.round(RESCUE_BASE_COST * Math.pow(RESCUE_COST_FACTOR, rescued - 1));
+}
+
+/** What a rescue actually costs to bring in right now — the base cost less the
+ *  second-horsebox discount (issue #48). Used for the button and the purchase. */
+export function rescuePrice(state = gameState) {
+  return Math.round(rescueCost(state) * (1 - rescueDiscount(state)));
 }
 
 /** The horse a rescue would bump from the front row back to the back row (the
@@ -358,7 +371,7 @@ export function rescueHorse() {
   // Every paddock space taken: like the real rescue, no one else can come in
   // until a horse finds a forever home (or a new paddock is built).
   if (herdAtCapacity(gameState)) return { ok: false, horse: null, reason: 'full', events: [] };
-  const cost = rescueCost();
+  const cost = rescuePrice();
   if (gameState.coins < cost) return { ok: false, horse: null, events: [] };
   // Don't send a still-struggling horse to the back row to make space.
   if (rescueNeedsCareFirst()) return { ok: false, horse: null, reason: 'needs-care', events: [] };
@@ -367,12 +380,14 @@ export function rescueHorse() {
   const herd = gameState.horses;
   const name = randomUnused(HORSE_NAMES, herd.map((h) => h.name));
   const coat = pickRescueCoat();
+  // The second horsebox means arrivals turn up in better shape (issue #48).
+  const arrivalWellbeing = 4 + Math.floor(Math.random() * 4) + rescueWellbeingBonus(gameState);
   const horse = createHorse({
     // rescueOrder makes this unique even for rescues in the same millisecond
     id: `horse-${herd.length + 1}-${Date.now().toString(36)}`,
     name,
     paletteKey: coat,
-    wellbeing: 4 + Math.floor(Math.random() * 4), // 4–7: rougher than Biscuit's 12
+    wellbeing: arrivalWellbeing, // base 4–7, rougher than Biscuit's 12
     rescueOrder: herd.length + 1,
     trait: randomUnused(TRAITS, herd.map((h) => h.trait)),
   });
@@ -501,7 +516,8 @@ function randomBetween(min, max) {
 
 /** Income offered for rehoming a horse: ~10% of the next rescue's cost. */
 function rehomeIncome(state = gameState) {
-  return Math.max(1, Math.round(rescueCost(state) * 0.1));
+  // The rehoming office lifts adoption fees (issue #48).
+  return Math.max(1, Math.round(rescueCost(state) * 0.1 * adoptionMultiplier(state)));
 }
 
 /** A reward-milestone bonus: 25% of the next rescue's cost, into the fund. */
@@ -877,7 +893,9 @@ let visitorsDayCountdown = 0;  // live seconds until the day, once scheduled; 0 
 
 export function billFee(kind, state = gameState) {
   const bill = BILLS[kind];
-  return Math.max(bill.min, Math.round(rescueCost(state) * bill.fraction));
+  const raw = Math.max(bill.min, Math.round(rescueCost(state) * bill.fraction));
+  // Facilities trim recurring bills (vet station, hay barn) — issue #48.
+  return Math.round(raw * (1 - billDiscount(state, kind)));
 }
 
 /** Start the countdown to the planned Visitors Day. Called by main.js when
@@ -985,6 +1003,7 @@ export function acceptBill(now = Date.now()) {
     // A new foal is the best kind of advert: a small crowd comes to coo, and
     // the paddock buzzes for a while after.
     supporters = FOAL_SUPPORTERS_MIN + Math.floor(Math.random() * (FOAL_SUPPORTERS_MAX - FOAL_SUPPORTERS_MIN + 1));
+    supporters = Math.round(supporters * eventDrawMultiplier(gameState)); // visitor centre (#48)
     gameState.supporters += supporters;
     gameState.stats.foalsBorn = (gameState.stats.foalsBorn ?? 0) + 1;
     glowUntil = now + FOAL_GLOW * 1000;
@@ -1046,7 +1065,8 @@ function runVisitorsDay() {
     ? herd.filter((h) => h.wellbeing >= THRIVING_AT).length / herd.length
     : 0;
   const visitors = Math.max(6, Math.round(
-    (gameState.supporters * 0.6 + herd.length * 2) * (0.6 + 0.6 * thrivingFrac),
+    (gameState.supporters * 0.6 + herd.length * 2) * (0.6 + 0.6 * thrivingFrac)
+    * eventDrawMultiplier(gameState), // the visitor centre draws a bigger crowd (#48)
   ));
   const income = visitors * VISITORS_ENTRY_FEE * shareMultiplier(gameState);
   const newSupporters = Math.round(visitors * 0.05);
@@ -1266,7 +1286,8 @@ function updateDrift(dt, now, events) {
   for (const horse of gameState.horses) {
     if (isMagicalCoat(horse.paletteKey) || horse.wellbeing <= DRIFT_FLOOR) continue;
     horse.lastCaredAt ??= now; // self-heal a save that predates the field
-    if (now - horse.lastCaredAt < DRIFT_GRACE * 1000) continue;
+    // The hay barn keeps a well-fed herd steady longer (issue #48).
+    if (now - horse.lastCaredAt < DRIFT_GRACE * driftGraceMultiplier(gameState) * 1000) continue;
     const before = horse.wellbeing;
     horse.wellbeing = Math.max(DRIFT_FLOOR, horse.wellbeing - DRIFT_PER_SEC * dt);
     if (!gameState.milestones.driftIntroShown && before >= THRIVING_AT && horse.wellbeing < THRIVING_AT) {

@@ -1,6 +1,7 @@
 // shop.js — the Tack room: wardrobe & paddock decor, plus the stores.
 
 import { isMagicalCoat } from './horse.js';
+import { maxPaddocks } from './facilities.js';
 
 //
 // You own at most one of each item (buy once), and move it around freely:
@@ -23,9 +24,10 @@ export const PADDOCK_CAP = 8;
 // The rescue starts with the home paddock; more can be built. Prices keyed by
 // which paddock number the purchase would be: the second is a mid-game save-up
 // (the herd needs it around the 8th rescue), the third an end-game sink priced
-// with the companions.
-export const MAX_PADDOCKS = 3;
-export const PADDOCK_PRICES = { 2: 2500, 3: 75000 };
+// with the companions. The fourth only unlocks with the Sanctuary field facility
+// (issue #48) -- see maxPaddocks() -- so most players never see it.
+export const MAX_PADDOCKS = 4;
+export const PADDOCK_PRICES = { 2: 2500, 3: 75000, 4: 250000 };
 
 // Decor slot index of the magical paddock — the free home of the magical gift
 // horses (unicorn, rainbow, golden pegasus). It exists only while a magical
@@ -150,9 +152,12 @@ export function herdAtCapacity(state) {
   return regular >= herdCapacity(state);
 }
 
-/** Price of the next paddock the player could build, or null at the max. */
+/** Price of the next paddock the player could build, or null at the max. The
+ *  fourth paddock only exists once the Sanctuary field is built (issue #48). */
 export function nextPaddockPrice(state) {
-  return PADDOCK_PRICES[paddockCount(state) + 1] ?? null;
+  const next = paddockCount(state) + 1;
+  if (next > maxPaddocks(state)) return null;
+  return PADDOCK_PRICES[next] ?? null;
 }
 
 /** Build the next paddock: 8 more spaces and a fresh spot to decorate. */

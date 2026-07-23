@@ -1,7 +1,7 @@
 // main.js — boot the game: load state, render, wire input and persistence.
 
 import { initState, save, gameState, adoptCloudState, DONATE_MILESTONE, SAVE_KEY, disableSaving } from './state.js';
-import { careFor, tick, rescueHorse, shareUpdate, rescueCost, acceptRehome, declineRehome, requestRehome, collectOfflineEarnings, collectDuePostcards, collectDueStatues, markPostcardsRead, fulfilWant, grantUnicorn, hasUnicorn, acceptBill, declineBill, scheduleVisitorsDay, hurryPaddockLife } from './game.js';
+import { careFor, tick, rescueHorse, shareUpdate, rescueCost, rescuePrice, acceptRehome, declineRehome, requestRehome, collectOfflineEarnings, collectDuePostcards, collectDueStatues, markPostcardsRead, fulfilWant, grantUnicorn, hasUnicorn, acceptBill, declineBill, scheduleVisitorsDay, hurryPaddockLife } from './game.js';
 import {
   renderAll, renderHUD, renderActions, updateHorseCard,
   showCareFeedback, showTipPop, showToast, showMoneyPop, showSupporterPop, burstConfetti, changePaddock, resetPaddockView,
@@ -13,6 +13,7 @@ import {
   formatDate, paddockLabel,
 } from './render.js';
 import { ACHIEVEMENTS, checkAchievements } from './achievements.js';
+import { buyFacility } from './facilities.js';
 import {
   buyDecorIn, buyWardrobe, placeDecor, removeDecor, placeWardrobe, removeWardrobe,
   hasNewAffordableItem, buyPaddock, nextPaddockPrice,
@@ -322,7 +323,7 @@ function pendingNudge() {
   // time a milestone is collectable.)
   if (m.leaderboardNudgeQueued && !m.leaderboardNudgeShown && !state.leaderboard.optedIn) candidates.push('leaderboard');
   if (state.unlocks.moneyUI && !m.hasSharedUpdate) candidates.push('share');
-  if (state.unlocks.rescue && !m.hasRescuedAgain && state.coins >= rescueCost(state)) candidates.push('rescue');
+  if (state.unlocks.rescue && !m.hasRescuedAgain && state.coins >= rescuePrice(state)) candidates.push('rescue');
   if (state.unlocks.moneyUI && !m.shopIntroDone && hasNewAffordableItem(state)) candidates.push('shop');
   if (state.stats.horsesRescued >= 8 && !m.collectionIntroDone) candidates.push('collection');
   return candidates.find((id) => !snoozedNudges.has(id)) ?? null;
@@ -1338,6 +1339,21 @@ document.getElementById('collection-overlay').addEventListener('click', (event) 
 initShare();
 
 document.getElementById('shop-modal').addEventListener('click', (event) => {
+  // "Grow the rescue" facility upgrades (issue #48) are their own big-ticket buy.
+  const facilityBtn = event.target.closest('.facility-buy-btn');
+  if (facilityBtn) {
+    const { ok, facility } = buyFacility(state, facilityBtn.dataset.facilityId);
+    if (!ok) return;
+    const capstone = facility.id === 'sanctuary-field';
+    showToast(`${facility.icon} ${facility.name} built! ${facility.blurb}`);
+    if (capstone) burstConfetti();
+    runAchievementCheck();     // may earn "A place of their own"
+    renderShopModal(state);    // reflect built state + reveal the next rung
+    renderAll(state);          // a new paddock may now be buildable (sanctuary)
+    refreshUI();
+    persist();
+    return;
+  }
   const buy = event.target.closest('.shop-buy-btn');
   const action = event.target.closest('[data-action]');
   if (!buy && !action) return;

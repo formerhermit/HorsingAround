@@ -117,6 +117,10 @@ export function defaultState() {
     achievements: [],
     achievementsSeen: 0,
 
+    // "Grow the rescue" facility upgrades bought so far (issue #48): a one-way
+    // ladder. The catalog and effects live in facilities.js.
+    facilities: [],
+
     // one-way feature gates flipped by progression
     unlocks: {
       moneyUI: false,    // flips when Biscuit first reaches "content"
@@ -294,6 +298,7 @@ function repair(save) {
   // in main.js (grant + mark seen, no toast flood).
   save.achievements ??= [];
   save.achievementsSeen ??= 0;
+  save.facilities ??= []; // "grow the rescue" upgrades (issue #48)
   save.milestones.donatedForReal ??= false;
   save.milestones.sharedForReal ??= false;
   save.stats.farrierVisits ??= 0;

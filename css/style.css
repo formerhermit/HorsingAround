@@ -1336,6 +1336,112 @@ main {
   cursor: default;
 }
 
+/* ---- "grow the rescue" facility ladder (issue #48) ---- */
+.shop-subintro {
+  margin: 0 0 0.7rem;
+  font-size: 0.82rem;
+  color: #8a7d68;
+  line-height: 1.4;
+}
+
+.facility-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.facility-card {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  background: #fffdf7;
+  border: 1.5px solid #ece3cf;
+  border-radius: 12px;
+  padding: 0.6rem 0.75rem;
+}
+
+.facility-icon {
+  font-size: 1.7rem;
+  line-height: 1;
+  flex: none;
+}
+
+.facility-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.facility-name {
+  margin: 0;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #3d3428;
+}
+
+.facility-blurb {
+  margin: 0.1rem 0 0;
+  font-size: 0.75rem;
+  color: #8a7d68;
+  line-height: 1.35;
+}
+
+.facility-control {
+  flex: none;
+}
+
+.facility-buy-btn {
+  font: inherit;
+  font-weight: 700;
+  font-size: 0.8rem;
+  color: #fffdf7;
+  background: #6f8f4f;
+  border: none;
+  border-radius: 999px;
+  padding: 0.35rem 0.8rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.facility-buy-btn:hover:not(:disabled) {
+  background: #5f7d42;
+}
+
+.facility-buy-btn:disabled {
+  background: #dcd3bf;
+  color: #a89b83;
+  cursor: default;
+}
+
+.facility-built {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #6f8f4f;
+  white-space: nowrap;
+}
+
+.facility-locked {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #b3a488;
+  white-space: nowrap;
+}
+
+/* Built: settled and quiet. Next: the one to save for, gently highlighted.
+   Locked: dimmed, out of reach until the rung below is built. */
+.facility-card.built {
+  background: #f4efe2;
+  border-color: #e2d9c4;
+}
+
+.facility-card.next {
+  border-color: #cdb98c;
+  box-shadow: 0 0 0 2px #f0e6cd;
+}
+
+.facility-card.locked {
+  opacity: 0.6;
+}
+
 /* Place: bring an owned item out of the stores. Free, so it reads friendlier
    (green) than the coin-cost buy button. */
 .shop-place-btn {
