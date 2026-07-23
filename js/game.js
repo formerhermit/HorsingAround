@@ -853,6 +853,7 @@ export const BILLS = {
   vet:        { fraction: 0.08, min: 6 },   // a named horse's check-up / worming
   farrier:    { fraction: 0.10, min: 8 },   // a named horse needs new shoes
   hay:        { fraction: 0.15, min: 10 },  // the hay delivery for the whole herd
+  water:      { fraction: 0.09, min: 6 },   // fresh water delivered for the troughs
   mechanic:   { fraction: 0.20, min: 12 },  // the horse box needs a repair
   barn:       { fraction: 0.25, min: 15 },  // the stable roof needs fixing (issue #63)
   journalist: { fraction: 0.12, min: 10 },  // a Sur feature: pays off later (issue #64)
@@ -998,6 +999,12 @@ export function acceptBill(now = Date.now()) {
       if (isMagicalCoat(h.paletteKey)) continue;
       h.wellbeing = Math.min(WELLBEING_MAX, h.wellbeing + 2);
       h.lastCaredAt = now; // well fed: the whole herd holds its shine a while
+    }
+  } else if (kind === 'water') {
+    // Fresh troughs all round: the herd stays content and holds its shine.
+    for (const h of gameState.horses) {
+      if (isMagicalCoat(h.paletteKey)) continue;
+      h.lastCaredAt = now;
     }
   } else if (kind === 'foal') {
     // A new foal is the best kind of advert: a small crowd comes to coo, and

@@ -26,7 +26,7 @@ export const FACILITIES = [
     art: 'assets/events/facility-visitor-centre.jpg',
     blurb: "A welcome barn, a little café, a gift shop. Visitors Days and new foals draw 50% more, and your following can grow bigger." },
   { id: 'sanctuary-field', name: 'Sanctuary field', icon: '✨', price: 5000000,
-    art: null, // artwork still to come
+    art: 'assets/events/facility-sanctuary-field.jpg',
     blurb: "The dream: acres of rolling pasture, a forever home. Room to build a fourth paddock." },
 ];
 

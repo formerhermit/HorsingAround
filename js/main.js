@@ -506,6 +506,7 @@ const BILL_ART = {
   vet: 'assets/events/vet-visit.jpg',
   farrier: 'assets/events/farrier-visit.jpg',
   hay: 'assets/events/hay-delivery.jpg',
+  water: 'assets/events/water-delivery.jpg',
   mechanic: 'assets/events/horse-box.jpg',
   barn: 'assets/events/stable-repairs.jpg',
   journalist: 'assets/events/journalist-offer.jpg',
@@ -530,6 +531,10 @@ function billCopy(e) {
     pay: 'Pay for the hay',
     text: `The hay delivery has arrived: enough bales to keep everyone fed and cosy. The bill comes to ${fee}.`,
   };
+  if (e.kind === 'water') return {
+    pay: 'Pay for the water',
+    text: `A water delivery has arrived to fill the troughs, fresh and clean for the whole herd. The bill comes to ${fee}.`,
+  };
   if (e.kind === 'barn') return {
     pay: 'Fix the stable',
     text: `The stable roof is letting the rain in. The volunteers can patch it up properly for ${fee}.`,
@@ -552,6 +557,7 @@ function billPaidToast(res) {
   if (res.kind === 'vet') return `🩺 ${res.horse?.name ?? 'Everyone'} has a clean bill of health 💛`;
   if (res.kind === 'farrier') return `✨ ${res.horse?.name ?? 'The herd'}'s new shoes are turning heads!`;
   if (res.kind === 'hay') return '🌾 The hay barn is full: the whole herd is fed and holding their shine 💛';
+  if (res.kind === 'water') return '💧 The troughs are brimming with fresh water: the whole herd is content 💛';
   if (res.kind === 'barn') return '🔨 The stable is snug and dry again, and the smart new roof is turning heads 💛';
   if (res.kind === 'journalist') return '📰 The journalist got the full tour. Watch the paper: the story runs soon!';
   if (res.kind === 'foal') return `🐴 The foal is up on its wobbly legs, and word of the new arrival is bringing visitors 💛`;
