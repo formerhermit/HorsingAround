@@ -111,6 +111,12 @@ export function defaultState() {
     collectedCoats: ['bay'],
     collectionSeen: 1,
 
+    // Pride-only badges (issue #65): the ids earned so far, and how many had
+    // been earned last time the Badges tab was opened (drives the "new" dot).
+    // The catalog and earn logic live in achievements.js.
+    achievements: [],
+    achievementsSeen: 0,
+
     // one-way feature gates flipped by progression
     unlocks: {
       moneyUI: false,    // flips when Biscuit first reaches "content"
@@ -135,6 +141,8 @@ export function defaultState() {
       rehomeRewardsGiven: [],   // rehome-count milestones already rewarded
       donateMilestoneShown: false, // the 10-rescue confetti/donate popup fired
       donateOptOut: false,      // player chose "Don't ask again" on the donate popup
+      donatedForReal: false,    // honour-based: pressed a Donate-to-ARCH button (badge #65)
+      sharedForReal: false,     // honour-based: used a "tell a friend" share (badge #65)
       firstPostcardShown: false, // the first postcard's toast explains the album
       supporterMilestonesShown: [], // supporter-count milestones already toasted
       collectionIntroDone: false, // the "check your collection" nudge fired once
@@ -158,6 +166,13 @@ export function defaultState() {
       horsesRescued: 1,  // Biscuit counts
       horsesRehomed: 0,  // horses sent to a forever home
       traitsRevealed: 0, // how many personality-reveal beats have played
+      traitsSeen: [],    // distinct trait texts ever met (drives the "all 29" badge)
+      farrierVisits: 0,  // farrier bills paid (badge #65)
+      wormings: 0,       // vet worming bills paid
+      billKindsPaid: [], // distinct bill kinds ever paid
+      fearsOvercome: 0,  // fear-breakthrough beats that have fired
+      visitorsDaysRun: 0,// Visitors Days held
+      reunionsHeld: 0,   // Reunion Days held
       playSeconds: 0,    // active play time, summed from the sim tick's clamped dt
       startedAt: Date.now(), // when this rescue began (for "caring since ...")
     },
@@ -268,6 +283,25 @@ function repair(save) {
   save.pendingArticle ??= null;
   save.milestones.utilidadShown ??= false;
   save.milestones.championMonthsCelebrated ??= [];
+
+  // Pride-only badges (issue #65). New stat counters can't be recovered from
+  // history (we never counted farrier visits before), so they start at 0 and
+  // accrue from now on; the count-based badges (rescues, income, postcards...)
+  // read stats that DO persist, so those unlock retroactively on next check.
+  // traitsSeen seeds from the current herd's revealed traits — the best we can
+  // reconstruct. The one-time silent backfill of already-earned badges happens
+  // in main.js (grant + mark seen, no toast flood).
+  save.achievements ??= [];
+  save.achievementsSeen ??= 0;
+  save.milestones.donatedForReal ??= false;
+  save.milestones.sharedForReal ??= false;
+  save.stats.farrierVisits ??= 0;
+  save.stats.wormings ??= 0;
+  save.stats.billKindsPaid ??= [];
+  save.stats.fearsOvercome ??= (save.horses ?? []).filter((h) => h.fearOvercome).length;
+  save.stats.visitorsDaysRun ??= 0;
+  save.stats.reunionsHeld ??= 0;
+  save.stats.traitsSeen ??= [...new Set((save.horses ?? []).map((h) => h.trait).filter(Boolean))];
   // The monthly leaderboard is opt-in and new; existing saves start off it.
   // Unlike the other backfilled nudges, the leaderboard one stays *on* for
   // returning players -- the feature is new to them too, so their next rescue

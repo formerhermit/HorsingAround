@@ -172,6 +172,14 @@ function randomFrom(list) {
   return list[Math.floor(Math.random() * list.length)];
 }
 
+/** Note a trait the player has now met, for the "all 29 personalities" badge
+ *  (issue #65). Called wherever a trait first becomes visible. */
+function recordTraitSeen(trait) {
+  if (!trait) return;
+  (gameState.stats.traitsSeen ??= []);
+  if (!gameState.stats.traitsSeen.includes(trait)) gameState.stats.traitsSeen.push(trait);
+}
+
 /** Random pick avoiding values the herd already uses, where possible. */
 function randomUnused(list, usedValues) {
   const unused = list.filter((v) => !usedValues.includes(v));
@@ -223,6 +231,7 @@ export function careFor(horse) {
     // trust built so far rather than a reveal.
     const shown = gameState.stats.traitsRevealed ?? 0;
     gameState.stats.traitsRevealed = shown + 1;
+    recordTraitSeen(horse.trait);
     let message;
     if (isFearTrait(horse.trait)) {
       message = `${horse.name} is starting to relax around you, though still ${horse.trait} 🐴`;
@@ -377,6 +386,7 @@ export function rescueHorse() {
   const arrivalNo = gameState.stats.horsesRescued - 1;
   let message;
   const fearInfo = isFearTrait(horse.trait) ? TRAIT_INFO[horse.trait] : null;
+  if (fearInfo) recordTraitSeen(horse.trait); // a fear is visible from arrival
   if (rareLabel) {
     message = `✨ ${name} arrives, thin and wary, but look closer: a rare ${rareLabel}! What a treasure 🌟`;
   } else if (fearInfo) {
@@ -926,12 +936,11 @@ function updatePaddockLife(dt, now, events) {
     if (!candidates.length) return;
     horse = randomFrom(candidates);
   }
-  pendingBill = { kind, fee, horseId: horse?.id ?? null };
-  events.push({
-    type: 'bill', kind, fee, horseName: horse?.name ?? null,
-    // The vet visits for one of two reasons, purely for copy variety.
-    variant: kind === 'vet' ? (Math.random() < 0.5 ? 'checkup' : 'worming') : null,
-  });
+  // The vet visits for one of two reasons; the variant rides on pendingBill too
+  // so paying a worming bill can count toward its badge (issue #65).
+  const variant = kind === 'vet' ? (Math.random() < 0.5 ? 'checkup' : 'worming') : null;
+  pendingBill = { kind, fee, variant, horseId: horse?.id ?? null };
+  events.push({ type: 'bill', kind, fee, horseName: horse?.name ?? null, variant });
 }
 
 /** Pay the pending bill. Every payment lands a warm payoff: the vet and
@@ -940,10 +949,16 @@ function updatePaddockLife(dt, now, events) {
  *  a few admirers. Returns { ok, kind, fee, horse } or null. */
 export function acceptBill(now = Date.now()) {
   if (!pendingBill) return null;
-  const { kind, fee, horseId } = pendingBill;
+  const { kind, fee, variant, horseId } = pendingBill;
   pendingBill = null;
   if (gameState.coins < fee) return { ok: false, kind, fee, horse: null };
   gameState.coins -= fee;
+  // Badge tracking (issue #65): note the kind paid, and the care specifics.
+  const st = gameState.stats;
+  (st.billKindsPaid ??= []);
+  if (!st.billKindsPaid.includes(kind)) st.billKindsPaid.push(kind);
+  if (kind === 'farrier') st.farrierVisits = (st.farrierVisits ?? 0) + 1;
+  if (kind === 'vet' && variant === 'worming') st.wormings = (st.wormings ?? 0) + 1;
   const horse = gameState.horses.find((h) => h.id === horseId) ?? null;
   if (kind === 'vet' || kind === 'farrier') {
     if (horse) {
@@ -1001,6 +1016,7 @@ function runReunionDay() {
   const returned = Math.max(1, Math.min(gameState.stats.horsesRehomed, 2 + Math.floor(Math.random() * 3)));
   const newSupporters = Math.round(3 + returned * 2 + Math.random() * 4);
   gameState.supporters += newSupporters;
+  gameState.stats.reunionsHeld = (gameState.stats.reunionsHeld ?? 0) + 1;
   return { type: 'reunion', returned, newSupporters };
 }
 
@@ -1020,6 +1036,7 @@ function runVisitorsDay() {
   gameState.coins += income;
   gameState.stats.totalDonated += income;
   gameState.supporters += newSupporters;
+  gameState.stats.visitorsDaysRun = (gameState.stats.visitorsDaysRun ?? 0) + 1;
   return { type: 'visitors-day', visitors, income, newSupporters };
 }
 
@@ -1164,6 +1181,7 @@ export function tick(dt) {
     const traitInfo = TRAIT_INFO[horse.trait];
     if (traitInfo?.kind !== 'fear' || horse.fearOvercome || horse.wellbeing < FEAR_OVERCOME_AT) continue;
     horse.fearOvercome = true;
+    gameState.stats.fearsOvercome = (gameState.stats.fearsOvercome ?? 0) + 1;
     gameState.supporters += FEAR_BREAKTHROUGH_SUPPORTERS;
     gameState.lastSharedAt = 0; // share meter: instantly full
     events.push({

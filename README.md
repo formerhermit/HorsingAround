@@ -99,6 +99,10 @@ Most rescues arrive as an everyday horse or donkey. Just occasionally a rarer on
 
 Tap the book up top to open your collection: every coat there is to find, which ones you've already welcomed home, and dimmed silhouettes for the ones you haven't. It fills in as your rescue grows.
 
+### Badges
+
+A second tab in the book collects **badges**: little pride-only milestones (no cash, just bragging rights). Some are one-offs (worm a horse, hold a Visitors Day, overcome a horse's fear, dress every horse to the nines, own one of everything in the shop, donate to the real ARCH). Others are long-haul goals with a progress bar ticking toward them: 100 then 250, 500, 1,000 rescues; forever homes found; supporters gathered; a million euros raised; a hundred postcards. They're what keeps a thriving rescue reaching for something, long after the last coat is collected.
+
 ### Top rescuers
 
 Tap the book up top and there's a third tab alongside Collection and Stats: a monthly leaderboard of everyone playing. It's opt-in, so nobody appears until they join, and joining gives you a made-up stable name (like "Velvet Canter") rather than anything you type yourself — no real names, nothing to moderate. The board starts fresh on the 1st of every month; leave any time from the same tab.
@@ -148,6 +152,7 @@ css/style.css          all the styling
 js/state.js            what the game knows, plus saving to your browser
 js/game.js             the rules and the money maths
 js/traits.js           every personality: the quirks, the fears, and their mechanics
+js/achievements.js     the pride-only badge catalog and its earn checks
 js/shop.js             shop items and their rules
 js/horse.js            the horse illustration, drawn in code
 js/render.js           turns the game state into what you see on screen
