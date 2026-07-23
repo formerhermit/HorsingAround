@@ -14,6 +14,17 @@ import { gameState, adoptCloudState } from './state.js';
 
 let clientPromise = null;
 
+// Cloud pushes are held until the boot reconciliation has settled (issue #67):
+// the 15-second autosave (or any event save) firing before syncOnLoad() had
+// decided could upsert this device's stale local save over a newer cloud one.
+// That's the "my progress went backwards after syncing" report in a nutshell.
+// syncOnLoad() and pullCloudSave() settle it themselves; the explicit
+// keep-my-progress override path calls markSyncSettled() before its push.
+let syncSettled = false;
+export function markSyncSettled() {
+  syncSettled = true;
+}
+
 // Shared with leaderboard.js, which talks to its own table over the same
 // client and session.
 export function isConfigured() {
@@ -31,10 +42,17 @@ export function getClient() {
 /**
  * Ensure an anonymous Supabase session exists for this browser, pull any
  * existing cloud save, and reconcile it against the local one by whichever
- * was saved more recently. Call once, after the first local render.
+ * was played more recently. Call once, after the first local render.
+ *
+ * `lastPlayedAt` is the local save's timestamp captured at boot, BEFORE the
+ * boot save() stamps a fresh one. Comparing against gameState.savedAt here
+ * was the heart of issue #67: the fresh stamp made this device's save always
+ * look newest, so a device opened with weeks-old progress would "win" and
+ * silently push its stale save over the cloud's good one.
+ *
  * Returns true if cloud state was adopted (caller should re-render).
  */
-export async function syncOnLoad() {
+export async function syncOnLoad(lastPlayedAt) {
   if (!isConfigured()) {
     console.info('Cloud sync not configured — playing locally only.');
     return false;
@@ -54,16 +72,25 @@ export async function syncOnLoad() {
       .select('game_state, updated_at')
       .maybeSingle();
 
-    if (row && (!gameState.savedAt || new Date(row.updated_at) > new Date(gameState.savedAt))) {
+    // A pristine local game (fresh default state: no care given, nothing
+    // unlocked) never outranks an existing cloud save, whatever its
+    // timestamp says — defaultState() is stamped with "now" at creation.
+    const pristineLocal = gameState.stats.clicks === 0
+      && gameState.stats.horsesRescued <= 1 && !gameState.unlocks.moneyUI;
+    const localPlayedAt = lastPlayedAt ?? gameState.savedAt;
+    if (row && (pristineLocal || !localPlayedAt || new Date(row.updated_at) > new Date(localPlayedAt))) {
       adoptCloudState(row.game_state);
       return true;
     }
 
-    await pushCloudSave(); // first sync, or local was newer — push it up
+    markSyncSettled(); // reconciliation decided: this device's save stands
+    await pushCloudSave(); // first sync, or local was genuinely newer
     return false;
   } catch (err) {
     console.warn('Cloud sync failed, continuing locally:', err);
     return false;
+  } finally {
+    markSyncSettled(); // however it went, ordinary saves may flow again
   }
 }
 
@@ -93,6 +120,8 @@ export async function pullCloudSave() {
   } catch (err) {
     console.warn('Could not load the other account’s save:', err);
     return false;
+  } finally {
+    markSyncSettled(); // the explicit load decided; ordinary saves may flow
   }
 }
 
@@ -139,9 +168,10 @@ export async function deleteCloudData() {
 }
 
 /** Push the current gameState to the cloud. Fire-and-forget; safe to call
- *  before a session exists (e.g. mid-boot) — it just no-ops until one does. */
+ *  before a session exists (e.g. mid-boot) — it just no-ops until one does,
+ *  and until the boot reconciliation has settled (see markSyncSettled). */
 export async function pushCloudSave() {
-  if (!isConfigured()) return;
+  if (!isConfigured() || !syncSettled) return;
   try {
     const client = await getClient();
     const { data: { session } } = await client.auth.getSession();
