@@ -311,6 +311,118 @@ main {
   50%      { opacity: 1; }
 }
 
+/* Built-in scenery for the named buildable paddocks (Meadow, Campo). Little
+   flowers and butterflies painted right into the grass in CSS — like the decor
+   items, but free and permanent, so each paddock lives up to its name. Tiny
+   inline SVGs kept as reusable vars; they sit above the grass/props (z2) but
+   behind the horse rows (z3), and never take pointer events. */
+.paddock {
+  --flower-pink:   url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='14'%20height='14'%3E%3Cg%20fill='%23E895B3'%3E%3Ccircle%20cx='7'%20cy='3'%20r='2.4'/%3E%3Ccircle%20cx='11'%20cy='6'%20r='2.4'/%3E%3Ccircle%20cx='9.4'%20cy='10.5'%20r='2.4'/%3E%3Ccircle%20cx='4.6'%20cy='10.5'%20r='2.4'/%3E%3Ccircle%20cx='3'%20cy='6'%20r='2.4'/%3E%3C/g%3E%3Ccircle%20cx='7'%20cy='7'%20r='2.3'%20fill='%23F7CD3A'/%3E%3C/svg%3E");
+  --flower-white:  url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='14'%20height='14'%3E%3Cg%20fill='%23FBF7EE'%3E%3Ccircle%20cx='7'%20cy='3'%20r='2.4'/%3E%3Ccircle%20cx='11'%20cy='6'%20r='2.4'/%3E%3Ccircle%20cx='9.4'%20cy='10.5'%20r='2.4'/%3E%3Ccircle%20cx='4.6'%20cy='10.5'%20r='2.4'/%3E%3Ccircle%20cx='3'%20cy='6'%20r='2.4'/%3E%3C/g%3E%3Ccircle%20cx='7'%20cy='7'%20r='2.3'%20fill='%23F7CD3A'/%3E%3C/svg%3E");
+  --flower-purple: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='14'%20height='14'%3E%3Cg%20fill='%23A971D6'%3E%3Ccircle%20cx='7'%20cy='3'%20r='2.4'/%3E%3Ccircle%20cx='11'%20cy='6'%20r='2.4'/%3E%3Ccircle%20cx='9.4'%20cy='10.5'%20r='2.4'/%3E%3Ccircle%20cx='4.6'%20cy='10.5'%20r='2.4'/%3E%3Ccircle%20cx='3'%20cy='6'%20r='2.4'/%3E%3C/g%3E%3Ccircle%20cx='7'%20cy='7'%20r='2.3'%20fill='%23F7CD3A'/%3E%3C/svg%3E");
+  --flower-yellow: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='14'%20height='14'%3E%3Cg%20fill='%23F7CD3A'%3E%3Ccircle%20cx='7'%20cy='3'%20r='2.4'/%3E%3Ccircle%20cx='11'%20cy='6'%20r='2.4'/%3E%3Ccircle%20cx='9.4'%20cy='10.5'%20r='2.4'/%3E%3Ccircle%20cx='4.6'%20cy='10.5'%20r='2.4'/%3E%3Ccircle%20cx='3'%20cy='6'%20r='2.4'/%3E%3C/g%3E%3Ccircle%20cx='7'%20cy='7'%20r='2.3'%20fill='%23E0A81E'/%3E%3C/svg%3E");
+  --flower-poppy:  url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='13'%20height='13'%3E%3Cg%20fill='%23E24B4A'%3E%3Ccircle%20cx='6.5'%20cy='2.8'%20r='2.4'/%3E%3Ccircle%20cx='10.2'%20cy='5.6'%20r='2.4'/%3E%3Ccircle%20cx='8.8'%20cy='9.8'%20r='2.4'/%3E%3Ccircle%20cx='4.2'%20cy='9.8'%20r='2.4'/%3E%3Ccircle%20cx='2.8'%20cy='5.6'%20r='2.4'/%3E%3C/g%3E%3Ccircle%20cx='6.5'%20cy='6.4'%20r='1.9'%20fill='%234A1B0C'/%3E%3C/svg%3E");
+  --butterfly-violet: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='16'%20height='14'%3E%3Cg%20fill='%23A971D6'%3E%3Cellipse%20cx='4.5'%20cy='4.8'%20rx='3.6'%20ry='3.1'/%3E%3Cellipse%20cx='11.5'%20cy='4.8'%20rx='3.6'%20ry='3.1'/%3E%3Cellipse%20cx='5'%20cy='9.6'%20rx='2.9'%20ry='3'/%3E%3Cellipse%20cx='11'%20cy='9.6'%20rx='2.9'%20ry='3'/%3E%3C/g%3E%3Crect%20x='7.5'%20y='2'%20width='1'%20height='10'%20rx='0.5'%20fill='%233d3428'/%3E%3C/svg%3E");
+  --butterfly-pink: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='16'%20height='14'%3E%3Cg%20fill='%23D4537E'%3E%3Cellipse%20cx='4.5'%20cy='4.8'%20rx='3.6'%20ry='3.1'/%3E%3Cellipse%20cx='11.5'%20cy='4.8'%20rx='3.6'%20ry='3.1'/%3E%3Cellipse%20cx='5'%20cy='9.6'%20rx='2.9'%20ry='3'/%3E%3Cellipse%20cx='11'%20cy='9.6'%20rx='2.9'%20ry='3'/%3E%3C/g%3E%3Crect%20x='7.5'%20y='2'%20width='1'%20height='10'%20rx='0.5'%20fill='%233d3428'/%3E%3C/svg%3E");
+  --butterfly-amber: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='16'%20height='14'%3E%3Cg%20fill='%23EF9F27'%3E%3Cellipse%20cx='4.5'%20cy='4.8'%20rx='3.6'%20ry='3.1'/%3E%3Cellipse%20cx='11.5'%20cy='4.8'%20rx='3.6'%20ry='3.1'/%3E%3Cellipse%20cx='5'%20cy='9.6'%20rx='2.9'%20ry='3'/%3E%3Cellipse%20cx='11'%20cy='9.6'%20rx='2.9'%20ry='3'/%3E%3C/g%3E%3Crect%20x='7.5'%20y='2'%20width='1'%20height='10'%20rx='0.5'%20fill='%234a2b0c'/%3E%3C/svg%3E");
+}
+
+/* Meadow paddock: a fresh, lush green with a light scatter of wildflowers and
+   a couple of fluttering butterflies. */
+.paddock.meadow-paddock {
+  background:
+    linear-gradient(#a4c775, #8bb35f) 0 calc(var(--horse-unit) * 0.545) / 100% 100% no-repeat,
+    linear-gradient(#eef5e6, #eef5e6) 0 calc(var(--horse-unit) * 0.536) / 100% 2px no-repeat,
+    #d9ecf8;
+}
+
+.paddock.meadow-paddock::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background-repeat: no-repeat;
+  background-image:
+    var(--flower-pink), var(--flower-white), var(--flower-yellow),
+    var(--flower-purple), var(--flower-pink), var(--flower-white),
+    var(--flower-yellow), var(--flower-purple);
+  background-size:
+    13px 13px, 11px 11px, 12px 12px, 12px 12px, 10px 10px, 13px 13px, 9px 9px, 10px 10px;
+  background-position:
+    7% 74%, 19% 90%, 31% 68%, 44% 88%, 57% 73%, 69% 92%, 82% 70%, 92% 86%;
+}
+
+.paddock.meadow-paddock::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background-repeat: no-repeat;
+  background-image: var(--butterfly-violet), var(--butterfly-pink);
+  background-size: 16px 14px, 14px 12px;
+  background-position: 26% 56%, 73% 50%;
+  animation: paddock-flutter 5s ease-in-out infinite;
+}
+
+/* Campo paddock: the sun-baked Andalusian countryside — warmer, golden grass
+   dotted with red poppies and a few dry wildflowers. */
+.paddock.campo-paddock {
+  background:
+    linear-gradient(#bcc079, #a3a95e) 0 calc(var(--horse-unit) * 0.545) / 100% 100% no-repeat,
+    linear-gradient(#f3f0dd, #f3f0dd) 0 calc(var(--horse-unit) * 0.536) / 100% 2px no-repeat,
+    #dbeaf3;
+}
+
+.paddock.campo-paddock::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background-repeat: no-repeat;
+  background-image:
+    var(--flower-poppy), var(--flower-yellow), var(--flower-poppy),
+    var(--flower-white), var(--flower-poppy), var(--flower-yellow),
+    var(--flower-poppy);
+  background-size:
+    12px 12px, 10px 10px, 11px 11px, 9px 9px, 13px 13px, 9px 9px, 10px 10px;
+  background-position:
+    9% 76%, 22% 91%, 35% 71%, 49% 89%, 63% 74%, 78% 92%, 90% 78%;
+}
+
+.paddock.campo-paddock::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background-repeat: no-repeat;
+  background-image: var(--butterfly-amber);
+  background-size: 15px 13px;
+  background-position: 66% 54%;
+  animation: paddock-flutter 6s ease-in-out infinite;
+}
+
+/* A gentle bob for the built-in butterflies. Kept tiny so it reads as a
+   flutter, not a distraction, and stilled for reduced-motion below. */
+@keyframes paddock-flutter {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-3px); }
+}
+
+/* Respect a reduced-motion preference: still the ambient paddock animations
+   (the butterfly flutter and the magical sparkle) without hiding anything. */
+@media (prefers-reduced-motion: reduce) {
+  .paddock.meadow-paddock::after,
+  .paddock.campo-paddock::after,
+  .paddock.magic-paddock::before,
+  .paddock.magic-paddock::after {
+    animation: none;
+  }
+}
+
 /* fence: posts + two rails, drawn with layered gradients so it tiles at any
    width. Vertical metrics scale with --horse-unit (ratios from the original
    60/78/16/48px design at a 220px unit) so it shrinks with the horses. */
