@@ -635,6 +635,8 @@ function handleCare(card, event) {
     showWantFulfilled(card, want, event); // its own flavour + supporter-burst pops
     renderWantBubbles(state);             // clear the tended bubble
     renderHUD(state);                     // supporters jumped
+    if (want.coins > 0) showMoneyPop(want.coins); // meter overflow, paid out directly
+    refreshUI();                          // the share meter just jumped — show it
     persist();
   } else {
     showCareFeedback(card, message, event, { crit });

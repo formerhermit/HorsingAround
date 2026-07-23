@@ -684,6 +684,15 @@ const WANT_MIN_WELLBEING = 60;   // only content-ish horses get little luxuries
 const WANT_SUPPORTER_BURST = 3;  // supporters gained on fulfilling one
 const WANT_GLOW_DURATION = 60;   // seconds the attraction glow lasts
 const WANT_GLOW_MULT = 2;        // attraction multiplier during the glow
+// A tended want is a photo-worthy moment, and the natural next thing a rescue
+// does with one is post it: fulfilling a want charges the share meter by this
+// much (issue #47). Any charge that doesn't fit converts straight to coins at
+// the share rate — a watching supporter shares it for you — so the reward is
+// never worth nothing, even for a following pinned at its capacity where the
+// supporter burst and glow no longer bite. Scales with supporters and decor
+// (via shareValue), and adds no passive income at all: only a player actually
+// tending horses ever sees it.
+const WANT_SHARE_CHARGE = 0.5;
 
 // Each need: the bubble shown above the horse and the pop shown when tended.
 // `photo` marks the "take a photo" want, which gets a camera flash in the UI.
@@ -760,8 +769,9 @@ function updateWants(dt, now) {
 }
 
 /** Tend the active want if this is the horse that wanted something. Grants the
- *  supporter burst + glow and returns { need, supporters } for feedback, else
- *  null (so a normal care tap is unaffected). */
+ *  supporter burst + glow, charges the share meter (overflow pays out as coins
+ *  at the share rate), and returns { need, supporters, coins } for feedback,
+ *  else null (so a normal care tap is unaffected). */
 export function fulfilWant(horseId, now = Date.now()) {
   if (!activeWant || activeWant.horseId !== horseId) return null;
   const { need } = activeWant;
@@ -769,7 +779,18 @@ export function fulfilWant(horseId, now = Date.now()) {
   wantCountdown = randomBetween(WANT_MIN_GAP, WANT_MAX_GAP);
   gameState.supporters += WANT_SUPPORTER_BURST;
   glowUntil = now + WANT_GLOW_DURATION * 1000;
-  return { need, supporters: WANT_SUPPORTER_BURST };
+  // Worth sharing: bump the meter, and pay any overflow out directly.
+  const newCharge = shareCharge(gameState, now) + WANT_SHARE_CHARGE;
+  const overflow = Math.max(0, newCharge - 1);
+  let coins = 0;
+  if (overflow > 0) {
+    coins = overflow * shareValue();
+    gameState.coins += coins;
+    gameState.stats.totalDonated += coins;
+  }
+  // Rewind lastSharedAt so the meter reads the boosted charge (full at most).
+  gameState.lastSharedAt = now - Math.min(newCharge, 1) * SHARE_CHARGE_TIME * 1000;
+  return { need, supporters: WANT_SUPPORTER_BURST, coins };
 }
 
 // ---- paddock life: bills & Visitors Day (issue #50) ----
