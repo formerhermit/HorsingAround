@@ -25,6 +25,18 @@ export function monthLabel(date = new Date()) {
   }).format(date); // "July 2026"
 }
 
+/** The previous month's key: "2026-06" while it's July. */
+export function prevMonthKey(date = new Date()) {
+  const [y, m] = monthKey(date).split('-').map(Number);
+  return m === 1 ? `${y - 1}-12` : `${y}-${String(m - 1).padStart(2, '0')}`;
+}
+
+/** Human label for the previous month ("June 2026"). */
+export function prevMonthLabel(date = new Date()) {
+  const [y, m] = prevMonthKey(date).split('-').map(Number);
+  return monthLabel(new Date(Date.UTC(y, m - 1, 15)));
+}
+
 // ---- stable names ----
 // Generated, never typed: no real names, no moderation burden, nothing for a
 // child to overshare. Uniqueness is enforced by the database per month; on a
@@ -83,7 +95,12 @@ async function getSession() {
   return session ? { client, session } : null;
 }
 
-/** Upsert this player's row for the current month. Fire-and-forget. */
+/** Upsert this player's row for the current month. Fire-and-forget, but
+ *  self-healing (issue #66): the old version never even looked at the upsert's
+ *  error, so a push that failed — typically a display-name collision after a
+ *  save crossed devices, since board rows are keyed per anonymous identity
+ *  while the name travels inside the synced save — just froze that player's
+ *  score on the board forever, silently. */
 export async function pushScore() {
   const lb = gameState.leaderboard;
   if (!lb.optedIn || !lb.name) return;
@@ -91,15 +108,62 @@ export async function pushScore() {
     const ctx = await getSession();
     if (!ctx) return;
     rolloverIfNeeded();
-    await ctx.client.from('leaderboard').upsert({
+    // The board never forgets: if our own cloud row already shows more
+    // rescues than the local counter (a synced save can lag behind or have
+    // regressed, see #67), adopt the higher number instead of writing the
+    // score backwards.
+    const { data: mine } = await ctx.client.from('leaderboard')
+      .select('rescues')
+      .eq('user_id', ctx.session.user.id).eq('month', lb.month)
+      .maybeSingle();
+    if (mine && mine.rescues > lb.rescues) lb.rescues = mine.rescues;
+
+    const row = {
       user_id: ctx.session.user.id,
       month: lb.month,
       display_name: lb.name,
       rescues: lb.rescues,
       updated_at: new Date().toISOString(),
-    });
+    };
+    const { error } = await ctx.client.from('leaderboard').upsert(row);
+    if (error && error.code === '23505') {
+      // Our name is held by a different identity this month (usually our own
+      // save arriving on a new device via a save code or an old sync mishap).
+      // Reroll a fresh name for this identity and retry, so the score
+      // unsticks instead of failing on every rescue for the rest of the month.
+      for (let attempt = 0; attempt < 4; attempt++) {
+        lb.name = attempt < 2 ? generateName() : `${generateName()} ${2 + Math.floor(Math.random() * 97)}`;
+        const retry = await ctx.client.from('leaderboard').upsert({ ...row, display_name: lb.name });
+        if (!retry.error) return;
+        if (retry.error.code !== '23505') throw retry.error;
+      }
+    } else if (error) {
+      throw error;
+    }
   } catch (err) {
     console.warn('Leaderboard push failed, will retry on next rescue:', err);
+  }
+}
+
+/** Last month's winner ({ name, rescues }), or null if that board was empty
+ *  or unreachable. The reigning champion wears the rosette on this month's
+ *  board until the next winner is crowned. */
+export async function fetchChampion() {
+  try {
+    const ctx = await getSession();
+    if (!ctx) return null;
+    const { data, error } = await ctx.client
+      .from('leaderboard')
+      .select('display_name, rescues')
+      .eq('month', prevMonthKey())
+      .order('rescues', { ascending: false })
+      .order('updated_at', { ascending: true }) // ties: first to the score wins
+      .limit(1);
+    if (error) throw error;
+    return data?.[0] ? { name: data[0].display_name, rescues: data[0].rescues } : null;
+  } catch (err) {
+    console.warn('Could not load last month\'s champion:', err);
+    return null;
   }
 }
 

@@ -2047,6 +2047,29 @@ main {
   cursor: default;
 }
 
+/* Reigning-champion caption above the board, and the rosette badge itself
+   (inline SVG, sized to the surrounding text). */
+.lb-champion {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: #8a6d3b;
+  margin: 0 0 0.6rem;
+}
+
+.lb-rosette {
+  width: 1.05em;
+  height: auto;
+  flex: none;
+  vertical-align: -0.25em;
+}
+
+.lb-name .lb-rosette {
+  margin-left: 0.35em;
+}
+
 .lb-list {
   list-style: none;
   margin: 0.25rem 0 0.75rem;
