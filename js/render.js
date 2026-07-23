@@ -669,7 +669,15 @@ function renderPaddock(state) {
   if (butterflies) children.unshift(butterflies); // behind the horses
   document.getElementById('horses').replaceChildren(...children);
   renderPaddockDecor(state, paddock);
-  document.getElementById('paddock').classList.toggle('magic-paddock', isMagic);
+  // Scene theme per paddock: the buildable ones live up to their names with a
+  // built-in scatter of flowers (Meadow) / poppies (Campo), painted in CSS so
+  // they cost nothing and never crowd the horses. Home and the magical paddock
+  // keep their own looks. `paddock` is the slot index (0 = home, 1 = Meadow,
+  // 2 = Campo); the magical paddock uses MAGIC_PADDOCK, handled by isMagic.
+  const scene = document.getElementById('paddock');
+  scene.classList.toggle('magic-paddock', isMagic);
+  scene.classList.toggle('meadow-paddock', !isMagic && paddock === 1);
+  scene.classList.toggle('campo-paddock', !isMagic && paddock === 2);
 
   // edge arrows + label, only when there is more than one view
   const older = document.getElementById('nav-older');
