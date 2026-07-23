@@ -1778,7 +1778,9 @@ main {
      never be hidden behind scene furniture. */
   z-index: 30;
   width: max-content;
-  max-width: 92%;
+  /* Never wider than the paddock, and never wider than the phone screen minus a
+     safe margin, so a long story-beat toast can't be clipped at the edge (#59). */
+  max-width: min(92%, calc(100vw - 1.75rem));
   pointer-events: none;
 }
 
@@ -1790,6 +1792,7 @@ main {
   padding: 0.5rem 0.9rem;
   font-size: 0.85rem;
   max-width: 100%;
+  overflow-wrap: break-word; /* long words/URLs wrap instead of overflowing (#59) */
   text-align: center;
   animation: toast-life 5s ease forwards;
 }
