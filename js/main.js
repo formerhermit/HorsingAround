@@ -20,8 +20,8 @@ import { syncOnLoad, pullCloudSave, pushCloudSave, markSyncSettled, getCloudUser
 import { createSaveCode, previewSaveCode, confirmSaveCode } from './saveCode.js';
 import { linkGoogle, signInWithGoogle, isGoogleLinked } from './google.js';
 import {
-  monthLabel, generateName, rolloverIfNeeded, recordRescue,
-  pushScore, joinBoard, fetchBoard, leaveBoard,
+  monthLabel, prevMonthLabel, generateName, rolloverIfNeeded, recordRescue,
+  pushScore, joinBoard, fetchBoard, leaveBoard, fetchChampion,
 } from './leaderboard.js';
 import { initShare } from './share.js';
 import './audio.js';
@@ -1088,6 +1088,23 @@ document.getElementById('tab-leaderboard').addEventListener('click', () => showC
 
 // ---- monthly leaderboard panel ----
 
+// The champion's rosette (issue #66): worn on the board by last month's
+// winner until the next one is crowned. Inline SVG in the game's flat style —
+// golden scalloped rosette, warm ribbon tails.
+const ROSETTE_SVG = `
+<svg class="lb-rosette" viewBox="0 0 24 30" aria-label="last month's champion" role="img">
+  <path d="M8 14 L4.5 27 L10 23.5 Z" fill="#D9534F"/>
+  <path d="M16 14 L19.5 27 L14 23.5 Z" fill="#C0392B"/>
+  <g fill="#F7CD3A">
+    <circle cx="19" cy="11" r="3.6"/><circle cx="16.9" cy="16" r="3.6"/>
+    <circle cx="12" cy="18" r="3.6"/><circle cx="7.1" cy="16" r="3.6"/>
+    <circle cx="5" cy="11" r="3.6"/><circle cx="7.1" cy="6" r="3.6"/>
+    <circle cx="12" cy="4" r="3.6"/><circle cx="16.9" cy="6" r="3.6"/>
+  </g>
+  <circle cx="12" cy="11" r="6.6" fill="#F7CD3A"/>
+  <circle cx="12" cy="11" r="4.4" fill="#FFF3D6" stroke="#E0A81E" stroke-width="1.2"/>
+</svg>`;
+
 let lbPreviewName = null; // the generated name on offer in the join card
 
 async function renderLeaderboardPanel() {
@@ -1111,12 +1128,20 @@ async function renderLeaderboardPanel() {
 
   document.getElementById('lb-own-name').textContent = lb.name;
   const list = document.getElementById('lb-list');
+  const championEl = document.getElementById('lb-champion');
+  championEl.hidden = true;
   list.innerHTML = '<li class="lb-status">Loading the board…</li>';
-  await pushScore(); // our row should be current before we read
-  const rows = await fetchBoard();
+  await pushScore(); // our row should be current before we read (may also heal a stuck name)
+  document.getElementById('lb-own-name').textContent = lb.name; // pushScore can reroll it
+  const [rows, champion] = await Promise.all([fetchBoard(), fetchChampion()]);
   if (!rows) {
     list.innerHTML = '<li class="lb-status">Couldn\'t reach the board just now. Try again in a bit.</li>';
     return;
+  }
+  if (champion) {
+    championEl.hidden = false;
+    championEl.innerHTML =
+      `${ROSETTE_SVG} Reigning champion: <strong>${champion.name}</strong> · ${champion.rescues} rescues in ${prevMonthLabel()}`;
   }
   if (rows.length === 0) {
     list.innerHTML = '<li class="lb-status">Nobody on the board yet this month.</li>';
@@ -1132,6 +1157,8 @@ async function renderLeaderboardPanel() {
     const name = document.createElement('span');
     name.className = 'lb-name';
     name.textContent = row.name + (row.you ? ' (you)' : '');
+    // Last month's winner wears the rosette all this month.
+    if (champion && row.name === champion.name) name.insertAdjacentHTML('beforeend', ROSETTE_SVG);
     const score = document.createElement('span');
     score.className = 'lb-score';
     score.textContent = `${row.rescues} ${row.rescues === 1 ? 'rescue' : 'rescues'}`;
