@@ -525,10 +525,13 @@ function viewCap() {
     ? 2 : PADDOCK_CAP;
 }
 
-/** Human label for a paddock slot, matching the on-scene label wording. */
-function paddockLabel(index) {
+/** Human label for a paddock slot, matching the on-scene label wording.
+ *  The buildable paddocks have names with a bit of personality (issue #60)
+ *  rather than "Paddock 2": a meadow, then a proper Andalusian campo. */
+const PADDOCK_NAMES = ['Home paddock', 'Meadow paddock', 'Campo paddock'];
+export function paddockLabel(index) {
   if (index === MAGIC_PADDOCK) return '✨ Magical paddock';
-  return index === 0 ? 'Home paddock' : `Paddock ${index + 1}`;
+  return PADDOCK_NAMES[index] ?? `Paddock ${index + 1}`;
 }
 
 // Which view is on screen. 0 = start of the home paddock (newest arrivals).

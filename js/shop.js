@@ -81,24 +81,30 @@ export function horseExclusiveRival(item, horse) {
 }
 
 export const SHOP_ITEMS = [
-  // tier 1 — from the first rescue. Winter rug and boots are the cheap starter
-  // wardrobe (the rug replaced the retired scarf, issue #38: back-worn pieces
-  // sit right on every coat); flower garland and bunting are the two
+  // The wardrobe list is ordered for the shop's two-column grid (issue #71):
+  // matching pieces sit side by side once unlocked — boots with leg wraps,
+  // the winter rug with its either/or saddle blanket, the ear flower with its
+  // either/or forelock bow. Unlock tiers (requiresHorses) are unchanged.
+
+  // tier 1 — from the first rescue. Boots and the winter rug are the cheap
+  // starter wardrobe (the rug replaced the retired scarf, issue #38: back-worn
+  // pieces sit right on every coat); flower garland and bunting are the two
   // fence-banner styles: a paddock flies one OR the other (see
   // EXCLUSIVE_GROUPS), priced the same so the pick is purely a matter of taste.
-  { id: 'winter-rug', name: 'Winter rug', category: 'wardrobe', price: 150, requiresHorses: 1, attractionBonus: 0.006 },
   { id: 'boots', name: 'Boots', category: 'wardrobe', price: 250, requiresHorses: 1, attractionBonus: 0.010 },
+  { id: 'leg-wraps', name: 'Leg wraps', category: 'wardrobe', price: 900, requiresHorses: 5, attractionBonus: 0.014 },
+  { id: 'winter-rug', name: 'Winter rug', category: 'wardrobe', price: 150, requiresHorses: 1, attractionBonus: 0.006 },
+  { id: 'saddle-blanket', name: 'Saddle blanket', category: 'wardrobe', price: 2000, requiresHorses: 8, attractionBonus: 0.020 },
+  { id: 'ear-flower', name: 'Ear flower', category: 'wardrobe', price: 650, requiresHorses: 3, attractionBonus: 0.012 },
+  { id: 'forelock-bow', name: 'Forelock bow', category: 'wardrobe', price: 650, requiresHorses: 3, attractionBonus: 0.012 },
+
   { id: 'flower-garland', name: 'Flower garland', category: 'decor', price: 500, requiresHorses: 1, shareBonus: 0.05 },
   { id: 'bunting', name: 'Bunting flags', category: 'decor', price: 500, requiresHorses: 1, shareBonus: 0.05 },
 
-  // tier 2 — 3 horses rescued. Ear flower and forelock bow are the two head-flair
-  // styles: a horse wears one OR the other, again same price so it's a free choice.
-  { id: 'ear-flower', name: 'Ear flower', category: 'wardrobe', price: 650, requiresHorses: 3, attractionBonus: 0.012 },
-  { id: 'forelock-bow', name: 'Forelock bow', category: 'wardrobe', price: 650, requiresHorses: 3, attractionBonus: 0.012 },
+  // tier 2 — 3 horses rescued
   { id: 'trough', name: 'Water trough', category: 'decor', price: 900, requiresHorses: 3, shareBonus: 0.05 },
 
   // tier 3 — 5 horses rescued
-  { id: 'leg-wraps', name: 'Leg wraps', category: 'wardrobe', price: 900, requiresHorses: 5, attractionBonus: 0.014 },
   { id: 'flower-buckets', name: 'Flower buckets', category: 'decor', price: 3000, requiresHorses: 5, shareBonus: 0.06 },
   { id: 'flower-barrow', name: 'Flower barrow', category: 'decor', price: 3400, requiresHorses: 5, shareBonus: 0.06 },
   { id: 'butterflies', name: 'Butterflies', category: 'decor', price: 3600, requiresHorses: 5, shareBonus: 0.06 },
@@ -106,7 +112,6 @@ export const SHOP_ITEMS = [
   // tier 4 — 8 horses rescued (matches the paddock-paging threshold). The
   // grandest props are deliberately steep: long-haul goals a maxed-out
   // supporter base funds only well into the late game.
-  { id: 'saddle-blanket', name: 'Saddle blanket', category: 'wardrobe', price: 2000, requiresHorses: 8, attractionBonus: 0.020 },
   { id: 'hay-bales', name: 'Hay bales', category: 'decor', price: 9000, requiresHorses: 8, shareBonus: 0.08 },
   { id: 'play-balls', name: 'Play balls', category: 'decor', price: 15000, requiresHorses: 8, shareBonus: 0.08 },
 

@@ -10,7 +10,7 @@ import {
   renderPostcardButton, openPostcardAlbum, closePostcardAlbum,
   renderWantBubbles, showWantFulfilled,
   renderCollectionButton, openCollection, closeCollection, renderStats,
-  formatDate,
+  formatDate, paddockLabel,
 } from './render.js';
 import {
   buyDecorIn, buyWardrobe, placeDecor, removeDecor, placeWardrobe, removeWardrobe,
@@ -771,7 +771,7 @@ function showFullPaddocksDialog() {
     buttons.push({ label: `🔨 Build a paddock · €${price}`, onClick: () => {
       const res = buyPaddock(state);
       if (res.ok) {
-        showToast(`🎉 Paddock ${res.count} is ready: room for 8 more horses, and a fresh spot to decorate!`);
+        showToast(`🎉 The ${paddockLabel(res.count - 1)} is ready: room for 8 more horses, and a fresh spot to decorate!`);
         renderAll(state);
         refreshUI();
         persist();
