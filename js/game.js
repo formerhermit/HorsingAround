@@ -825,6 +825,11 @@ const VISITORS_DELAY_MIN = 4 * 60; // planning popup -> the day itself
 const VISITORS_DELAY_MAX = 7 * 60;
 const VISITORS_ENTRY_FEE = 2.5;    // € each visitor donates on the day
 const MECHANIC_SUPPORTERS = 3;     // passers-by who admire the freshly fixed box
+// A foal is born: costly to raise, but who wouldn't visit a cute new arrival?
+// Paying brings a small crowd of new supporters plus a short attraction glow.
+const FOAL_SUPPORTERS_MIN = 4;
+const FOAL_SUPPORTERS_MAX = 7;
+const FOAL_GLOW = 120;             // seconds the new-foal buzz turns extra heads
 
 // Each bill's fee scales with the rescue's stage (via the next rescue's cost),
 // so it stays felt-but-friendly from a three-horse paddock to a full rescue.
@@ -835,6 +840,7 @@ export const BILLS = {
   mechanic:   { fraction: 0.20, min: 12 },  // the horse box needs a repair
   barn:       { fraction: 0.25, min: 15 },  // the stable roof needs fixing (issue #63)
   journalist: { fraction: 0.12, min: 10 },  // a Sur feature: pays off later (issue #64)
+  foal:       { fraction: 0.22, min: 14 },  // a foal is born: cost, but draws visitors
 };
 
 // The Sur article chain (issue #64): pay the journalist now, and the story
@@ -931,7 +937,8 @@ function updatePaddockLife(dt, now, events) {
     return;
   }
   let horse = null;
-  if (kind === 'vet' || kind === 'farrier') {
+  if (kind === 'vet' || kind === 'farrier' || kind === 'foal') {
+    // The vet/farrier tend a named horse; the foal is born to a named mare.
     const candidates = gameState.horses.filter((h) => !isMagicalCoat(h.paletteKey));
     if (!candidates.length) return;
     horse = randomFrom(candidates);
@@ -946,12 +953,13 @@ function updatePaddockLife(dt, now, events) {
 /** Pay the pending bill. Every payment lands a warm payoff: the vet and
  *  farrier leave their horse topped up (the farrier's new shoes turn heads for
  *  a while too), the hay settles the whole herd, and the fixed horse box wins
- *  a few admirers. Returns { ok, kind, fee, horse } or null. */
+ *  a few admirers, and a new foal brings a small crowd of well-wishers.
+ *  Returns { ok, kind, fee, horse, supporters } or null. */
 export function acceptBill(now = Date.now()) {
   if (!pendingBill) return null;
   const { kind, fee, variant, horseId } = pendingBill;
   pendingBill = null;
-  if (gameState.coins < fee) return { ok: false, kind, fee, horse: null };
+  if (gameState.coins < fee) return { ok: false, kind, fee, horse: null, supporters: 0 };
   gameState.coins -= fee;
   // Badge tracking (issue #65): note the kind paid, and the care specifics.
   const st = gameState.stats;
@@ -960,6 +968,7 @@ export function acceptBill(now = Date.now()) {
   if (kind === 'farrier') st.farrierVisits = (st.farrierVisits ?? 0) + 1;
   if (kind === 'vet' && variant === 'worming') st.wormings = (st.wormings ?? 0) + 1;
   const horse = gameState.horses.find((h) => h.id === horseId) ?? null;
+  let supporters = 0;
   if (kind === 'vet' || kind === 'farrier') {
     if (horse) {
       horse.wellbeing = WELLBEING_MAX;
@@ -972,7 +981,15 @@ export function acceptBill(now = Date.now()) {
       h.wellbeing = Math.min(WELLBEING_MAX, h.wellbeing + 2);
       h.lastCaredAt = now; // well fed: the whole herd holds its shine a while
     }
+  } else if (kind === 'foal') {
+    // A new foal is the best kind of advert: a small crowd comes to coo, and
+    // the paddock buzzes for a while after.
+    supporters = FOAL_SUPPORTERS_MIN + Math.floor(Math.random() * (FOAL_SUPPORTERS_MAX - FOAL_SUPPORTERS_MIN + 1));
+    gameState.supporters += supporters;
+    gameState.stats.foalsBorn = (gameState.stats.foalsBorn ?? 0) + 1;
+    glowUntil = now + FOAL_GLOW * 1000;
   } else if (kind === 'mechanic') {
+    supporters = MECHANIC_SUPPORTERS;
     gameState.supporters += MECHANIC_SUPPORTERS;
   } else if (kind === 'barn') {
     glowUntil = now + BARN_GLOW * 1000; // the smart new roof turns heads a while
@@ -983,7 +1000,7 @@ export function acceptBill(now = Date.now()) {
       dueAt: now + randomBetween(ARTICLE_DELAY_MIN, ARTICLE_DELAY_MAX) * 1000,
     };
   }
-  return { ok: true, kind, fee, horse };
+  return { ok: true, kind, fee, horse, supporters };
 }
 
 /** Decline the pending bill. Always safe: nothing happens to any horse, the

@@ -508,6 +508,7 @@ const BILL_ART = {
   mechanic: 'assets/events/horse-box.jpg',
   barn: 'assets/events/stable-repairs.jpg',
   journalist: 'assets/events/journalist-offer.jpg',
+  foal: 'assets/events/foal-born.jpg',
 };
 
 function billCopy(e) {
@@ -536,6 +537,10 @@ function billCopy(e) {
     pay: 'Pay for the story',
     text: `A journalist from the Sur wants to write a feature about the rescue. A story like that could bring in real support, for a fee of ${fee}.`,
   };
+  if (e.kind === 'foal') return {
+    pay: 'Welcome the foal',
+    text: `Wonderful news: ${fig(e.horseName)} has had a foal! Raising a newborn and its mother isn't cheap, ${fee} to see them both right, but a cute new arrival is sure to draw some visitors.`,
+  };
   return {
     pay: 'Fix the horse box',
     text: `The horse box needs a repair before it can fetch any more horses. The mechanic can fix it today for ${fee}.`,
@@ -548,6 +553,7 @@ function billPaidToast(res) {
   if (res.kind === 'hay') return '🌾 The hay barn is full: the whole herd is fed and holding their shine 💛';
   if (res.kind === 'barn') return '🔨 The stable is snug and dry again, and the smart new roof is turning heads 💛';
   if (res.kind === 'journalist') return '📰 The journalist got the full tour. Watch the paper: the story runs soon!';
+  if (res.kind === 'foal') return `🐴 The foal is up on its wobbly legs, and word of the new arrival is bringing visitors 💛`;
   return '🔧 The horse box is roadworthy again, ready for the next rescue 💛';
 }
 
@@ -637,7 +643,7 @@ function handleEvent(e) {
           const res = acceptBill();
           if (!res?.ok) return;
           showToast(billPaidToast(res));
-          if (res.kind === 'mechanic') showSupporterPop(3);
+          if (res.supporters > 0) showSupporterPop(res.supporters); // mechanic admirers, foal well-wishers
           state.horses.forEach(updateHorseCard); // topped-up bars show right away
           runAchievementCheck(); // farrier / worming / good-books badges
           refreshUI();
