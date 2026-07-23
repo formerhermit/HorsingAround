@@ -173,6 +173,7 @@ export function defaultState() {
       fearsOvercome: 0,  // fear-breakthrough beats that have fired
       visitorsDaysRun: 0,// Visitors Days held
       reunionsHeld: 0,   // Reunion Days held
+      foalsBorn: 0,      // foals welcomed into the rescue
       playSeconds: 0,    // active play time, summed from the sim tick's clamped dt
       startedAt: Date.now(), // when this rescue began (for "caring since ...")
     },
@@ -301,6 +302,7 @@ function repair(save) {
   save.stats.fearsOvercome ??= (save.horses ?? []).filter((h) => h.fearOvercome).length;
   save.stats.visitorsDaysRun ??= 0;
   save.stats.reunionsHeld ??= 0;
+  save.stats.foalsBorn ??= 0;
   save.stats.traitsSeen ??= [...new Set((save.horses ?? []).map((h) => h.trait).filter(Boolean))];
   // The monthly leaderboard is opt-in and new; existing saves start off it.
   // Unlike the other backfilled nudges, the leaderboard one stays *on* for
