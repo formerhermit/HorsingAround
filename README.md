@@ -81,11 +81,24 @@ Spend your funds on nice things.
 
 Each paddock gets its own decorations — the magical paddock included — up to a tidy limit. Some choices are one or the other: flower garland *or* bunting, an ear flower *or* a forelock bow. The dog and cat are the big splurges, for when the rescue's really thriving.
 
+### Grow the rescue
+
+Once your rescue is well established, a new part of the Tack room opens up: **Grow the rescue**, a ladder of big, permanent upgrades to the rescue itself. These are the grandest goals a thriving rescue can save up for, and each one quietly makes running the place easier:
+
+- **Vet station** — vet and farrier bills cost less.
+- **Hay barn** — hay bills cost less, and a well-fed herd holds its shine longer.
+- **Rehoming office** — adoption fees pay more.
+- **Second horsebox** — new rescues arrive in better shape, and cost less.
+- **Visitor centre** — Visitors Days and new foals draw a bigger crowd, and your following can grow larger.
+- **Sanctuary field** — the dream: a grand forever home, and room to build a fourth paddock.
+
+They're bought in order and priced to be a long chase, tens of thousands for the first, millions for the last, so there's always something to reach for. Most of the benefits are gentle savings rather than a money fountain, so the rescue grows without ever running away with itself.
+
 ### Paddock life
 
 Every so often, rescue life turns up at the gate as an illustrated story card:
 
-- **Bills**: the vet is due for a check-up or a worming treatment, a horse needs new shoes, the hay delivery arrives, the horse box needs the mechanic, the stable roof starts letting the rain in, or one of your mares has a **foal**. Each one costs a slice of your fund, scaled to where your rescue is at. Paying always feels good: the vet and farrier leave their horse topped up and gleaming, a full hay barn settles the whole herd, a fixed-up horse box or a smart new roof turns admiring heads, and a cute new foal draws a little crowd of new supporters. Saying "not just yet" is always safe; the bill just comes around again later. And a bill never arrives that your fund can't comfortably pay.
+- **Bills**: the vet is due for a check-up or a worming treatment, a horse needs new shoes, the hay or water delivery arrives, the horse box needs the mechanic, the stable roof starts letting the rain in, or one of your mares has a **foal**. Each one costs a slice of your fund, scaled to where your rescue is at. Paying always feels good: the vet and farrier leave their horse topped up and gleaming, a full hay barn settles the whole herd, a fixed-up horse box or a smart new roof turns admiring heads, and a cute new foal draws a little crowd of new supporters. Saying "not just yet" is always safe; the bill just comes around again later. And a bill never arrives that your fund can't comfortably pay.
 - **The Sur feature**: a journalist sometimes offers to write about the rescue, for a fee. Pay it and the story runs a little later, always bringing in more than it cost, sometimes much more, and once in a while it makes the front page. The story prints even if you're away; it'll be waiting when you come back.
 - **Visitors Day**: sometimes the volunteers get together and plan a Visitors Day instead. You get a heads-up a few minutes ahead, and that time matters: on the day, entry donations scale with your supporters, your decor, and above all how much of the herd is thriving. Groom everyone before the visitors arrive and the day can be a triumph.
 - **Reunion Day**: once you've found horses their forever homes, they sometimes come back to visit, families in tow, and the visitors tend to leave as supporters.
@@ -153,6 +166,7 @@ js/state.js            what the game knows, plus saving to your browser
 js/game.js             the rules and the money maths
 js/traits.js           every personality: the quirks, the fears, and their mechanics
 js/achievements.js     the pride-only badge catalog and its earn checks
+js/facilities.js       the "grow the rescue" upgrade ladder and its effects
 js/shop.js             shop items and their rules
 js/horse.js            the horse illustration, drawn in code
 js/render.js           turns the game state into what you see on screen

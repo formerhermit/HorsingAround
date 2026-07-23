@@ -73,6 +73,8 @@ export const ACHIEVEMENTS = [
     earned: (s) => { const h = homePaddockHorses(s); return h.length > 0 && h.every(horseFullyDressed); } },
   { id: 'compulsive-shopper', name: 'Compulsive shopper', icon: '🛍️', group: 'collector',
     hint: 'Owned one of everything in the shop', earned: ownsEverything },
+  { id: 'grown-rescue', name: 'A place of their own', icon: '✨', group: 'collector',
+    hint: 'Grew the rescue to a full sanctuary', earned: (s) => (s.facilities ?? []).includes('sanctuary-field') },
 
   // ---- the long haul (tiered; progress bars pull play onward) ----
   countBadge('rescue-100', 'Century of care', '🐴', 'haul', '100 horses rescued', 100, (s) => s.stats.horsesRescued),

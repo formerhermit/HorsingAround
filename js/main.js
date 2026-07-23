@@ -1,7 +1,7 @@
 // main.js — boot the game: load state, render, wire input and persistence.
 
 import { initState, save, gameState, adoptCloudState, DONATE_MILESTONE, SAVE_KEY, disableSaving } from './state.js';
-import { careFor, tick, rescueHorse, shareUpdate, rescueCost, acceptRehome, declineRehome, requestRehome, collectOfflineEarnings, collectDuePostcards, collectDueStatues, markPostcardsRead, fulfilWant, grantUnicorn, hasUnicorn, acceptBill, declineBill, scheduleVisitorsDay, hurryPaddockLife } from './game.js';
+import { careFor, tick, rescueHorse, shareUpdate, rescueCost, rescuePrice, acceptRehome, declineRehome, requestRehome, collectOfflineEarnings, collectDuePostcards, collectDueStatues, markPostcardsRead, fulfilWant, grantUnicorn, hasUnicorn, acceptBill, declineBill, scheduleVisitorsDay, hurryPaddockLife } from './game.js';
 import {
   renderAll, renderHUD, renderActions, updateHorseCard,
   showCareFeedback, showTipPop, showToast, showMoneyPop, showSupporterPop, burstConfetti, changePaddock, resetPaddockView,
@@ -13,6 +13,7 @@ import {
   formatDate, paddockLabel,
 } from './render.js';
 import { ACHIEVEMENTS, checkAchievements } from './achievements.js';
+import { buyFacility } from './facilities.js';
 import {
   buyDecorIn, buyWardrobe, placeDecor, removeDecor, placeWardrobe, removeWardrobe,
   hasNewAffordableItem, buyPaddock, nextPaddockPrice,
@@ -322,7 +323,7 @@ function pendingNudge() {
   // time a milestone is collectable.)
   if (m.leaderboardNudgeQueued && !m.leaderboardNudgeShown && !state.leaderboard.optedIn) candidates.push('leaderboard');
   if (state.unlocks.moneyUI && !m.hasSharedUpdate) candidates.push('share');
-  if (state.unlocks.rescue && !m.hasRescuedAgain && state.coins >= rescueCost(state)) candidates.push('rescue');
+  if (state.unlocks.rescue && !m.hasRescuedAgain && state.coins >= rescuePrice(state)) candidates.push('rescue');
   if (state.unlocks.moneyUI && !m.shopIntroDone && hasNewAffordableItem(state)) candidates.push('shop');
   if (state.stats.horsesRescued >= 8 && !m.collectionIntroDone) candidates.push('collection');
   return candidates.find((id) => !snoozedNudges.has(id)) ?? null;
@@ -505,6 +506,7 @@ const BILL_ART = {
   vet: 'assets/events/vet-visit.jpg',
   farrier: 'assets/events/farrier-visit.jpg',
   hay: 'assets/events/hay-delivery.jpg',
+  water: 'assets/events/water-delivery.jpg',
   mechanic: 'assets/events/horse-box.jpg',
   barn: 'assets/events/stable-repairs.jpg',
   journalist: 'assets/events/journalist-offer.jpg',
@@ -529,6 +531,10 @@ function billCopy(e) {
     pay: 'Pay for the hay',
     text: `The hay delivery has arrived: enough bales to keep everyone fed and cosy. The bill comes to ${fee}.`,
   };
+  if (e.kind === 'water') return {
+    pay: 'Pay for the water',
+    text: `A water delivery has arrived to fill the troughs, fresh and clean for the whole herd. The bill comes to ${fee}.`,
+  };
   if (e.kind === 'barn') return {
     pay: 'Fix the stable',
     text: `The stable roof is letting the rain in. The volunteers can patch it up properly for ${fee}.`,
@@ -551,6 +557,7 @@ function billPaidToast(res) {
   if (res.kind === 'vet') return `🩺 ${res.horse?.name ?? 'Everyone'} has a clean bill of health 💛`;
   if (res.kind === 'farrier') return `✨ ${res.horse?.name ?? 'The herd'}'s new shoes are turning heads!`;
   if (res.kind === 'hay') return '🌾 The hay barn is full: the whole herd is fed and holding their shine 💛';
+  if (res.kind === 'water') return '💧 The troughs are brimming with fresh water: the whole herd is content 💛';
   if (res.kind === 'barn') return '🔨 The stable is snug and dry again, and the smart new roof is turning heads 💛';
   if (res.kind === 'journalist') return '📰 The journalist got the full tour. Watch the paper: the story runs soon!';
   if (res.kind === 'foal') return `🐴 The foal is up on its wobbly legs, and word of the new arrival is bringing visitors 💛`;
@@ -1338,6 +1345,30 @@ document.getElementById('collection-overlay').addEventListener('click', (event) 
 initShare();
 
 document.getElementById('shop-modal').addEventListener('click', (event) => {
+  // "Grow the rescue" facility upgrades (issue #48) are their own big-ticket buy.
+  const facilityBtn = event.target.closest('.facility-buy-btn');
+  if (facilityBtn) {
+    const { ok, facility } = buyFacility(state, facilityBtn.dataset.facilityId);
+    if (!ok) return;
+    const capstone = facility.id === 'sanctuary-field';
+    runAchievementCheck();     // may earn "A place of their own"
+    renderShopModal(state);    // reflect built state + reveal the next rung
+    renderAll(state);          // a new paddock may now be buildable (sanctuary)
+    refreshUI();
+    persist();
+    // A big-ticket upgrade deserves a moment: an illustrated congratulations
+    // card (it queues behind the open shop and pops when it's closed).
+    enqueueDialog({
+      emoji: facility.art ? '' : facility.icon,
+      image: facility.art ?? null,
+      confetti: capstone,
+      text: capstone
+        ? `The ${fig(facility.name)} is complete: ARCH is a true sanctuary now. ${facility.blurb} What a journey 💛`
+        : `The ${fig(facility.name)} is built! ${facility.blurb}`,
+      buttons: [{ label: capstone ? 'What a journey 💛' : 'Wonderful!', variant: 'primary' }],
+    });
+    return;
+  }
   const buy = event.target.closest('.shop-buy-btn');
   const action = event.target.closest('[data-action]');
   if (!buy && !action) return;

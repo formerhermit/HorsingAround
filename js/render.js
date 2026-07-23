@@ -1,8 +1,9 @@
 // render.js — turns gameState into DOM. No game logic lives here.
 
 import { horseFigureHTML, horseImageSrc, wellbeingLabel, wellbeingColor, isShinyCoat, isMagicalCoat, COAT_CATALOG } from './horse.js';
-import { rescueCost, shareValue, shareCharge, SHARE_READY_AT, FRONT_ROW, getActiveWant } from './game.js';
+import { rescuePrice, shareValue, shareCharge, SHARE_READY_AT, FRONT_ROW, getActiveWant } from './game.js';
 import { ACHIEVEMENTS, ACHIEVEMENT_GROUPS, isEarned } from './achievements.js';
+import { FACILITIES, hasFacility, nextFacility, canBuyFacility } from './facilities.js';
 import {
   SHOP_ITEMS, isUnlocked, isAffordable, hasNewAffordableItem,
   PADDOCK_CAP, MAGIC_PADDOCK, paddockCount, decorTargets, herdAtCapacity, paddockDecor,
@@ -89,7 +90,7 @@ export function renderActions(state) {
       rescue.querySelector('.action-cost').textContent = 'The paddocks are full';
       rescue.disabled = false;
     } else {
-      const cost = rescueCost(state);
+      const cost = rescuePrice(state);
       rescue.querySelector('.action-cost').textContent = `€${cost}`;
       rescue.disabled = state.coins < cost;
     }
@@ -109,7 +110,10 @@ const ITEM_EMOJI = {
 export function renderShopButton(state) {
   const btn = document.getElementById('shop-btn');
   btn.hidden = !state.unlocks.moneyUI;
-  document.getElementById('shop-badge').hidden = !hasNewAffordableItem(state);
+  // Badge for a buyable item, or a newly-affordable facility upgrade (issue #48).
+  const facilityReady = facilitiesUnlocked(state) && nextFacility(state)
+    && canBuyFacility(state, nextFacility(state).id);
+  document.getElementById('shop-badge').hidden = !(hasNewAffordableItem(state) || facilityReady);
 }
 
 // ---- postcard album ----
@@ -498,6 +502,51 @@ export function renderShopModal(state) {
   }
   fillGrid(decorGrid, unlocked.filter((i) => i.category === 'decor'),
     (item) => decorItemRow(item, shopPaddockTarget, state));
+
+  renderFacilities(state);
+}
+
+// ---- "grow the rescue": facility upgrades (issue #48) ----
+
+/** The section is a late-game aspiration, so it stays hidden until the rescue is
+ *  established (or a facility is already owned) rather than showing a wall of
+ *  six-figure prices to a brand-new player. */
+function facilitiesUnlocked(state) {
+  return state.unlocks.moneyUI
+    && ((state.stats.horsesRescued ?? 1) >= 8 || (state.facilities?.length ?? 0) > 0);
+}
+
+function facilityCard(f, state) {
+  const owned = hasFacility(state, f.id);
+  const isNext = nextFacility(state)?.id === f.id;
+  const cls = owned ? 'facility-card built' : isNext ? 'facility-card next' : 'facility-card locked';
+  let control;
+  if (owned) {
+    control = '<span class="facility-built">✓ Built</span>';
+  } else if (isNext) {
+    const afford = canBuyFacility(state, f.id);
+    control = `<button class="facility-buy-btn" data-facility-id="${f.id}"${afford ? '' : ' disabled'}>€${f.price.toLocaleString()}</button>`;
+  } else {
+    control = `<span class="facility-locked">🔒 €${f.price.toLocaleString()}</span>`;
+  }
+  return `<div class="${cls}">
+    <span class="facility-icon">${f.icon}</span>
+    <div class="facility-text">
+      <p class="facility-name">${f.name}</p>
+      <p class="facility-blurb">${f.blurb}</p>
+    </div>
+    <div class="facility-control">${control}</div>
+  </div>`;
+}
+
+export function renderFacilities(state) {
+  const section = document.getElementById('shop-section-facilities');
+  if (!section) return;
+  const show = facilitiesUnlocked(state);
+  section.hidden = !show;
+  if (!show) return;
+  document.getElementById('facility-grid').innerHTML =
+    FACILITIES.map((f) => facilityCard(f, state)).join('');
 }
 
 /** The paddock the decor section is currently targeting (read by the buy handler). */
