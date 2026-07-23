@@ -1,8 +1,7 @@
 // render.js — turns gameState into DOM. No game logic lives here.
 
 import { horseFigureHTML, horseImageSrc, wellbeingLabel, wellbeingColor, isShinyCoat, isMagicalCoat, COAT_CATALOG } from './horse.js';
-import { rescueCost, shareValue, shareCharge, SHARE_READY_AT, FRONT_ROW, getActiveWant, TRAIT_REVEAL_AT } from './game.js';
-import { TRAIT_INFO } from './traits.js';
+import { rescueCost, shareValue, shareCharge, SHARE_READY_AT, FRONT_ROW, getActiveWant } from './game.js';
 import { ACHIEVEMENTS, ACHIEVEMENT_GROUPS, isEarned } from './achievements.js';
 import {
   SHOP_ITEMS, isUnlocked, isAffordable, hasNewAffordableItem,
@@ -821,18 +820,10 @@ function butterfliesOverlay(state, paddock) {
   return layer;
 }
 
-/** The little personality line under a horse's condition. A fear shows from
- *  the day the horse arrives (and flips to a proud "not scared" line after the
- *  breakthrough); a quirk shows once the personality has revealed itself. */
-function traitLine(horse) {
-  const info = TRAIT_INFO[horse.trait];
-  if (!info) return '';
-  if (info.kind === 'fear') {
-    return horse.fearOvercome ? `not ${horse.trait} anymore 💛` : horse.trait;
-  }
-  return horse.wellbeing >= TRAIT_REVEAL_AT ? horse.trait : '';
-}
-
+// The personality trait is deliberately NOT shown as a line under the horse
+// (that was dropped from the cards long ago -- just name + status). Traits still
+// drive everything else: the arrival/reveal/breakthrough toasts, quirk care
+// moments, want bias, postcards, and the "all 29 personalities" badge.
 function horseCard(horse, scale = 1, isBack = false, wardrobe = []) {
   const card = document.createElement('div');
   card.className = `horse${isBack ? ' is-back' : ''}${isShinyCoat(horse) ? ' is-shiny' : ''}`;
@@ -851,7 +842,6 @@ function horseCard(horse, scale = 1, isBack = false, wardrobe = []) {
     ${horseFigureHTML(horse, wardrobe)}
     <p class="horse-name">${horse.name}</p>
     <p class="horse-condition">${wellbeingLabel(horse.wellbeing)}</p>
-    <p class="horse-trait${traitLine(horse) ? ' shown' : ''}">${traitLine(horse)}</p>
     <p class="horse-sponsor${horse.sponsor ? ' shown' : ''}">${horse.sponsor ? `sponsored by ${horse.sponsor} 💛` : ''}</p>
     <div class="wellbeing" role="meter" aria-label="${horse.name}'s wellbeing"
          aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(horse.wellbeing)}">
@@ -883,12 +873,6 @@ export function updateHorseCard(horse) {
   if (img.getAttribute('src') !== src) img.setAttribute('src', src);
 
   card.querySelector('.horse-condition').textContent = wellbeingLabel(horse.wellbeing);
-  const traitEl = card.querySelector('.horse-trait');
-  if (traitEl) {
-    const line = traitLine(horse);
-    traitEl.classList.toggle('shown', !!line);
-    traitEl.textContent = line;
-  }
   const sponsorEl = card.querySelector('.horse-sponsor');
   sponsorEl.classList.toggle('shown', !!horse.sponsor);
   sponsorEl.textContent = horse.sponsor ? `sponsored by ${horse.sponsor} 💛` : '';
