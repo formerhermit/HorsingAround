@@ -21,7 +21,7 @@ import { createSaveCode, previewSaveCode, confirmSaveCode } from './saveCode.js'
 import { linkGoogle, signInWithGoogle, isGoogleLinked } from './google.js';
 import {
   monthLabel, prevMonthLabel, generateName, rolloverIfNeeded, recordRescue,
-  pushScore, joinBoard, fetchBoard, leaveBoard, fetchChampion,
+  pushScore, joinBoard, fetchBoard, leaveBoard, fetchChampion, fetchMyChampionship,
 } from './leaderboard.js';
 import { initShare } from './share.js';
 import './audio.js';
@@ -190,6 +190,7 @@ getClient().then((client) => client.auth.getSession()).then(() => {
     pullCloudSave().then((adopted) => {
       if (adopted) { resetPaddockView(); renderAll(state); save(); }
       pushScore();
+      maybeCelebrateChampionship();
       showToast(adopted ? 'Welcome back! Your Google save is here 💛' : 'Signed in with Google 💛', 'ok');
     });
   } else if (googleReturn === 'override') {
@@ -204,6 +205,7 @@ getClient().then((client) => client.auth.getSession()).then(() => {
         markSyncSettled(); // this push IS the reconciliation: keep my progress
         pushCloudSave();
         pushScore();
+        maybeCelebrateChampionship();
         showToast('Your progress is now saved to this Google account 💛', 'ok');
       } catch (err) {
         console.warn('Could not restore the stashed save after overriding:', err);
@@ -226,6 +228,7 @@ getClient().then((client) => client.auth.getSession()).then(() => {
         save();
       }
       pushScore();
+      maybeCelebrateChampionship();
       if (googleReturn === 'linked') {
         if (googleError) {
           openSync().then(() => { document.getElementById('google-conflict').hidden = false; });
@@ -337,6 +340,30 @@ updateOnboardingNudges();
 function persist() {
   save();
   pushCloudSave();
+}
+
+// ---- leaderboard champion celebration (issue #73) ----
+// On the first visit after a month this player WON, a one-time popup: the
+// rosette pony, confetti, and a bonus into the fund. The celebrated months
+// live in the synced save, so it fires once per won month across devices.
+// Called after each boot-sync path settles (the save is accurate by then).
+async function maybeCelebrateChampionship() {
+  const won = await fetchMyChampionship();
+  if (!won) return;
+  const m = state.milestones;
+  m.championMonthsCelebrated ??= [];
+  if (m.championMonthsCelebrated.includes(won.month)) return;
+  m.championMonthsCelebrated.push(won.month);
+  const bonus = Math.max(20, Math.round(rescueCost(state) * 0.25));
+  state.coins += bonus;
+  state.stats.totalDonated += bonus;
+  enqueueDialog({
+    emoji: '', image: 'assets/events/leaderboard-winner.jpg', confetti: true, share: true,
+    text: `Champion! ${fig(won.name)} finished top of the rescuers board for ${prevMonthLabel()}, with ${fig(won.rescues)} ${won.rescues === 1 ? 'rescue' : 'rescues'}. The whole paddock is proud of you, and a ${fig(`€${bonus}`)} celebration bonus has gone into the fund 💛`,
+    buttons: [{ label: 'Amazing!', variant: 'primary' }],
+  });
+  refreshUI();
+  persist();
 }
 
 // Modal event dialogs (rehoming offers, milestone rewards) show one at a time.
@@ -455,6 +482,8 @@ const BILL_ART = {
   farrier: 'assets/events/farrier-visit.jpg',
   hay: 'assets/events/hay-delivery.jpg',
   mechanic: 'assets/events/horse-box.jpg',
+  barn: 'assets/events/stable-repairs.jpg',
+  journalist: 'assets/events/journalist-offer.jpg',
 };
 
 function billCopy(e) {
@@ -475,6 +504,14 @@ function billCopy(e) {
     pay: 'Pay for the hay',
     text: `The hay delivery has arrived: enough bales to keep everyone fed and cosy. The bill comes to ${fee}.`,
   };
+  if (e.kind === 'barn') return {
+    pay: 'Fix the stable',
+    text: `The stable roof is letting the rain in. The volunteers can patch it up properly for ${fee}.`,
+  };
+  if (e.kind === 'journalist') return {
+    pay: 'Pay for the story',
+    text: `A journalist from the Sur wants to write a feature about the rescue. A story like that could bring in real support, for a fee of ${fee}.`,
+  };
   return {
     pay: 'Fix the horse box',
     text: `The horse box needs a repair before it can fetch any more horses. The mechanic can fix it today for ${fee}.`,
@@ -485,6 +522,8 @@ function billPaidToast(res) {
   if (res.kind === 'vet') return `🩺 ${res.horse?.name ?? 'Everyone'} has a clean bill of health 💛`;
   if (res.kind === 'farrier') return `✨ ${res.horse?.name ?? 'The herd'}'s new shoes are turning heads!`;
   if (res.kind === 'hay') return '🌾 The hay barn is full: the whole herd is fed and holding their shine 💛';
+  if (res.kind === 'barn') return '🔨 The stable is snug and dry again, and the smart new roof is turning heads 💛';
+  if (res.kind === 'journalist') return '📰 The journalist got the full tour. Watch the paper: the story runs soon!';
   return '🔧 The horse box is roadworthy again, ready for the next rescue 💛';
 }
 
@@ -592,6 +631,30 @@ function handleEvent(e) {
     });
     // The day itself follows in a few minutes; have its artwork ready and waiting.
     new Image().src = 'assets/events/visitors-day.jpg';
+  } else if (e.type === 'article') {
+    const followers = ` ${fig(e.followers)} readers started following the rescue!`;
+    enqueueDialog({
+      emoji: '', image: 'assets/events/newspaper-article.jpg', confetti: e.frontPage, share: true,
+      text: e.frontPage
+        ? `Front page! The Sur ran the story right up top, and donations came flooding in: ${fig(`€${e.income}`)} for the rescue 💛${followers}`
+        : `The article is out! The Sur's feature brought in ${fig(`€${e.income}`)} of donations 💛${followers}`,
+      buttons: [{ label: e.frontPage ? 'Incredible!' : 'Lovely!', variant: 'primary' }],
+    });
+  } else if (e.type === 'reunion') {
+    const who = e.returned === 1
+      ? 'One of the horses you found a forever home for came back'
+      : `${fig(e.returned)} of the horses you found forever homes for came back`;
+    enqueueDialog({
+      emoji: '', image: 'assets/events/reunion-day.jpg', confetti: true, share: true,
+      text: `Reunion Day! ${who} to visit, families in tow. Seeing them so happy won the rescue ${fig(e.newSupporters)} new supporters 💛`,
+      buttons: [{ label: 'What a day 💛', variant: 'primary' }],
+    });
+  } else if (e.type === 'utilidad') {
+    enqueueDialog({
+      emoji: '', image: 'assets/events/utilidad-publica.jpg', confetti: true, share: true,
+      text: `Big news: ARCH has been declared ${fig('Utilidad Pública')}! It's Spain's official recognition for charities that serve the public good, and it means donations to the rescue now attract tax relief, so every supporter's euro goes a little further. Supporter donations are worth ${fig('10%')} more, forever 💛`,
+      buttons: [{ label: 'What an honour!', variant: 'primary' }],
+    });
   } else if (e.type === 'visitors-day') {
     const followers = e.newSupporters > 0
       ? ` ${fig(e.newSupporters)} of them liked it so much they started following the rescue!`

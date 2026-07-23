@@ -85,8 +85,11 @@ Each paddock gets its own decorations — the magical paddock included — up to
 
 Every so often, rescue life turns up at the gate as an illustrated story card:
 
-- **Bills**: the vet is due for a check-up or a worming treatment, a horse needs new shoes, the hay delivery arrives, or the horse box needs the mechanic. Each one costs a slice of your fund, scaled to where your rescue is at. Paying always feels good: the vet and farrier leave their horse topped up and gleaming, a full hay barn settles the whole herd, and a roadworthy horse box turns a few admiring heads. Saying "not just yet" is always safe; the bill just comes around again later. And a bill never arrives that your fund can't comfortably pay.
+- **Bills**: the vet is due for a check-up or a worming treatment, a horse needs new shoes, the hay delivery arrives, the horse box needs the mechanic, or the stable roof starts letting the rain in. Each one costs a slice of your fund, scaled to where your rescue is at. Paying always feels good: the vet and farrier leave their horse topped up and gleaming, a full hay barn settles the whole herd, and a fixed-up horse box or a smart new roof turns admiring heads. Saying "not just yet" is always safe; the bill just comes around again later. And a bill never arrives that your fund can't comfortably pay.
+- **The Sur feature**: a journalist sometimes offers to write about the rescue, for a fee. Pay it and the story runs a little later, always bringing in more than it cost, sometimes much more, and once in a while it makes the front page. The story prints even if you're away; it'll be waiting when you come back.
 - **Visitors Day**: sometimes the volunteers get together and plan a Visitors Day instead. You get a heads-up a few minutes ahead, and that time matters: on the day, entry donations scale with your supporters, your decor, and above all how much of the herd is thriving. Groom everyone before the visitors arrive and the day can be a triumph.
+- **Reunion Day**: once you've found horses their forever homes, they sometimes come back to visit, families in tow, and the visitors tend to leave as supporters.
+- **Utilidad Pública**: when the rescue is well established (15 rescues), official recognition arrives: Spain's public-interest status for charities, which brings tax relief on donations. From then on, supporter donations are worth 10% more, forever.
 
 ### Animals and rare coats
 
@@ -100,9 +103,11 @@ Tap the book up top to open your collection: every coat there is to find, which 
 
 Tap the book up top and there's a third tab alongside Collection and Stats: a monthly leaderboard of everyone playing. It's opt-in, so nobody appears until they join, and joining gives you a made-up stable name (like "Velvet Canter") rather than anything you type yourself — no real names, nothing to moderate. The board starts fresh on the 1st of every month; leave any time from the same tab.
 
+Winning a month is worth something. All the next month, the reigning champion's name wears a purple **rosette** on the board (with a "Reigning champion" line above the rankings), and the winner's first visit after the month turns opens with a celebration popup and a bonus for the fund.
+
 ### Little celebrations
 
-The game cheers you on. Hit 5, 25, 50 (and beyond) rescues, or rehomings, and you'll get a pat on the back and a bit of extra cash. Reach 10 rescues and there's confetti, plus a gentle nudge toward the real ARCH, with a magical friend in it for you if you help (more on that below).
+The game cheers you on. Hit 5, 25 (and beyond) rescues, or rehomings, and you'll get a pat on the back and a bit of extra cash. Reach 10 rescues and there's confetti, plus a gentle nudge toward the real ARCH, with a magical friend in it for you if you help (more on that below). And at 50 and 100 rescues, instead of cash, a magical gift horse comes to live with you: first a **rainbow horse**, then a **golden pegasus**.
 
 ### The paddocks
 
@@ -142,10 +147,12 @@ index.html             the page
 css/style.css          all the styling
 js/state.js            what the game knows, plus saving to your browser
 js/game.js             the rules and the money maths
+js/traits.js           every personality: the quirks, the fears, and their mechanics
 js/shop.js             shop items and their rules
 js/horse.js            the horse illustration, drawn in code
 js/render.js           turns the game state into what you see on screen
 js/main.js             starts it all up and handles your taps
+js/share.js            the "tell a friend" buttons
 js/audio.js            the background music
 js/cloud.js            optional cloud-save syncing
 js/leaderboard.js      the monthly Top rescuers board

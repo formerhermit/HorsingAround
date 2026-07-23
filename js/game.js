@@ -819,11 +819,34 @@ const MECHANIC_SUPPORTERS = 3;     // passers-by who admire the freshly fixed bo
 // Each bill's fee scales with the rescue's stage (via the next rescue's cost),
 // so it stays felt-but-friendly from a three-horse paddock to a full rescue.
 export const BILLS = {
-  vet:      { fraction: 0.08, min: 6 },   // a named horse's check-up / worming
-  farrier:  { fraction: 0.10, min: 8 },   // a named horse needs new shoes
-  hay:      { fraction: 0.15, min: 10 },  // the hay delivery for the whole herd
-  mechanic: { fraction: 0.20, min: 12 },  // the horse box needs a repair
+  vet:        { fraction: 0.08, min: 6 },   // a named horse's check-up / worming
+  farrier:    { fraction: 0.10, min: 8 },   // a named horse needs new shoes
+  hay:        { fraction: 0.15, min: 10 },  // the hay delivery for the whole herd
+  mechanic:   { fraction: 0.20, min: 12 },  // the horse box needs a repair
+  barn:       { fraction: 0.25, min: 15 },  // the stable roof needs fixing (issue #63)
+  journalist: { fraction: 0.12, min: 10 },  // a Sur feature: pays off later (issue #64)
 };
+
+// The Sur article chain (issue #64): pay the journalist now, and the story
+// prints a few minutes later with donations always comfortably above the fee,
+// sometimes far above (the front page). The pending article is persisted
+// (gameState.pendingArticle), so closing the game never eats a paid-for story:
+// it's waiting in print when the player comes back.
+const ARTICLE_DELAY_MIN = 3 * 60;    // seconds from paying to the story printing
+const ARTICLE_DELAY_MAX = 6 * 60;
+const ARTICLE_FRONT_PAGE = 0.125;    // ~1 in 8 stories lands the front page
+const REUNION_CHANCE = 0.12;         // windfall roll: Reunion Day (issue #61)
+const BARN_GLOW = 120;               // seconds the fixed roof turns heads
+
+// Utilidad Pública (issue #62): a one-time recognition beat once the rescue is
+// established. Real Spanish charities earn this official public-interest
+// status; donations to them attract tax relief, so every euro goes further.
+// Permanent and deliberately modest: supporter donations gain 10%, forever.
+export const UTILIDAD_AT = 15;       // rescues at which the recognition arrives
+export const UTILIDAD_MULT = 1.1;    // supporter donations, forever after
+function utilidadMult() {
+  return gameState.milestones.utilidadShown ? UTILIDAD_MULT : 1;
+}
 
 let eventCountdown = randomBetween(EVENT_GAP_MIN, EVENT_GAP_MAX);
 let pendingBill = null;        // { kind, fee, horseId } while a bill popup is up (not persisted)
@@ -849,9 +872,16 @@ export function scheduleVisitorsDay() {
   visitorsDayCountdown = randomBetween(VISITORS_DELAY_MIN, VISITORS_DELAY_MAX);
 }
 
-/** Advance paddock life by dt seconds: fire the planned Visitors Day when due,
- *  otherwise count down to the next event (a bill, or a Visitors Day plan). */
+/** Advance paddock life by dt seconds: deliver a printed article, fire the
+ *  planned Visitors Day when due, otherwise count down to the next event (a
+ *  bill, a Reunion Day, or a Visitors Day plan). */
 function updatePaddockLife(dt, now, events) {
+  // A paid-for story prints when it prints, whatever else is going on; the
+  // dueAt is wall-clock and persisted, so it also lands on returning to the
+  // game (the paper doesn't wait for you to be watching).
+  if (gameState.pendingArticle && now >= gameState.pendingArticle.dueAt) {
+    events.push(runArticle());
+  }
   if (visitorsPlanned && visitorsDayCountdown > 0) {
     visitorsDayCountdown -= dt;
     if (visitorsDayCountdown <= 0) {
@@ -868,13 +898,22 @@ function updatePaddockLife(dt, now, events) {
   if (eventCountdown > 0) return;
   eventCountdown = randomBetween(EVENT_GAP_MIN, EVENT_GAP_MAX);
 
-  if (Math.random() < VISITORS_CHANCE) {
+  const roll = Math.random();
+  if (roll < VISITORS_CHANCE) {
     visitorsPlanned = true; // countdown starts when the popup is dismissed
     events.push({ type: 'visitors-planning' });
     return;
   }
+  // Reunion Day (issue #61): only once there are old horses TO come back —
+  // it's the horses this player rehomed, with their new families in tow.
+  if (roll < VISITORS_CHANCE + REUNION_CHANCE && gameState.stats.horsesRehomed >= 1) {
+    events.push(runReunionDay());
+    return;
+  }
 
-  const kind = randomFrom(Object.keys(BILLS));
+  // A bill — though never a second story while one is already at the printers.
+  const kinds = Object.keys(BILLS).filter((k) => k !== 'journalist' || !gameState.pendingArticle);
+  const kind = randomFrom(kinds);
   const fee = billFee(kind);
   // Never bill a fund that would struggle to pay: skip and look in again soon.
   if (gameState.coins < fee * BILL_AFFORD_MARGIN) {
@@ -920,6 +959,14 @@ export function acceptBill(now = Date.now()) {
     }
   } else if (kind === 'mechanic') {
     gameState.supporters += MECHANIC_SUPPORTERS;
+  } else if (kind === 'barn') {
+    glowUntil = now + BARN_GLOW * 1000; // the smart new roof turns heads a while
+  } else if (kind === 'journalist') {
+    // The story goes to the printers; the payoff arrives when it runs.
+    gameState.pendingArticle = {
+      fee,
+      dueAt: now + randomBetween(ARTICLE_DELAY_MIN, ARTICLE_DELAY_MAX) * 1000,
+    };
   }
   return { ok: true, kind, fee, horse };
 }
@@ -929,6 +976,32 @@ export function acceptBill(now = Date.now()) {
 export function declineBill() {
   pendingBill = null;
   eventCountdown = randomBetween(BILL_SNOOZE_MIN, BILL_SNOOZE_MAX);
+}
+
+/** The Sur article runs (issue #64): donations always land comfortably above
+ *  the fee paid, sometimes far above — and once in a while it makes the front
+ *  page. Clears the pending article. */
+function runArticle() {
+  const { fee } = gameState.pendingArticle;
+  gameState.pendingArticle = null;
+  const frontPage = Math.random() < ARTICLE_FRONT_PAGE;
+  const mult = 1.5 + Math.random() * 2.5; // 1.5x–4x the fee, always a profit
+  const income = Math.round(fee * (frontPage ? mult * 2.5 : mult));
+  let followers = 2 + Math.floor(Math.random() * 7);
+  if (frontPage) followers *= 2;
+  gameState.coins += income;
+  gameState.stats.totalDonated += income;
+  gameState.supporters += followers;
+  return { type: 'article', income, followers, frontPage };
+}
+
+/** Reunion Day (issue #61): horses this player rehomed come back to visit
+ *  with their families, and some of the visitors become supporters. */
+function runReunionDay() {
+  const returned = Math.max(1, Math.min(gameState.stats.horsesRehomed, 2 + Math.floor(Math.random() * 3)));
+  const newSupporters = Math.round(3 + returned * 2 + Math.random() * 4);
+  gameState.supporters += newSupporters;
+  return { type: 'reunion', returned, newSupporters };
 }
 
 /** The planned Visitors Day arrives: entry donations scale with the supporter
@@ -951,9 +1024,11 @@ function runVisitorsDay() {
 }
 
 /** Dev helper (console): make the next paddock-life beat land on the next
- *  tick — the planned Visitors Day if one is armed, else a fresh event. */
+ *  tick — a pending article or planned Visitors Day if one is armed, else a
+ *  fresh event. */
 export function hurryPaddockLife() {
-  if (visitorsPlanned) visitorsDayCountdown = Math.min(visitorsDayCountdown || 1, 1);
+  if (gameState.pendingArticle) gameState.pendingArticle.dueAt = Date.now();
+  else if (visitorsPlanned) visitorsDayCountdown = Math.min(visitorsDayCountdown || 1, 1);
   else eventCountdown = 0;
 }
 
@@ -1000,7 +1075,7 @@ export function collectOfflineEarnings(lastPlayedAt, now = Date.now()) {
   // the donations and the new-supporter count below.
   const seconds = Math.min(awaySeconds, OFFLINE_CAP_SECONDS) * OFFLINE_RATE;
   const sponsored = gameState.horses.filter((h) => h.sponsor).length;
-  const income = (gameState.supporters * SUPPORTER_RATE + sponsored * SPONSOR_RATE) * seconds;
+  const income = (gameState.supporters * SUPPORTER_RATE * utilidadMult() + sponsored * SPONSOR_RATE) * seconds;
   // New supporters arrive at the same per-second chance the live tick rolls,
   // but never past the herd's carrying capacity. They only start donating from
   // now on — we don't back-pay their giving.
@@ -1050,9 +1125,10 @@ export function tick(dt) {
     }
   }
 
-  // supporters donate steadily; sponsored horses bring extra committed income
+  // supporters donate steadily (a touch more once Utilidad Pública is won);
+  // sponsored horses bring extra committed income
   const sponsored = gameState.horses.filter((h) => h.sponsor).length;
-  const income = (gameState.supporters * SUPPORTER_RATE + sponsored * SPONSOR_RATE) * dt;
+  const income = (gameState.supporters * SUPPORTER_RATE * utilidadMult() + sponsored * SPONSOR_RATE) * dt;
   gameState.coins += income;
   gameState.stats.totalDonated += income;
 
@@ -1220,6 +1296,14 @@ function checkMilestones(events) {
   if (gameState.stats.horsesRescued >= DONATE_MILESTONE && !m.donateMilestoneShown && !m.donateOptOut) {
     m.donateMilestoneShown = true;
     events.push({ type: 'donate-milestone', count: DONATE_MILESTONE });
+  }
+  // Utilidad Pública (issue #62): once the rescue is established, official
+  // recognition arrives — one popup, and supporter donations gain 10% forever.
+  // Deliberately not backfilled quietly for returning players: it's a reward
+  // beat, so anyone already past the mark earns the popup on their next tick.
+  if (gameState.stats.horsesRescued >= UTILIDAD_AT && !m.utilidadShown) {
+    m.utilidadShown = true;
+    events.push({ type: 'utilidad' });
   }
   for (const n of REHOME_MILESTONES) {
     if (gameState.stats.horsesRehomed >= n && !m.rehomeRewardsGiven.includes(n)) {

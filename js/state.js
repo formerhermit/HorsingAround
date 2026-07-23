@@ -101,6 +101,10 @@ export function defaultState() {
     postcards: [],
     pendingPostcards: [],
 
+    // A paid-for Sur article at the printers: { fee, dueAt } or null. Persisted
+    // so closing the game never eats the story (see game.js, issue #64).
+    pendingArticle: null,
+
     // Collection book: coat ids ever collected (Biscuit is a bay from the
     // start), and how many were collected last time the book was opened (drives
     // the "new" dot on the button).
@@ -120,6 +124,8 @@ export function defaultState() {
       firstDonation: false,
       firstSponsorship: false,  // once true, sponsorship toasts go terse
       driftIntroShown: false,   // the one-time "horses love routine" top-up explainer
+      utilidadShown: false,     // Utilidad Pública recognition earned (permanent +10% supporter donations)
+      championMonthsCelebrated: [], // leaderboard months whose winner's popup has fired
       introToastShown: false,   // the "tap Biscuit" nudge new players get once
       hasSharedUpdate: false,   // resolves the "share to raise money" onboarding popup
       hasRescuedAgain: false,   // resolves the "rescue another horse" onboarding popup
@@ -256,6 +262,12 @@ function repair(save) {
   save.lastSharedAt ??= 0;
   // The gentle-upkeep drift is new; returning players get its explainer too.
   save.milestones.driftIntroShown ??= false;
+  // Paddock-life additions: the article chain, the Utilidad Pública beat (a
+  // returning player past the mark earns its popup on next tick, on purpose),
+  // and the once-per-month champion celebration.
+  save.pendingArticle ??= null;
+  save.milestones.utilidadShown ??= false;
+  save.milestones.championMonthsCelebrated ??= [];
   // The monthly leaderboard is opt-in and new; existing saves start off it.
   // Unlike the other backfilled nudges, the leaderboard one stays *on* for
   // returning players -- the feature is new to them too, so their next rescue
