@@ -601,18 +601,24 @@ function renderPaddock(state) {
   });
   if (!chunk.length) {
     // An empty paddock (freshly built, or every horse rehomed) still reserves
-    // the height of a front-row horse, so paging onto it doesn't collapse the
-    // scene (issue #44). The spacer is a real card, invisible and inert, so
-    // its height tracks the true card layout at every viewport.
-    const spacer = horseCard({
-      id: 'ghost', name: 'Ghost', paletteKey: 'bay', wellbeing: 100,
-      sponsor: null, trait: null, wardrobe: [], facing: 'right', sizeJitter: 1,
-    }, 1, false, []);
-    spacer.classList.add('horse-ghost');
-    spacer.removeAttribute('role');
-    spacer.removeAttribute('tabindex');
-    spacer.setAttribute('aria-hidden', 'true');
-    frontRow.append(spacer);
+    // a full view's height, so paging onto it doesn't collapse the scene
+    // (issue #44). The spacers are real cards, invisible and inert, so the
+    // reserved space tracks the true card layout at every viewport — and it
+    // takes as many of them as a view holds up close: a narrow screen stacks
+    // its two front horses vertically, so one ghost alone would still leave
+    // the empty paddock shorter than a populated one there.
+    const ghosts = Math.min(viewCap(), FRONT_COUNT);
+    for (let i = 0; i < ghosts; i++) {
+      const spacer = horseCard({
+        id: `ghost-${i}`, name: 'Ghost', paletteKey: 'bay', wellbeing: 100,
+        sponsor: null, trait: null, wardrobe: [], facing: 'right', sizeJitter: 1,
+      }, FRONT_SCALES[i] ?? BACK_SCALE, false, []);
+      spacer.classList.add('horse-ghost');
+      spacer.removeAttribute('role');
+      spacer.removeAttribute('tabindex');
+      spacer.setAttribute('aria-hidden', 'true');
+      frontRow.append(spacer);
+    }
   }
 
   const children = [backRow, groundDecorRow(state, paddock, view, viewCount), frontRow];
