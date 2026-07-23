@@ -685,9 +685,18 @@ function renderPaddock(state) {
   older.hidden = currentView >= views.length - 1;
   newer.hidden = currentView === 0;
   label.hidden = views.length < 2;
+  // A paddock that pages across views labels them by position rather than a bare
+  // "1 of 2" (issue #59): the newest arrivals stand at the front, the older
+  // friends drift to the back, so the ends read "front" / "back" and any middle
+  // views keep a count. A single-view paddock just names itself.
   let text = paddockLabel(paddock);
-  if (viewCount > 1) text += ` · ${view + 1} of ${viewCount}`;
-  else if (!isMagic && paddock > 0) text += ' · old friends';
+  if (viewCount > 1) {
+    if (view === 0) text += ' · front';
+    else if (view === viewCount - 1) text += ' · back';
+    else text += ` · ${view + 1} of ${viewCount}`;
+  } else if (!isMagic && paddock > 0) {
+    text += ' · old friends';
+  }
   label.textContent = text;
 
   renderWantBubbles(state); // re-attach the want bubble to the freshly-built card
@@ -801,12 +810,19 @@ function groundDecorRow(state, paddock, view = 0, viewCount = 1) {
   const props = paddockDecor(state, paddock)
     .filter((id) => GROUND_IMAGES[id])
     .filter((_, i) => i % viewCount === view);
+  // The viewBox is one horse-slot wide per horse the view can show, so props
+  // scale with the horses rather than the paddock's pixel width (issue #59):
+  // on a narrow phone a view shows fewer horses, so a shorter viewBox lets the
+  // same prop render larger instead of shrinking to the full-herd width. Desktop
+  // (viewCap = PADDOCK_CAP) keeps the original 900-wide box, unchanged.
+  const slot = 900 / PADDOCK_CAP;
+  const vbw = viewCap() * slot;
   const images = props
-    .map((id, i) => groundImage(id, (900 * (i + 1)) / (props.length + 1)))
+    .map((id, i) => groundImage(id, (vbw * (i + 1)) / (props.length + 1)))
     .join('');
   const row = document.createElement('div');
   row.className = 'ground-decor';
-  row.innerHTML = `<svg viewBox="0 0 900 100" preserveAspectRatio="xMidYMax meet" aria-hidden="true">${images}</svg>`;
+  row.innerHTML = `<svg viewBox="0 0 ${vbw.toFixed(1)} 100" preserveAspectRatio="xMidYMax meet" aria-hidden="true">${images}</svg>`;
   return row;
 }
 
