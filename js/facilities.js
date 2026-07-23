@@ -11,16 +11,22 @@
 
 export const FACILITIES = [
   { id: 'vet-station', name: 'Vet station', icon: '🩺', price: 60000,
+    art: 'assets/events/facility-vet-station.jpg',
     blurb: "A proper on-site clinic. Vet and farrier bills cost 30% less." },
   { id: 'hay-barn', name: 'Hay barn', icon: '🌾', price: 150000,
+    art: 'assets/events/facility-hay-barn.jpg',
     blurb: "Feed bought in bulk and stored dry. Hay bills cost 40% less, and a well-fed herd holds its shine longer." },
   { id: 'rehoming-office', name: 'Rehoming office', icon: '🏡', price: 400000,
+    art: 'assets/events/facility-rehoming-office.jpg',
     blurb: "Staff to match horses with the right families. Adoption fees pay 60% more." },
   { id: 'second-horsebox', name: 'Second horsebox', icon: '🚚', price: 900000,
+    art: 'assets/events/facility-second-horsebox.jpg',
     blurb: "Reach more horses in need. New rescues arrive in better shape and cost 15% less." },
   { id: 'visitor-centre', name: 'Visitor centre', icon: '🎪', price: 2000000,
+    art: 'assets/events/facility-visitor-centre.jpg',
     blurb: "A welcome barn, a little café, a gift shop. Visitors Days and new foals draw 50% more, and your following can grow bigger." },
   { id: 'sanctuary-field', name: 'Sanctuary field', icon: '✨', price: 5000000,
+    art: null, // artwork still to come
     blurb: "The dream: acres of rolling pasture, a forever home. Room to build a fourth paddock." },
 ];
 

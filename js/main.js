@@ -1345,13 +1345,22 @@ document.getElementById('shop-modal').addEventListener('click', (event) => {
     const { ok, facility } = buyFacility(state, facilityBtn.dataset.facilityId);
     if (!ok) return;
     const capstone = facility.id === 'sanctuary-field';
-    showToast(`${facility.icon} ${facility.name} built! ${facility.blurb}`);
-    if (capstone) burstConfetti();
     runAchievementCheck();     // may earn "A place of their own"
     renderShopModal(state);    // reflect built state + reveal the next rung
     renderAll(state);          // a new paddock may now be buildable (sanctuary)
     refreshUI();
     persist();
+    // A big-ticket upgrade deserves a moment: an illustrated congratulations
+    // card (it queues behind the open shop and pops when it's closed).
+    enqueueDialog({
+      emoji: facility.art ? '' : facility.icon,
+      image: facility.art ?? null,
+      confetti: capstone,
+      text: capstone
+        ? `The ${fig(facility.name)} is complete: ARCH is a true sanctuary now. ${facility.blurb} What a journey 💛`
+        : `The ${fig(facility.name)} is built! ${facility.blurb}`,
+      buttons: [{ label: capstone ? 'What a journey 💛' : 'Wonderful!', variant: 'primary' }],
+    });
     return;
   }
   const buy = event.target.closest('.shop-buy-btn');
