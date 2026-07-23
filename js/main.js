@@ -16,7 +16,7 @@ import {
   buyDecorIn, buyWardrobe, placeDecor, removeDecor, placeWardrobe, removeWardrobe,
   hasNewAffordableItem, buyPaddock, nextPaddockPrice,
 } from './shop.js';
-import { syncOnLoad, pullCloudSave, pushCloudSave, getCloudUserId, deleteCloudData, getClient } from './cloud.js';
+import { syncOnLoad, pullCloudSave, pushCloudSave, markSyncSettled, getCloudUserId, deleteCloudData, getClient } from './cloud.js';
 import { createSaveCode, previewSaveCode, confirmSaveCode } from './saveCode.js';
 import { linkGoogle, signInWithGoogle, isGoogleLinked } from './google.js';
 import {
@@ -201,6 +201,7 @@ getClient().then((client) => client.auth.getSession()).then(() => {
         resetPaddockView();
         renderAll(state);
         save();
+        markSyncSettled(); // this push IS the reconciliation: keep my progress
         pushCloudSave();
         pushScore();
         showToast('Your progress is now saved to this Google account 💛', 'ok');
@@ -215,8 +216,10 @@ getClient().then((client) => client.auth.getSession()).then(() => {
     // Cloud sync is a background enhancement, never a blocker on first paint —
     // Biscuit is already on screen and clickable before this resolves. This is
     // the normal path (including a successful Google *link*, which never
-    // changes which account owns the save, so the usual reconciliation is fine).
-    syncOnLoad().then((adopted) => {
+    // changes which account owns the save, so the usual reconciliation is
+    // fine). lastPlayedAt (captured before the boot save() stamped a fresh
+    // time) is what the cloud save is compared against — see issue #67.
+    syncOnLoad(lastPlayedAt).then((adopted) => {
       if (adopted) {
         resetPaddockView();
         renderAll(state);
