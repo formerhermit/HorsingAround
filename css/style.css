@@ -448,6 +448,12 @@ main {
   border-radius: 12px;
 }
 
+/* Invisible spacer card that keeps an empty paddock at full height (#44). */
+.horse.horse-ghost {
+  visibility: hidden;
+  pointer-events: none;
+}
+
 .horse.just-cared .horse-img,
 .horse.just-cared .horse-costume {
   animation: care-bounce 0.25s ease;

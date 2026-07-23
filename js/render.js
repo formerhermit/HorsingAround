@@ -97,7 +97,7 @@ export function renderActions(state) {
 }
 
 const ITEM_EMOJI = {
-  scarf: '🧣', 'ear-flower': '🌸', boots: '👢', 'leg-wraps': '🩹',
+  'winter-rug': '🧥', 'ear-flower': '🌸', boots: '👢', 'leg-wraps': '🩹',
   'forelock-bow': '🎀', 'saddle-blanket': '🟦',
   'flower-garland': '🌼', bunting: '🎏', trough: '💧',
   'flower-buckets': '🪣', 'flower-barrow': '🌷', 'hay-bales': '🌾',
@@ -599,6 +599,21 @@ function renderPaddock(state) {
     const rank = front.length - 1 - i; // 0 = newest
     frontRow.append(horseCard(h, FRONT_SCALES[rank] ?? BACK_SCALE, false, h.wardrobe));
   });
+  if (!chunk.length) {
+    // An empty paddock (freshly built, or every horse rehomed) still reserves
+    // the height of a front-row horse, so paging onto it doesn't collapse the
+    // scene (issue #44). The spacer is a real card, invisible and inert, so
+    // its height tracks the true card layout at every viewport.
+    const spacer = horseCard({
+      id: 'ghost', name: 'Ghost', paletteKey: 'bay', wellbeing: 100,
+      sponsor: null, trait: null, wardrobe: [], facing: 'right', sizeJitter: 1,
+    }, 1, false, []);
+    spacer.classList.add('horse-ghost');
+    spacer.removeAttribute('role');
+    spacer.removeAttribute('tabindex');
+    spacer.setAttribute('aria-hidden', 'true');
+    frontRow.append(spacer);
+  }
 
   const children = [backRow, groundDecorRow(state, paddock, view, viewCount), frontRow];
   const butterflies = butterfliesOverlay(state, paddock);
