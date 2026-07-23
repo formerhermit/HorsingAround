@@ -9,9 +9,10 @@ import {
   renderShopButton, openShopModal, closeShopModal, renderShopModal, shopDecorPaddock, shopWardrobeHorse,
   renderPostcardButton, openPostcardAlbum, closePostcardAlbum,
   renderWantBubbles, showWantFulfilled,
-  renderCollectionButton, openCollection, closeCollection, renderStats,
+  renderCollectionButton, openCollection, closeCollection, renderStats, renderAchievements,
   formatDate, paddockLabel,
 } from './render.js';
+import { ACHIEVEMENTS, checkAchievements } from './achievements.js';
 import {
   buyDecorIn, buyWardrobe, placeDecor, removeDecor, placeWardrobe, removeWardrobe,
   hasNewAffordableItem, buyPaddock, nextPaddockPrice,
@@ -77,6 +78,7 @@ const offlineSummary = collectOfflineEarnings(lastPlayedAt);
 
 renderAll(state);
 save(); // persist immediately so the save shape exists from first load
+backfillAchievements(); // grant already-earned badges quietly, before live play can toast
 
 // ---- intro popup ----
 // Brand-new players don't know clicking a horse does anything. A small toast
@@ -116,9 +118,18 @@ if (!state.milestones.introToastShown) {
 // winnable, so the auto-popup is never the single missable chance to get it.
 let unicornSnoozed = false;
 
+/** Honour-based: the player pressed a real Donate-to-ARCH button. Earns the
+ *  "Real hero" badge (issue #65). Can't be verified, so we take it on trust. */
+function markDonatedForReal() {
+  if (state.milestones.donatedForReal) return;
+  state.milestones.donatedForReal = true;
+  runAchievementCheck();
+}
+
 /** Open the real donation page and, honor-based, grant the unicorn as thanks. */
 function claimUnicorn() {
   window.open(DONATE_URL, '_blank', 'noopener');
+  markDonatedForReal();
   const unicorn = grantUnicorn();
   if (unicorn) {
     resetPaddockView();
@@ -157,7 +168,7 @@ function maybeOfferUnicorn() {
 function wireDonateButtons() {
   document.querySelectorAll('[data-donate]').forEach((el) => {
     el.addEventListener('click', (e) => {
-      if (hasUnicorn(state)) return; // already won: let the link open normally
+      if (hasUnicorn(state)) { markDonatedForReal(); return; } // already won: link opens normally
       e.preventDefault();
       offerUnicorn();
     });
@@ -188,7 +199,7 @@ getClient().then((client) => client.auth.getSession()).then(() => {
 
   if (googleReturn === 'signin') {
     pullCloudSave().then((adopted) => {
-      if (adopted) { resetPaddockView(); renderAll(state); save(); }
+      if (adopted) { resetPaddockView(); renderAll(state); save(); backfillAchievements(); }
       pushScore();
       maybeCelebrateChampionship();
       showToast(adopted ? 'Welcome back! Your Google save is here 💛' : 'Signed in with Google 💛', 'ok');
@@ -205,6 +216,7 @@ getClient().then((client) => client.auth.getSession()).then(() => {
         markSyncSettled(); // this push IS the reconciliation: keep my progress
         pushCloudSave();
         pushScore();
+        backfillAchievements();
         maybeCelebrateChampionship();
         showToast('Your progress is now saved to this Google account 💛', 'ok');
       } catch (err) {
@@ -226,6 +238,7 @@ getClient().then((client) => client.auth.getSession()).then(() => {
         resetPaddockView();
         renderAll(state);
         save();
+        backfillAchievements();
       }
       pushScore();
       maybeCelebrateChampionship();
@@ -340,6 +353,17 @@ updateOnboardingNudges();
 function persist() {
   save();
   pushCloudSave();
+}
+
+// Grant any already-earned badges quietly (issue #65): no toast, no dot. Run
+// once at boot and again whenever a cloud save is adopted, so a returning
+// player (or one whose save predates badges) isn't greeted by a toast flood —
+// only badges earned during live play toast. Idempotent: badges already in the
+// list are skipped, and marking seen just clears the dot for the caught-up set.
+function backfillAchievements() {
+  checkAchievements(state); // grants earned-but-unlisted into state.achievements
+  state.achievementsSeen = state.achievements.length;
+  save();
 }
 
 // ---- leaderboard champion celebration (issue #73) ----
@@ -588,7 +612,7 @@ function handleEvent(e) {
         emoji: '💛', confetti: true,
         text: `You have rescued ${fig(e.count)} horses. If you're enjoying this game, why not donate to ARCH to help our real horses too?`,
         buttons: [
-          { label: 'Donate', variant: 'primary', onClick: () => window.open(DONATE_URL, '_blank', 'noopener') },
+          { label: 'Donate', variant: 'primary', onClick: () => { window.open(DONATE_URL, '_blank', 'noopener'); markDonatedForReal(); } },
           { label: "Don't ask again", variant: 'ghost', onClick: () => { state.milestones.donateOptOut = true; save(); } },
         ],
       });
@@ -615,6 +639,7 @@ function handleEvent(e) {
           showToast(billPaidToast(res));
           if (res.kind === 'mechanic') showSupporterPop(3);
           state.horses.forEach(updateHorseCard); // topped-up bars show right away
+          runAchievementCheck(); // farrier / worming / good-books badges
           refreshUI();
           persist();
         } },
@@ -685,9 +710,26 @@ function processEvents(events) {
   // The unicorn offer isn't fired here: the 10-rescue 'donate-milestone' event
   // (handled above) is the single trigger for the crossing, and maybeOfferUnicorn
   // on load covers returning players. Firing it here too would double the popup.
+  runAchievementCheck();
   refreshUI();
   persist(); // story beats are worth persisting immediately
 }
+
+// ---- pride-only badges (issue #65) ----
+// Grant any freshly-earned badge and toast it, one at a time so a spree (e.g.
+// crossing a rescue milestone that also unlocks a tier) doesn't stack. Called
+// after any moment that could unlock one. refreshUI relights the book dot.
+function runAchievementCheck() {
+  const earned = checkAchievements(state);
+  if (!earned.length) return;
+  for (const a of earned) showToast(`🎖️ Badge earned: ${a.name} — ${a.hint}`);
+  renderCollectionButton(state);
+  persist();
+}
+
+// share.js sets its honour flag on a low level and pings us to check (avoids a
+// circular import). Same hook is future-proof for any other decoupled unlock.
+window.addEventListener('achievements-check', runAchievementCheck);
 
 function handleCare(card, event) {
   const horse = state.horses.find((h) => h.id === card.dataset.horseId);
@@ -1119,6 +1161,7 @@ document.getElementById('album-overlay').addEventListener('click', (event) => {
 // Switch between the tabs inside the collection modal.
 const COLLECTION_TABS = {
   collection:  { tab: 'tab-collection',  panel: 'panel-collection',  title: 'Collection' },
+  badges:      { tab: 'tab-badges',      panel: 'panel-badges',      title: 'Badges' },
   stats:       { tab: 'tab-stats',       panel: 'panel-stats',       title: 'Stats' },
   leaderboard: { tab: 'tab-leaderboard', panel: 'panel-leaderboard', title: 'Top rescuers' },
 };
@@ -1132,6 +1175,12 @@ function showCollectionTab(name) {
     tab.setAttribute('aria-selected', String(active));
   }
   document.getElementById('collection-title').textContent = COLLECTION_TABS[name].title;
+  if (name === 'badges') {
+    renderAchievements(state);
+    state.achievementsSeen = state.achievements.length; // clear the "new" dot
+    renderCollectionButton(state);
+    persist();
+  }
   if (name === 'stats') renderStats(state);
   if (name === 'leaderboard') renderLeaderboardPanel();
 }
@@ -1146,6 +1195,7 @@ document.getElementById('collection-btn').addEventListener('click', () => {
   persist();
 });
 document.getElementById('tab-collection').addEventListener('click', () => showCollectionTab('collection'));
+document.getElementById('tab-badges').addEventListener('click', () => showCollectionTab('badges'));
 document.getElementById('tab-stats').addEventListener('click', () => showCollectionTab('stats'));
 document.getElementById('tab-leaderboard').addEventListener('click', () => showCollectionTab('leaderboard'));
 
@@ -1301,6 +1351,7 @@ document.getElementById('shop-modal').addEventListener('click', (event) => {
     }
   }
   if (!ok) return;
+  runAchievementCheck(); // dressing / buying can complete Best dressed, Compulsive shopper
   renderShopModal(state); // refresh owned/stored/afford states within the open modal
   renderAll(state); // wardrobe/decor changes show up on the horses/paddock immediately
   persist();
@@ -1333,6 +1384,7 @@ setInterval(() => {
   state.horses.forEach(updateHorseCard); // tick can change sponsor lines (and later, wellbeing)
   refreshUI();
   processEvents(events);
+  runAchievementCheck(); // catch passive-threshold badges (income, supporters) on a quiet tick
   deliverPostcards(collectDuePostcards(now)); // same-visit postcards land here
   grantStatues();                             // ...and any statue they just earned
   renderWantBubbles(state); // show/hide the little-needs bubble as wants come and go

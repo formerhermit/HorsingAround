@@ -144,6 +144,8 @@
       <div class="modal-tabs" role="tablist" aria-label="Collection, stats and top rescuers">
         <button class="modal-tab is-active" id="tab-collection" role="tab"
                 aria-selected="true" aria-controls="panel-collection">📖 Collection</button>
+        <button class="modal-tab" id="tab-badges" role="tab"
+                aria-selected="false" aria-controls="panel-badges">🎖️ Badges</button>
         <button class="modal-tab" id="tab-stats" role="tab"
                 aria-selected="false" aria-controls="panel-stats">📊 Stats</button>
         <button class="modal-tab" id="tab-leaderboard" role="tab"
@@ -156,6 +158,14 @@
           cared for. Keep rescuing to collect them all 💛
         </p>
         <div class="collection-grid" id="collection-grid"></div>
+      </div>
+
+      <div class="modal-panel" id="panel-badges" role="tabpanel" aria-labelledby="tab-badges" hidden>
+        <p class="shop-intro">
+          <span id="badges-count">0 of 0 badges earned</span>. Little milestones on
+          the way to a thriving rescue 💛
+        </p>
+        <div class="badges-grid" id="badges-grid"></div>
       </div>
 
       <div class="modal-panel" id="panel-stats" role="tabpanel" aria-labelledby="tab-stats" hidden>

@@ -3,6 +3,7 @@
 import { horseFigureHTML, horseImageSrc, wellbeingLabel, wellbeingColor, isShinyCoat, isMagicalCoat, COAT_CATALOG } from './horse.js';
 import { rescueCost, shareValue, shareCharge, SHARE_READY_AT, FRONT_ROW, getActiveWant, TRAIT_REVEAL_AT } from './game.js';
 import { TRAIT_INFO } from './traits.js';
+import { ACHIEVEMENTS, ACHIEVEMENT_GROUPS, isEarned } from './achievements.js';
 import {
   SHOP_ITEMS, isUnlocked, isAffordable, hasNewAffordableItem,
   PADDOCK_CAP, MAGIC_PADDOCK, paddockCount, decorTargets, herdAtCapacity, paddockDecor,
@@ -164,11 +165,13 @@ export function closePostcardAlbum() {
 // ---- collection book ----
 
 /** The 📖 button lives in the top bar always; a "new" dot shows when coats have
- *  been collected since the book was last opened. */
+ *  been collected — or badges earned — since the book was last opened. */
 export function renderCollectionButton(state) {
   const badge = document.getElementById('collection-badge');
   if (!badge) return;
-  badge.hidden = state.collectedCoats.length <= (state.collectionSeen ?? 0);
+  const newCoat = state.collectedCoats.length > (state.collectionSeen ?? 0);
+  const newBadge = (state.achievements?.length ?? 0) > (state.achievementsSeen ?? 0);
+  badge.hidden = !(newCoat || newBadge);
 }
 
 const RARITY_GROUPS = [
@@ -212,6 +215,43 @@ export function renderCollection(state) {
 export function openCollection(state) {
   renderCollection(state);
   document.getElementById('collection-overlay').hidden = false;
+}
+
+// ---- badges (issue #65) ----
+
+/** One badge tile: colour + hint once earned; dimmed with its goal (and a
+ *  progress line for count badges) while still locked. */
+function badgeHTML(a, state) {
+  const earned = isEarned(a, state);
+  if (earned) {
+    return `<figure class="badge earned">
+      <span class="badge-icon">${a.icon}</span>
+      <figcaption class="badge-name">${a.name}</figcaption>
+      <figcaption class="badge-hint">${a.hint}</figcaption></figure>`;
+  }
+  let progress = '';
+  if (a.progress) {
+    const { value, goal } = a.progress(state);
+    const pct = Math.min(100, Math.round((value / goal) * 100));
+    progress = `<div class="badge-bar"><span style="width:${pct}%"></span></div>
+      <figcaption class="badge-count">${value.toLocaleString()} / ${goal.toLocaleString()}</figcaption>`;
+  }
+  return `<figure class="badge locked">
+    <span class="badge-icon">${a.icon}</span>
+    <figcaption class="badge-name">${a.name}</figcaption>
+    <figcaption class="badge-hint">${a.hint}</figcaption>${progress}</figure>`;
+}
+
+export function renderAchievements(state) {
+  const have = ACHIEVEMENTS.filter((a) => isEarned(a, state)).length;
+  document.getElementById('badges-count').textContent =
+    `${have} of ${ACHIEVEMENTS.length} badges earned`;
+  document.getElementById('badges-grid').innerHTML = ACHIEVEMENT_GROUPS.map((g) => {
+    const badges = ACHIEVEMENTS.filter((a) => a.group === g.id);
+    if (!badges.length) return '';
+    const tiles = badges.map((a) => badgeHTML(a, state)).join('');
+    return `<h3 class="collection-group">${g.title}</h3><div class="badges-row">${tiles}</div>`;
+  }).join('');
 }
 
 export function closeCollection() {

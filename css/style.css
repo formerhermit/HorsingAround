@@ -1519,6 +1519,91 @@ main {
   gap: 0.6rem;
 }
 
+/* ---- badges (issue #65) ---- */
+.badges-grid {
+  display: flex;
+  flex-direction: column;
+}
+
+.badges-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 0.6rem;
+}
+
+.badge {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  background: #fffdf7;
+  border: 1.5px solid #ece3cf;
+  border-radius: 12px;
+  padding: 0.6rem 0.5rem 0.55rem;
+}
+
+.badge-icon {
+  font-size: 1.9rem;
+  line-height: 1;
+}
+
+.badge-name {
+  margin: 0.35rem 0 0;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #3d3428;
+}
+
+.badge-hint {
+  margin: 0.12rem 0 0;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: #8a7d68;
+}
+
+/* Earned: a warm sunlit tile with a gentle glow. */
+.badge.earned {
+  background: #fbf3dd;
+  border-color: #e7cf94;
+}
+
+.badge.earned .badge-hint {
+  color: #a3763a;
+}
+
+/* Locked: dimmed icon, and (for count badges) a progress bar toward the goal. */
+.badge.locked .badge-icon {
+  filter: grayscale(1) opacity(0.4);
+}
+
+.badge.locked .badge-name {
+  color: #b3a488;
+}
+
+.badge-bar {
+  width: 100%;
+  height: 5px;
+  margin: 0.4rem 0 0.2rem;
+  background: #ece3cf;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.badge-bar span {
+  display: block;
+  height: 100%;
+  background: #b0823f;
+  border-radius: 3px;
+}
+
+.badge-count {
+  margin: 0;
+  font-size: 0.66rem;
+  font-weight: 700;
+  color: #a3763a;
+}
+
 .stamp {
   margin: 0;
   background: #fffdf7;

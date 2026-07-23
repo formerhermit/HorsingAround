@@ -6,10 +6,23 @@
 // Instagram, WhatsApp, etc.); on desktop, where there's no share sheet and
 // Instagram has no web share URL, we show a small menu: Facebook, X, Copy link.
 
+import { gameState, save } from './state.js';
+
 const SHARE_URL = 'https://formerhermit.github.io/HorsingAround/';
 const SHARE_TITLE = 'Horsing Around';
 const SHARE_TEXT =
   'I found this little game about looking after rescue horses. It raises real money for ARCH horse rescue. Come and play 💛';
+
+/** Honour-based: the player actually shared the game somewhere (native sheet,
+ *  a social link, or copying the link). Earns "Word of mouth" (issue #65).
+ *  Fires a DOM event so main.js can run the badge check without a circular
+ *  import back into this low-level module. */
+function markSharedForReal() {
+  if (!gameState || gameState.milestones.sharedForReal) return;
+  gameState.milestones.sharedForReal = true;
+  save();
+  window.dispatchEvent(new CustomEvent('achievements-check'));
+}
 
 /** Fire the native share sheet if the browser has one (mostly mobile). Returns
  *  true if we handed off, false if the caller should fall back to the menu. */
@@ -73,13 +86,14 @@ function openMenu(anchor) {
     try {
       await navigator.clipboard.writeText(SHARE_URL);
       label.textContent = 'Copied!';
+      markSharedForReal();
       setTimeout(closeMenu, 900);
     } catch {
       label.textContent = 'Copy failed';
     }
   });
   menuEl.addEventListener('click', (e) => {
-    if (e.target.closest('a')) closeMenu(); // let the link open, then tidy up
+    if (e.target.closest('a')) { markSharedForReal(); closeMenu(); } // link opens, then tidy up
   });
 
   document.body.appendChild(menuEl);
@@ -105,7 +119,8 @@ function openMenu(anchor) {
 export async function shareGame(anchor) {
   if (menuEl) { closeMenu(); return; } // toggle off if already open
   const handed = await tryNativeShare();
-  if (!handed) openMenu(anchor);
+  if (handed) markSharedForReal();
+  else openMenu(anchor);
 }
 
 /** One delegated listener covers every current and future share button. */
