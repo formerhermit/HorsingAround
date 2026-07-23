@@ -318,6 +318,28 @@ function repair(save) {
   save.collectionSeen ??= save.collectedCoats.length;
   save.milestones.collectionIntroDone ??= (save.stats.horsesRescued ?? 1) >= 8;
 
+  // The scarf was retired (issue #38: neck placement never sat right across
+  // coats); anyone who owned one gets the winter rug that replaced it. Worn
+  // scarves become worn rugs unless that horse's back is already taken (the
+  // rug and saddle blanket are an either/or), in which case the rug waits in
+  // the stores; stored scarves convert in place. Runs before the legacy
+  // global-wardrobe migration below so an ancient save's scarf converts too.
+  save.shop.owned = save.shop.owned?.map((id) => (id === 'scarf' ? 'winter-rug' : id));
+  for (const horse of save.horses ?? []) {
+    const i = horse.wardrobe.indexOf('scarf');
+    if (i === -1) continue;
+    if (horse.wardrobe.includes('saddle-blanket') || horse.wardrobe.includes('winter-rug')) {
+      horse.wardrobe.splice(i, 1);
+      save.shop.stock['winter-rug'] = (save.shop.stock['winter-rug'] ?? 0) + 1;
+    } else {
+      horse.wardrobe[i] = 'winter-rug';
+    }
+  }
+  if (save.shop.stock.scarf) {
+    save.shop.stock['winter-rug'] = (save.shop.stock['winter-rug'] ?? 0) + save.shop.stock.scarf;
+    delete save.shop.stock.scarf;
+  }
+
   // Wardrobe used to be a global purchase that dressed every horse at once.
   // Anyone who bought one under that system keeps it -- migrate those ids
   // onto every horse that already exists, then drop them from the global list.

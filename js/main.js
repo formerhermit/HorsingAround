@@ -268,7 +268,7 @@ function nudgeConfig(id) {
     text: "You've rescued a whole paddock! Tap the book up top to see every horse type there is, and which you've collected so far.",
   };
   if (id === 'left-behind') return {
-    emoji: '🧣', dir: 'up-right',
+    emoji: '🧥', dir: 'up-right',
     text: `${leftBehindHorseName} has gone to their new home, but left their outfit behind. It's waiting in your Tack room up top, ready for another horse.`,
   };
   if (id === 'leaderboard') return {

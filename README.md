@@ -76,7 +76,7 @@ When the rescue is full you don't have to wait for an offer: the full-paddocks p
 
 Spend your funds on nice things.
 
-- **Wardrobe**: scarves, boots, flowers and bows for a chosen horse. A dressed-up horse turns more heads, so it attracts supporters faster.
+- **Wardrobe**: winter rugs, boots, flowers and bows for a chosen horse. A dressed-up horse turns more heads, so it attracts supporters faster.
 - **Paddock decor**: bunting, flower buckets, hay bales, a water trough, even a dog or a cat. Decor makes every "share an update" worth more.
 
 Each paddock gets its own decorations — the magical paddock included — up to a tidy limit. Some choices are one or the other: flower garland *or* bunting, an ear flower *or* a forelock bow. The dog and cat are the big splurges, for when the rescue's really thriving.

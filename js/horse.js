@@ -92,14 +92,9 @@ const EAR_FLOWER_ANCHOR = {
 };
 const DEFAULT_EAR_FLOWER = { cx: 392, cy: 70 };
 
-// The scarf is authored for the horse neck; donkeys' throats sit lower and a
-// little forward, so their scarf is translated onto the throat. Coats not listed
-// wear the scarf at its authored position.
-const SCARF_OFFSET = {
-  'brown-donkey':   { dx: 11, dy: 52 },
-  'grey-donkey':    { dx: 11, dy: 52 },
-  'piebald-donkey': { dx: 11, dy: 52 },
-};
+// (The neck scarf was retired in issue #38: neck placement never sat right
+// across the different builds. Its slot went to the winter rug, which is
+// back-worn like the saddle blanket and needs no per-coat tuning.)
 
 // Where the four lower legs sit (each [x0, x1]) for boots and leg-wraps. Donkeys
 // stand a little narrower and the zebra's forelegs sit further forward, so the
@@ -122,17 +117,12 @@ const LEG_POSITIONS = {
  */
 function costumeMarkup(wardrobe = [], coat = 'bay') {
   let m = '';
-  if (wardrobe.includes('scarf')) {
-    // band spanning the whole neck from the mane edge (~x305) to the throat
-    // (~x390), with a knotted tail hanging at the front of the throat.
-    // Donkeys carry their heads higher and more upright, so their throat sits
-    // lower and a touch forward -- shift the whole scarf down/right onto it.
-    const off = SCARF_OFFSET[coat];
-    const open = off ? `<g transform="translate(${off.dx},${off.dy})">` : '';
-    const close = off ? '</g>' : '';
-    // Sunny yellow, matching the paddock flowers (issue #54).
-    m += `${open}<path d="M300,188 Q345,179 390,179 Q401,191 397,203 Q394,213 388,216 Q345,220 303,214 Q295,202 300,188 Z" fill="#F7CD3A"/>`;
-    m += `<path d="M382,213 Q378,239 385,259 Q397,241 396,211 Z" fill="#E0A81E"/>${close}`;
+  if (wardrobe.includes('winter-rug')) {
+    // a cozy rug over the whole back, withers to rump, hanging well down the
+    // barrel. Soft rosy pink from the flower palette, with a cream hem band.
+    m += `<path d="M152,206 Q232,186 314,197 Q327,204 324,255 Q321,300 313,309 Q234,323 160,309 Q150,298 148,252 Q147,212 152,206 Z" fill="#E895B3"/>`;
+    m += `<path d="M156,292 Q236,308 318,290" fill="none" stroke="#F9EFE3" stroke-width="8" stroke-linecap="round"/>`;
+    m += `<path d="M160,309 Q234,322 313,309" fill="none" stroke="#D3719B" stroke-width="6" stroke-linecap="round"/>`;
   }
   if (wardrobe.includes('ear-flower')) {
     // a small daisy tucked at the base of the forward ear

@@ -60,6 +60,7 @@ export const MAX_EXTRA_DECOR = 5;
 export const EXCLUSIVE_GROUPS = [
   ['flower-garland', 'bunting'],   // fence banner, per paddock
   ['ear-flower', 'forelock-bow'],  // head flair, per horse
+  ['winter-rug', 'saddle-blanket'], // back wear, per horse — they'd overlap
 ];
 
 function exclusiveSiblings(itemId) {
@@ -80,11 +81,12 @@ export function horseExclusiveRival(item, horse) {
 }
 
 export const SHOP_ITEMS = [
-  // tier 1 — from the first rescue. Scarf and boots are the cheap starter
-  // wardrobe; flower garland and bunting are the two fence-banner styles: a
-  // paddock flies one OR the other (see EXCLUSIVE_GROUPS), priced the same so
-  // the pick is purely a matter of taste.
-  { id: 'scarf', name: 'Scarf', category: 'wardrobe', price: 150, requiresHorses: 1, attractionBonus: 0.006 },
+  // tier 1 — from the first rescue. Winter rug and boots are the cheap starter
+  // wardrobe (the rug replaced the retired scarf, issue #38: back-worn pieces
+  // sit right on every coat); flower garland and bunting are the two
+  // fence-banner styles: a paddock flies one OR the other (see
+  // EXCLUSIVE_GROUPS), priced the same so the pick is purely a matter of taste.
+  { id: 'winter-rug', name: 'Winter rug', category: 'wardrobe', price: 150, requiresHorses: 1, attractionBonus: 0.006 },
   { id: 'boots', name: 'Boots', category: 'wardrobe', price: 250, requiresHorses: 1, attractionBonus: 0.010 },
   { id: 'flower-garland', name: 'Flower garland', category: 'decor', price: 500, requiresHorses: 1, shareBonus: 0.05 },
   { id: 'bunting', name: 'Bunting flags', category: 'decor', price: 500, requiresHorses: 1, shareBonus: 0.05 },
