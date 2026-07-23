@@ -894,15 +894,24 @@ export function renderWantBubbles(state) {
  *  camera flash for the "take a photo" want. */
 export function showWantFulfilled(card, want, clickEvent) {
   showCareFeedback(card, want.need.done, clickEvent, { crit: true });
+  const rect = card.getBoundingClientRect();
   const pop = document.createElement('span');
   pop.className = 'care-pop tip';
   pop.style.setProperty('--tilt', `${(Math.random() * 8 - 4).toFixed(1)}deg`);
   pop.textContent = `+${want.supporters} supporters 💛`;
-  const rect = card.getBoundingClientRect();
   pop.style.left = `${rect.width * 0.5}px`;
   pop.style.top = `${rect.height * 0.1}px`;
   card.appendChild(pop);
   pop.addEventListener('animationend', () => pop.remove());
+  // The moment also charged the share meter — say so, just below.
+  const share = document.createElement('span');
+  share.className = 'care-pop tip';
+  share.style.setProperty('--tilt', `${(Math.random() * 8 - 4).toFixed(1)}deg`);
+  share.textContent = '📣 worth sharing!';
+  share.style.left = `${rect.width * 0.5}px`;
+  share.style.top = `${rect.height * 0.28}px`;
+  card.appendChild(share);
+  share.addEventListener('animationend', () => share.remove());
   if (want.need.photo) {
     const flash = document.createElement('div');
     flash.className = 'photo-flash';
