@@ -222,6 +222,30 @@ export async function fetchBoard(limit = 20) {
   }
 }
 
+/** Did THIS identity top last month's board? Returns { month, name, rescues }
+ *  or null. Drives the once-per-won-month champion popup (issue #73). */
+export async function fetchMyChampionship() {
+  try {
+    const ctx = await getSession();
+    if (!ctx) return null;
+    const { data, error } = await ctx.client
+      .from('leaderboard')
+      .select('user_id, display_name, rescues')
+      .eq('month', prevMonthKey())
+      .order('rescues', { ascending: false })
+      .order('updated_at', { ascending: true }) // ties: first to the score wins
+      .limit(1);
+    if (error) throw error;
+    const top = data?.[0];
+    return top && top.user_id === ctx.session.user.id
+      ? { month: prevMonthKey(), name: top.display_name, rescues: top.rescues }
+      : null;
+  } catch (err) {
+    console.warn('Could not check last month\'s champion:', err);
+    return null;
+  }
+}
+
 /** Leave the board: delete every row (all months) and forget the name.
  *  The local month counter is kept, so re-joining credits the month so far. */
 export async function leaveBoard() {
