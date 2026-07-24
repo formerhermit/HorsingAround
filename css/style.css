@@ -1189,6 +1189,12 @@ main {
   color: #5c5344;
 }
 
+/* The "Tell a friend" pill sits beside Donate: same soft outline as its modal
+   twin (.share-btn-modal), kept from shrinking in the banner row. */
+.share-btn-donate {
+  flex-shrink: 0;
+}
+
 .donate-link {
   flex-shrink: 0;
   background: #6f8f4f;
@@ -1232,7 +1238,8 @@ main {
     position: relative;
   }
   .donate-link { order: 1; }
-  .donate-text { order: 2; }
+  .share-btn-donate { order: 2; }
+  .donate-text { order: 3; }
   .donate-dismiss {
     position: absolute;
     top: 0.25rem;

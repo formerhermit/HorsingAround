@@ -63,6 +63,9 @@ function openMenu(anchor) {
   closeMenu();
   const fb = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(SHARE_URL)}`;
   const x = `https://twitter.com/intent/tweet?text=${encodeURIComponent(SHARE_TEXT)}&url=${encodeURIComponent(SHARE_URL)}`;
+  // WhatsApp shares one text field, so fold the link into the message. wa.me
+  // works on desktop (WhatsApp Web / app) and mobile alike.
+  const wa = `https://wa.me/?text=${encodeURIComponent(`${SHARE_TEXT} ${SHARE_URL}`)}`;
 
   menuEl = document.createElement('div');
   menuEl.className = 'share-menu';
@@ -73,6 +76,9 @@ function openMenu(anchor) {
     </a>
     <a class="share-menu-item" role="menuitem" href="${x}" target="_blank" rel="noopener">
       <span aria-hidden="true">✖️</span> X
+    </a>
+    <a class="share-menu-item" role="menuitem" href="${wa}" target="_blank" rel="noopener">
+      <span aria-hidden="true">💬</span> WhatsApp
     </a>
     <button class="share-menu-item" role="menuitem" type="button" data-copy-link>
       <span aria-hidden="true">🔗</span> <span data-copy-label>Copy link</span>
