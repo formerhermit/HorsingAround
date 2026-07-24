@@ -26,7 +26,6 @@ export function renderAll(state) {
   renderActions(state);
   renderPaddock(state);
   renderShopButton(state);
-  renderPostcardButton(state);
   renderCollectionButton(state);
 }
 
@@ -121,14 +120,73 @@ export function renderShopButton(state) {
 
 /** The album button appears once the first postcard exists; its badge counts
  *  unread ones. */
-export function renderPostcardButton(state) {
-  const btn = document.getElementById('album-btn');
-  if (!btn) return;
-  btn.hidden = state.postcards.length === 0;
-  const unread = state.postcards.filter((p) => !p.read).length;
-  const badge = document.getElementById('album-badge');
-  badge.hidden = unread === 0;
-  badge.textContent = unread > 0 ? String(unread) : '';
+// ---- residents (the horses currently at the rescue) — issue #89 ----
+
+const COAT_NAMES = Object.fromEntries(COAT_CATALOG.map((c) => [c.id, c.name]));
+
+/** What to show as a resident's breed: its coat name, or "Foal" while young. */
+function residentBreed(horse) {
+  if (horse.foal) return 'Foal';
+  return COAT_NAMES[horse.paletteKey] ?? 'Horse';
+}
+
+/** A resident's (made-up but stable) age, shown in words. Magical gift horses
+ *  are ageless; foals are under a year until they grow up. */
+function residentAge(horse) {
+  if (isMagicalCoat(horse.paletteKey)) return 'Ageless ✨';
+  if (horse.foal) return 'Under a year';
+  const y = horse.ageYears ?? 1;
+  return y <= 1 ? '1 year old' : `${y} years old`;
+}
+
+/** A resident's personality: a foal's stays a mystery until its reveal beat. */
+function residentPersonality(horse) {
+  if (horse.foal && !horse.foalTraitRevealed) return 'still emerging';
+  return horse.trait ?? 'still settling in';
+}
+
+/** One resident's profile card: portrait, name, and a few facts. Built to grow
+ *  (quick-adopt and other actions can hang off this later). */
+function residentCardHTML(horse) {
+  const portrait = horseFigureHTML(
+    { name: horse.name, paletteKey: horse.paletteKey, wellbeing: 100, foal: horse.foal },
+    horse.foal ? [] : horse.wardrobe,
+  );
+  const arrived = new Date(horse.arrivedAt).toLocaleDateString(undefined, {
+    day: 'numeric', month: 'short', year: 'numeric',
+  });
+  return `
+<figure class="resident-card">
+  <div class="resident-photo">${portrait}</div>
+  <figcaption class="resident-info">
+    <p class="resident-name">${horse.name}${horse.sponsor ? ' <span class="resident-heart" title="Sponsored">💛</span>' : ''}</p>
+    <dl class="resident-facts">
+      <div><dt>Breed</dt><dd>${residentBreed(horse)}</dd></div>
+      <div><dt>Age</dt><dd>${residentAge(horse)}</dd></div>
+      <div><dt>Arrived</dt><dd>${arrived}</dd></div>
+      <div><dt>Personality</dt><dd>${residentPersonality(horse)}</dd></div>
+    </dl>
+  </figcaption>
+</figure>`;
+}
+
+/** Fill the residents modal with a card per horse, newest arrival first. */
+export function renderResidents(state) {
+  const grid = document.getElementById('residents-grid');
+  if (!grid) return;
+  const horses = [...state.horses].reverse();
+  grid.innerHTML = horses.length
+    ? horses.map(residentCardHTML).join('')
+    : '<p class="album-empty">No horses at the rescue just yet.</p>';
+}
+
+export function openResidents(state) {
+  renderResidents(state);
+  document.getElementById('residents-overlay').hidden = false;
+}
+
+export function closeResidents() {
+  document.getElementById('residents-overlay').hidden = true;
 }
 
 /** One polaroid: the horse's happy portrait (in the outfit it wore), its name,
@@ -149,6 +207,8 @@ function postcardHTML(pc) {
 </figure>`;
 }
 
+/** Fill the Postcards tab's grid (issue #89: postcards now live in the
+ *  collection modal rather than their own). */
 export function renderPostcardAlbum(state) {
   const grid = document.getElementById('album-grid');
   const cards = [...state.postcards].sort((a, b) => b.deliveredAt - a.deliveredAt);
@@ -157,25 +217,24 @@ export function renderPostcardAlbum(state) {
     : '<p class="album-empty">No postcards yet. Rehome a thriving horse and one will find its way back to you 💛</p>';
 }
 
-export function openPostcardAlbum(state) {
-  renderPostcardAlbum(state);
-  document.getElementById('album-overlay').hidden = false;
-}
-
-export function closePostcardAlbum() {
-  document.getElementById('album-overlay').hidden = true;
-}
-
 // ---- collection book ----
 
 /** The 📖 button lives in the top bar always; a "new" dot shows when coats have
  *  been collected — or badges earned — since the book was last opened. */
 export function renderCollectionButton(state) {
+  const unread = (state.postcards ?? []).filter((p) => !p.read).length;
+  // The 💌 Postcards tab carries its own unread count.
+  const tabBadge = document.getElementById('postcards-tab-badge');
+  if (tabBadge) {
+    tabBadge.hidden = unread === 0;
+    tabBadge.textContent = unread > 0 ? String(unread) : '';
+  }
   const badge = document.getElementById('collection-badge');
   if (!badge) return;
   const newCoat = state.collectedCoats.length > (state.collectionSeen ?? 0);
   const newBadge = (state.achievements?.length ?? 0) > (state.achievementsSeen ?? 0);
-  badge.hidden = !(newCoat || newBadge);
+  // The book's dot now also lights for postcards waiting to be read.
+  badge.hidden = !(newCoat || newBadge || unread > 0);
 }
 
 const RARITY_GROUPS = [

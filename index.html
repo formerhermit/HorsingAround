@@ -44,10 +44,10 @@
       <button class="shop-btn" id="shop-btn" hidden aria-haspopup="dialog" aria-controls="shop-modal">
         🧰 Tack room<span class="shop-badge" id="shop-badge" hidden></span>
       </button>
-      <button class="album-btn" id="album-btn" hidden aria-haspopup="dialog" aria-controls="album-modal" title="Postcards from rehomed horses">
-        💌<span class="album-badge" id="album-badge" hidden></span>
+      <button class="album-btn" id="residents-btn" aria-haspopup="dialog" aria-controls="residents-modal" title="The horses living at the rescue">
+        🐴
       </button>
-      <button class="album-btn" id="collection-btn" aria-haspopup="dialog" aria-controls="collection-modal" title="Your collection of horse types">
+      <button class="album-btn" id="collection-btn" aria-haspopup="dialog" aria-controls="collection-modal" title="Your collection, badges, stats and postcards">
         📖<span class="album-badge" id="collection-badge" hidden></span>
       </button>
       <button class="sound-btn" id="sound-btn" aria-label="Mute music" title="Music">🔊</button>
@@ -122,22 +122,19 @@
     </div>
   </div>
 
-  <div class="album-overlay" id="album-overlay" hidden>
-    <div class="album-modal" id="album-modal" role="dialog" aria-modal="true" aria-labelledby="album-title">
+  <div class="album-overlay" id="residents-overlay" hidden>
+    <div class="album-modal" id="residents-modal" role="dialog" aria-modal="true" aria-labelledby="residents-title">
       <div class="shop-header">
-        <h2 id="album-title">Postcards</h2>
+        <h2 id="residents-title">Residents</h2>
         <div class="header-actions">
-          <button class="share-btn-modal" data-share-game aria-label="Tell a friend about Horsing Around">
-            <span class="share-icon" aria-hidden="true">💛</span> Tell a friend
-          </button>
-          <button class="shop-close" id="album-close" aria-label="Close postcards">×</button>
+          <button class="shop-close" id="residents-close" aria-label="Close residents">×</button>
         </div>
       </div>
       <p class="shop-intro">
-        Horses you've rehomed write to say how they're settling in: a little wall
-        of happy endings 💛
+        Everyone living at the rescue right now: their story so far, and who they've
+        turned out to be 💛
       </p>
-      <div class="album-grid" id="album-grid"></div>
+      <div class="residents-grid" id="residents-grid"></div>
     </div>
   </div>
 
@@ -153,7 +150,7 @@
         </div>
       </div>
 
-      <div class="modal-tabs" role="tablist" aria-label="Collection, stats and top rescuers">
+      <div class="modal-tabs" role="tablist" aria-label="Collection, badges, stats, top rescuers and postcards">
         <button class="modal-tab is-active" id="tab-collection" role="tab"
                 aria-selected="true" aria-controls="panel-collection">📖 Collection</button>
         <button class="modal-tab" id="tab-badges" role="tab"
@@ -162,6 +159,8 @@
                 aria-selected="false" aria-controls="panel-stats">📊 Stats</button>
         <button class="modal-tab" id="tab-leaderboard" role="tab"
                 aria-selected="false" aria-controls="panel-leaderboard">🏆 Top rescuers</button>
+        <button class="modal-tab" id="tab-postcards" role="tab"
+                aria-selected="false" aria-controls="panel-postcards">💌 Postcards<span class="tab-badge" id="postcards-tab-badge" hidden></span></button>
       </div>
 
       <div class="modal-panel" id="panel-collection" role="tabpanel" aria-labelledby="tab-collection">
@@ -207,6 +206,14 @@
           <p class="privacy-meta">You're on the board as <strong id="lb-own-name"></strong>.
             <button class="lb-leave" id="lb-leave">Leave the board</button></p>
         </div>
+      </div>
+
+      <div class="modal-panel" id="panel-postcards" role="tabpanel" aria-labelledby="tab-postcards" hidden>
+        <p class="shop-intro">
+          Horses you've rehomed write to say how they're settling in: a little wall
+          of happy endings 💛
+        </p>
+        <div class="album-grid" id="album-grid"></div>
       </div>
     </div>
   </div>
