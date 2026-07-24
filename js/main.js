@@ -785,6 +785,10 @@ function handleCare(card, event) {
     renderWantBubbles(state);             // clear the tended bubble
     renderHUD(state);                     // supporters jumped
     if (want.coins > 0) showMoneyPop(want.coins); // meter overflow, paid out directly
+    // The first want's big one-off payout gets its own explaining toast.
+    if (want.firstWant) {
+      showToast(`📣 ${horse.name}'s happy update spread far and wide: €${Math.round(want.coins)} for the rescue: enough to bring home a friend 💛`);
+    }
     refreshUI();                          // the share meter just jumped — show it
     persist();
   } else {

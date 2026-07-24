@@ -271,6 +271,11 @@ export function careFor(horse) {
       type: 'milestone',
       message: `${horse.name} is looking content — and María noticed! She's your first supporter and donated €${FIRST_DONATION} 💛`,
     });
+    // Bring the first want on quickly, so its big payout (fulfilWant) lands soon
+    // and gets the player toward their second horse.
+    if (!gameState.milestones.firstWantRewarded) {
+      wantCountdown = randomBetween(FIRST_WANT_MIN, FIRST_WANT_MAX);
+    }
   }
 
   // A spontaneous tip: rarely, a supporter who's watching chips in a few euros
@@ -734,6 +739,14 @@ const WANT_GLOW_MULT = 2;        // attraction multiplier during the glow
 // tending horses ever sees it.
 const WANT_SHARE_CHARGE = 0.5;
 
+// The very first want ever is a deliberate early hook: it lands soon after the
+// money side opens and pays out most of a second rescue's cost, so a new player
+// reaches their second horse quickly (the early economy is otherwise slow to
+// build off a single supporter). One-off, gated by milestones.firstWantRewarded.
+const FIRST_WANT_MIN = 6;             // seconds after "content" before it lands
+const FIRST_WANT_MAX = 12;
+const FIRST_WANT_RESCUE_FRACTION = 0.8; // its coin bonus, as a share of the next rescue's cost
+
 // Each need: the bubble shown above the horse and the pop shown when tended.
 // `photo` marks the "take a photo" want, which gets a camera flash in the UI.
 const NEEDS = [
@@ -830,7 +843,18 @@ export function fulfilWant(horseId, now = Date.now()) {
   }
   // Rewind lastSharedAt so the meter reads the boosted charge (full at most).
   gameState.lastSharedAt = now - Math.min(newCharge, 1) * SHARE_CHARGE_TIME * 1000;
-  return { need, supporters: WANT_SUPPORTER_BURST, coins };
+  // The very first want ever pays a big one-off bonus on top: most of a second
+  // rescue's cost, so the early game finds its feet quickly (see FIRST_WANT_*).
+  let firstWant = false;
+  if (!gameState.milestones.firstWantRewarded) {
+    gameState.milestones.firstWantRewarded = true;
+    const bonus = Math.round(rescueCost() * FIRST_WANT_RESCUE_FRACTION);
+    gameState.coins += bonus;
+    gameState.stats.totalDonated += bonus;
+    coins += bonus;
+    firstWant = true;
+  }
+  return { need, supporters: WANT_SUPPORTER_BURST, coins, firstWant };
 }
 
 // ---- paddock life: bills & Visitors Day (issue #50) ----
