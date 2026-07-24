@@ -531,15 +531,15 @@ main {
   background-position: 0 0, 13% 97%, 51% 99%, 85% 95%;
 }
 .paddock.season-autumn .paddock-weather::before {
-  background-image: var(--leaf-amber), var(--leaf-rust), var(--leaf-amber), var(--leaf-rust), var(--leaf-amber);
-  background-size: 13px 15px, 12px 14px, 11px 13px, 13px 15px, 12px 14px;
-  background-position: 11% 15%, 35% 9%, 59% 22%, 85% 11%, 47% 34%;
+  background-image: var(--leaf-amber), var(--leaf-rust), var(--leaf-amber), var(--leaf-rust), var(--leaf-amber), var(--leaf-rust), var(--leaf-amber), var(--leaf-rust);
+  background-size: 13px 15px, 12px 14px, 11px 13px, 13px 15px, 12px 14px, 11px 13px, 13px 15px, 12px 14px;
+  background-position: 8% 12%, 22% 20%, 34% 8%, 47% 26%, 60% 13%, 72% 23%, 85% 10%, 95% 29%;
   animation: season-drift 6.5s ease-in-out infinite;
 }
 .paddock.season-autumn .paddock-weather::after {
-  background-image: var(--leaf-rust), var(--leaf-amber), var(--leaf-rust);
-  background-size: 11px 13px, 12px 14px, 11px 13px;
-  background-position: 23% 42%, 68% 48%, 90% 38%;
+  background-image: var(--leaf-rust), var(--leaf-amber), var(--leaf-rust), var(--leaf-amber), var(--leaf-rust), var(--leaf-amber);
+  background-size: 11px 13px, 12px 14px, 11px 13px, 12px 14px, 11px 13px, 12px 14px;
+  background-position: 14% 34%, 29% 44%, 44% 40%, 58% 46%, 78% 44%, 90% 36%;
   animation: season-drift 8s ease-in-out .9s infinite;
 }
 
