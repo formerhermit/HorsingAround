@@ -1,13 +1,13 @@
 // main.js — boot the game: load state, render, wire input and persistence.
 
 import { initState, save, gameState, adoptCloudState, DONATE_MILESTONE, SAVE_KEY, disableSaving } from './state.js';
-import { careFor, tick, rescueHorse, shareUpdate, rescueCost, rescuePrice, acceptRehome, declineRehome, requestRehome, collectOfflineEarnings, collectDuePostcards, collectDueStatues, markPostcardsRead, fulfilWant, grantUnicorn, hasUnicorn, acceptBill, declineBill, scheduleVisitorsDay, hurryPaddockLife } from './game.js';
+import { careFor, tick, rescueHorse, shareUpdate, rescueCost, rescuePrice, acceptRehome, declineRehome, requestRehome, collectOfflineEarnings, collectDuePostcards, collectDueStatues, markPostcardsRead, fulfilWant, grantUnicorn, hasUnicorn, acceptBill, declineBill, scheduleVisitorsDay, hurryPaddockLife, setKept, SANCTUARY_CAP } from './game.js';
 import {
   renderAll, renderHUD, renderActions, updateHorseCard,
   showCareFeedback, showTipPop, showToast, showMoneyPop, showSupporterPop, burstConfetti, changePaddock, resetPaddockView,
   showNudgePopup, hideNudgePopup, showDialog,
   renderShopButton, openShopModal, closeShopModal, renderShopModal, shopDecorPaddock, setShopDecorPaddock, shopWardrobeHorse, showShopTab,
-  renderPostcardAlbum, openResidents, closeResidents,
+  renderPostcardAlbum, openResidents, closeResidents, renderResidents,
   renderWantBubbles, showWantFulfilled,
   renderCollectionButton, openCollection, closeCollection, renderStats, renderAchievements,
   formatDate, paddockLabel,
@@ -1214,6 +1214,22 @@ document.getElementById('residents-btn').addEventListener('click', () => {
 document.getElementById('residents-close').addEventListener('click', closeResidents);
 document.getElementById('residents-overlay').addEventListener('click', (event) => {
   if (event.target.id === 'residents-overlay') closeResidents();
+});
+// Keep a horse as a permanent resident, or release it (issue #83).
+document.getElementById('residents-grid').addEventListener('click', (event) => {
+  const btn = event.target.closest('[data-keep-toggle]');
+  if (!btn) return;
+  const res = setKept(btn.dataset.horseId, btn.dataset.keepToggle === 'on', state);
+  if (!res.ok) {
+    if (res.reason === 'full') showToast(`The sanctuary is full: ${SANCTUARY_CAP} permanent residents is the limit 🏡`, 'alert');
+    return;
+  }
+  showToast(res.horse.kept
+    ? `🏡 ${res.horse.name} is a permanent resident now, home for good 💛`
+    : `${res.horse.name} is back in the adoptable herd.`);
+  renderResidents(state);
+  refreshUI();
+  persist();
 });
 
 // ---- collection book ----

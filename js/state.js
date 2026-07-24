@@ -65,6 +65,7 @@ export function createHorse({
     bornHere,
     foalTraitRevealed,
     ageYears,
+    kept: false,       // a permanent resident: kept for good, never rehomed (issue #83)
     returned: false,   // set true when a rehomed horse comes home (issue #35)
     arrivedAt: Date.now(),
     lastCaredAt: Date.now(), // last care tap; drives the gentle-upkeep drift (game.js)
@@ -300,6 +301,7 @@ function repair(save) {
     horse.ageYears ??= horse.foal ? 0 : 3 + Math.floor(Math.random() * 18);
     horse.arrivedAt ??= Date.now();
     horse.returned ??= false; // came back after an adoption (issue #35)
+    horse.kept ??= false;     // permanent resident of the sanctuary (issue #83)
     // Joya is now reserved for the dog decor item; rename any horse
     if (horse.name === 'Joya') horse.name = 'Billy';
     if (horse.name === 'Pantoja 2' || horse.name === 'Panjota 2') horse.name = 'Binky';

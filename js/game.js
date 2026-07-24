@@ -16,7 +16,7 @@ import {
 } from './traits.js';
 import {
   billDiscount, adoptionMultiplier, rescueDiscount, rescueWellbeingBonus,
-  eventDrawMultiplier, supporterCapMultiplier, driftGraceMultiplier,
+  eventDrawMultiplier, supporterCapMultiplier, driftGraceMultiplier, hasFacility,
 } from './facilities.js';
 import { SEASONS, currentSeason, seasonIndexFor } from './seasons.js';
 
@@ -1549,13 +1549,52 @@ function maybeOfferRehome(dt, events) {
   rehomeCountdown -= dt;
   if (rehomeCountdown > 0) return;
   rehomeCountdown = randomBetween(REHOME_GAP_MIN, REHOME_GAP_MAX);
-  // Magical gift horses are permanent residents; foals aren't grown yet.
-  const thriving = gameState.horses.filter((h) => h.wellbeing >= THRIVING_AT && !isMagicalCoat(h.paletteKey) && !h.foal);
+  // Magical gift horses are permanent residents; foals aren't grown yet; and a
+  // kept horse (issue #83) lives here for good, so it's never offered a home.
+  const thriving = gameState.horses.filter(isAdoptable);
   if (!thriving.length) return; // no one ready; try again next interval
   const horse = randomFrom(thriving);
   const income = rehomeIncome();
   pendingRehome = { horseId: horse.id, income };
   events.push({ type: 'rehome-offer', horseName: horse.name, income, bornHere: horse.bornHere, returned: horse.returned });
+}
+
+/** A horse the rescue could find a forever home: thriving, and not a magical
+ *  gift horse, a foal, or a kept permanent resident. */
+function isAdoptable(h) {
+  return h.wellbeing >= THRIVING_AT && !isMagicalCoat(h.paletteKey) && !h.foal && !h.kept;
+}
+
+// ---- the sanctuary: permanent residents (issue #83) ----
+// Once the Sanctuary field is built, a paddock's worth of horses can be kept
+// for good: they live at the rescue and are never offered for rehoming. The cap
+// keeps the rehoming loop alive rather than letting the whole herd be kept.
+export const SANCTUARY_CAP = PADDOCK_CAP;
+
+/** Whether keeping horses is unlocked yet (the Sanctuary field is built). */
+export function canKeep(state = gameState) {
+  return hasFacility(state, 'sanctuary-field');
+}
+
+/** How many horses are currently kept as permanent residents. */
+export function keptCount(state = gameState) {
+  return state.horses.filter((h) => h.kept).length;
+}
+
+/** Mark a horse a permanent resident, or release it back to the adoptable pool.
+ *  Honours the sanctuary cap when keeping. Returns { ok, reason?, horse? }. */
+export function setKept(horseId, kept, state = gameState) {
+  const horse = state.horses.find((h) => h.id === horseId);
+  if (!horse) return { ok: false, reason: 'missing' };
+  if (kept) {
+    if (!canKeep(state)) return { ok: false, reason: 'locked' };
+    if (!horse.kept && keptCount(state) >= SANCTUARY_CAP) return { ok: false, reason: 'full' };
+  }
+  horse.kept = !!kept;
+  // If this horse had a rehome offer in the air, keeping it retires that offer
+  // so a stale popup can't adopt out a horse the player just decided to keep.
+  if (kept && pendingRehome && pendingRehome.horseId === horseId) pendingRehome = null;
+  return { ok: true, horse };
 }
 
 /** Player-initiated rehoming: ask around for a forever home right now (the
@@ -1564,7 +1603,7 @@ function maybeOfferRehome(dt, events) {
  *  process, or null if no horse can be spared / one is already on offer. */
 export function requestRehome() {
   if (pendingRehome || gameState.horses.length <= REHOME_MIN_HERD) return null;
-  const thriving = gameState.horses.filter((h) => h.wellbeing >= THRIVING_AT && !isMagicalCoat(h.paletteKey) && !h.foal);
+  const thriving = gameState.horses.filter(isAdoptable);
   if (!thriving.length) return null;
   const horse = randomFrom(thriving);
   const income = rehomeIncome();
