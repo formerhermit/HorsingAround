@@ -733,7 +733,7 @@ function handleEvent(e) {
     renderAll(state);
     enqueueDialog({
       emoji: '', image: 'assets/events/returned.jpg', share: true,
-      text: `${fig(e.name)} is coming home: ${e.reason}. So the stable is theirs again, remembered and loved, and a little fussing will have them settled in no time 💛`,
+      text: `${fig(e.name)} is coming home for a while: ${e.reason}. So the stable is theirs again, remembered and loved, until the right new family comes along 💛`,
       buttons: [{ label: 'Welcome home 💛', variant: 'primary' }],
     });
   } else if (e.type === 'foal-grown') {

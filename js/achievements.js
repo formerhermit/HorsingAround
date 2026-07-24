@@ -101,8 +101,12 @@ export const ACHIEVEMENTS = [
     hint: 'Played through all four seasons', earned: (s) => yearsPlayed(s.stats.playSeconds ?? 0) >= 1 },
   { id: 'born-here', name: 'Born at the rescue', icon: '🐴', group: 'community',
     hint: 'Raised a foal and found it a home', earned: (s) => (s.stats.homegrownRehomed ?? 0) >= 1 },
+  // The returned-adoption arc (issue #35) is two beats: welcoming a horse back
+  // for a while, then seeing them off to the home that sticks.
   { id: 'home-again', name: 'Home again', icon: '🏠', group: 'community',
-    hint: 'A returned horse found a new forever home', earned: (s) => (s.stats.returnedRehomed ?? 0) >= 1 },
+    hint: 'Welcomed a horse back when an adoption fell through', earned: (s) => (s.stats.horsesReturned ?? 0) >= 1 },
+  { id: 'second-time-lucky', name: 'Second time lucky', icon: '🍀', group: 'community',
+    hint: 'A returned horse found their true forever home', earned: (s) => (s.stats.returnedRehomed ?? 0) >= 1 },
   { id: 'real-hero', name: 'Real hero', icon: '💝', group: 'community',
     hint: 'Donated to the real ARCH', earned: (s) => !!s.milestones.donatedForReal },
   { id: 'word-of-mouth', name: 'Word of mouth', icon: '📣', group: 'community',
