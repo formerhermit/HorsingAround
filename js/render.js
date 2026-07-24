@@ -1,7 +1,7 @@
 // render.js — turns gameState into DOM. No game logic lives here.
 
 import { horseFigureHTML, horseImageSrc, wellbeingLabel, wellbeingColor, isShinyCoat, isMagicalCoat, COAT_CATALOG } from './horse.js';
-import { rescuePrice, shareValue, shareCharge, SHARE_READY_AT, FRONT_ROW, getActiveWant, foalSizeFactor, foalGrowth } from './game.js';
+import { rescuePrice, shareValue, shareCharge, SHARE_READY_AT, FRONT_ROW, getActiveWant, foalSizeFactor, foalGrowth, canKeep, keptCount, SANCTUARY_CAP } from './game.js';
 import { ACHIEVEMENTS, ACHIEVEMENT_GROUPS, isEarned } from './achievements.js';
 import { FACILITIES, hasFacility, nextFacility, canBuyFacility } from './facilities.js';
 import { currentSeason, SEASON_CLASSES } from './seasons.js';
@@ -147,7 +147,25 @@ function residentPersonality(horse) {
 
 /** One resident's profile card: portrait, name, and a few facts. Built to grow
  *  (quick-adopt and other actions can hang off this later). */
-function residentCardHTML(horse) {
+/** The "keep forever" control on a card (issue #83): a button to make a horse a
+ *  permanent resident once the Sanctuary field is built, or to release one. Not
+ *  shown for magical friends (already permanent) or foals (not adoptable yet). */
+function residentKeepControl(horse, ctx) {
+  if (isMagicalCoat(horse.paletteKey) || horse.foal) return '';
+  if (horse.kept) {
+    return `<div class="resident-keep">
+      <button class="resident-keep-btn is-kept" type="button" data-keep-toggle="off" data-horse-id="${horse.id}">🏡 Permanent resident</button>
+    </div>`;
+  }
+  if (!ctx.canKeep) return ''; // sanctuary not built yet
+  const full = ctx.keptCount >= ctx.cap;
+  return `<div class="resident-keep">
+    <button class="resident-keep-btn" type="button" data-keep-toggle="on" data-horse-id="${horse.id}"${full ? ' disabled' : ''}>🏡 Keep forever</button>
+    ${full ? `<span class="resident-keep-note">Sanctuary full (${ctx.cap})</span>` : ''}
+  </div>`;
+}
+
+function residentCardHTML(horse, ctx) {
   const portrait = horseFigureHTML(
     { name: horse.name, paletteKey: horse.paletteKey, wellbeing: 100, foal: horse.foal },
     horse.foal ? [] : horse.wardrobe,
@@ -156,7 +174,7 @@ function residentCardHTML(horse) {
     day: 'numeric', month: 'short', year: 'numeric',
   });
   return `
-<figure class="resident-card">
+<figure class="resident-card${horse.kept ? ' is-kept' : ''}">
   <div class="resident-photo">${portrait}</div>
   <figcaption class="resident-info">
     <p class="resident-name">${horse.name}${horse.sponsor ? ' <span class="resident-heart" title="Sponsored">💛</span>' : ''}</p>
@@ -166,6 +184,7 @@ function residentCardHTML(horse) {
       <div><dt>${horse.returned ? 'Returned' : 'Arrived'}</dt><dd>${arrived}</dd></div>
       <div><dt>Personality</dt><dd>${residentPersonality(horse)}</dd></div>
     </dl>
+    ${residentKeepControl(horse, ctx)}
   </figcaption>
 </figure>`;
 }
@@ -175,21 +194,29 @@ export function renderResidents(state) {
   const grid = document.getElementById('residents-grid');
   if (!grid) return;
   const horses = [...state.horses].reverse();
-  // Magical gift horses are permanent residents — never rehomed — so they get
-  // their own section apart from the rescues who are looking for homes (#89).
-  const rescues = horses.filter((h) => !isMagicalCoat(h.paletteKey));
-  const magical = horses.filter((h) => isMagicalCoat(h.paletteKey));
   if (!horses.length) {
     grid.innerHTML = '<p class="album-empty">No horses at the rescue just yet.</p>';
     return;
   }
+  // Three groups: rescues looking for homes, kept permanent residents (#83), and
+  // the magical friends who are here to stay (#89) — each apart from the others.
+  const magical = horses.filter((h) => isMagicalCoat(h.paletteKey));
+  const kept = horses.filter((h) => !isMagicalCoat(h.paletteKey) && h.kept);
+  const rescues = horses.filter((h) => !isMagicalCoat(h.paletteKey) && !h.kept);
+  const ctx = { canKeep: canKeep(state), keptCount: keptCount(state), cap: SANCTUARY_CAP };
   const groupHead = (text) => `<h3 class="residents-group">${text}</h3>`;
+  const card = (h) => residentCardHTML(h, ctx);
   const parts = [];
-  if (magical.length && rescues.length) parts.push(groupHead('Looking for homes'));
-  parts.push(...rescues.map(residentCardHTML));
+  // Only label the rescues group when there's another group to tell it apart from.
+  if (rescues.length && (kept.length || magical.length)) parts.push(groupHead('Looking for homes'));
+  parts.push(...rescues.map(card));
+  if (kept.length) {
+    parts.push(groupHead('🏡 Permanent residents'));
+    parts.push(...kept.map(card));
+  }
   if (magical.length) {
     parts.push(groupHead('✨ Magical friends, here to stay'));
-    parts.push(...magical.map(residentCardHTML));
+    parts.push(...magical.map(card));
   }
   grid.innerHTML = parts.join('');
 }

@@ -1934,6 +1934,50 @@ main {
   grid-column: 1 / -1;
 }
 
+/* "Keep forever" control (issue #83): make a horse a permanent resident. */
+.resident-keep {
+  margin-top: 0.4rem;
+  text-align: center;
+}
+.resident-keep-btn {
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #6f8f4f;
+  background: none;
+  border: 1px solid #cfdcb9;
+  border-radius: 999px;
+  padding: 0.22rem 0.55rem;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, border-color 0.15s;
+}
+.resident-keep-btn:hover:not(:disabled) {
+  background: #eef3e2;
+  border-color: #6f8f4f;
+}
+.resident-keep-btn:disabled {
+  color: #a89b83;
+  border-color: #e6dcc6;
+  cursor: default;
+}
+/* Once kept, the button reads as a badge and toggles back off on click. */
+.resident-keep-btn.is-kept {
+  color: #8a6d3b;
+  background: #f6efe0;
+  border-color: #e4d3ad;
+}
+.resident-card.is-kept {
+  border-color: #e4d3ad;
+  box-shadow: 0 3px 10px rgba(138, 109, 59, 0.16);
+}
+.resident-keep-note {
+  display: block;
+  margin-top: 0.2rem;
+  font-size: 0.66rem;
+  color: #a89b83;
+}
+
 .resident-card {
   margin: 0;
   background: #fffdf7;
