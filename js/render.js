@@ -919,8 +919,16 @@ function renderPaddock(state) {
 // top plank sits around y~18-22 in the decor space, the same rail the bunting
 // hangs from).
 const GARLAND_RAIL_Y = 22; // SVG-y the garland subject centres on (the top rail)
-function fenceGarlandImages() {
-  const garland = { aspect: 1.500, fw: 0.635, fh: 0.287, subjH: 12 }; // a touch smaller
+// The autumn/winter recolours are cropped to the solid subject (fh 1), tuned so
+// their subject renders the same size and tiles the same as the base garland.
+const GARLAND_METRICS = {
+  'flower-garland':        { aspect: 1.500, fw: 0.635, fh: 0.287, subjH: 12 },
+  'flower-garland-autumn': { aspect: 3.323, fw: 1, fh: 1, subjH: 12 },
+  'flower-garland-winter': { aspect: 3.345, fw: 1, fh: 1, subjH: 12 },
+};
+function fenceGarlandImages(seasonKey) {
+  const key = seasonalDecorKey('flower-garland', seasonKey);
+  const garland = GARLAND_METRICS[key];
   const hImg = garland.subjH / garland.fh;
   const wImg = hImg * garland.aspect;
   const y = GARLAND_RAIL_Y - hImg / 2; // subject centred on the rail
@@ -929,7 +937,7 @@ function fenceGarlandImages() {
   // Repeat from the very start of the fence (subject left edge at x=0).
   for (let cx = wImg / 2; cx < 900 + wImg; cx += spacing) {
     const x = cx - wImg / 2;
-    images.push(`<image href="assets/decor/flower-garland.png" x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${wImg.toFixed(1)}" height="${hImg.toFixed(1)}"/>`);
+    images.push(`<image href="assets/decor/${key}.png" x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${wImg.toFixed(1)}" height="${hImg.toFixed(1)}"/>`);
   }
   return images.join('');
 }
@@ -939,8 +947,16 @@ function fenceGarlandImages() {
 // In the 900x130 decor space the top rail sits at y~18 and the lower rail at
 // y~40, so the string hangs just above the top rail and the flags drape into
 // the gap below it without reaching the lower rail.
-const BUNTING_COLORS = ['#E8917A', '#8FC0E8', '#F5D949', '#A6D8A0'];
-function fenceBuntingSwags() {
+// The bunting takes on the season's palette to match the seasonal decor swaps:
+// warm and autumnal in autumn, cool blues in winter, its bright default the
+// rest of the year (issue #48).
+const BUNTING_PALETTES = {
+  default: ['#E8917A', '#8FC0E8', '#F5D949', '#A6D8A0'],
+  autumn:  ['#C0522E', '#E39B3C', '#EBC352', '#8A6D3B'],
+  winter:  ['#5E7EA8', '#8FB0D6', '#B8D0E6', '#7BA0C8'],
+};
+function fenceBuntingSwags(seasonKey) {
+  const BUNTING_COLORS = BUNTING_PALETTES[seasonKey] ?? BUNTING_PALETTES.default;
   const swagW = 130;   // one swag spans this much of the fence
   const y0 = 15;       // string endpoints, resting on the top rail
   const dip = 7;       // how far the string sags at the swag's centre
@@ -961,15 +977,19 @@ function fenceBuntingSwags() {
   return parts.join('');
 }
 
-const FENCE_DECOR_MARKUP = {
-  'flower-garland': fenceGarlandImages(),
-  bunting: fenceBuntingSwags(),
-};
+/** Fence-line decor markup for one item, in the given season (garland recolours,
+ *  bunting recolours; anything else has no fence markup). */
+function fenceDecorMarkup(id, seasonKey) {
+  if (id === 'flower-garland') return fenceGarlandImages(seasonKey);
+  if (id === 'bunting') return fenceBuntingSwags(seasonKey);
+  return '';
+}
 
 /** Draw the fence-line decor placed in the on-screen paddock. */
 function renderPaddockDecor(state, paddock) {
   const layer = document.getElementById('paddock-decor');
-  const markup = paddockDecor(state, paddock).map((id) => FENCE_DECOR_MARKUP[id] ?? '').join('');
+  const seasonKey = currentSeason(state.stats.playSeconds).key;
+  const markup = paddockDecor(state, paddock).map((id) => fenceDecorMarkup(id, seasonKey)).join('');
   layer.innerHTML = markup;
 }
 
@@ -990,6 +1010,15 @@ const GROUND_IMAGES = {
   'flower-barrow':  { aspect: 1.500, fw: 0.854, fh: 0.891, subjH: 72 },
   trough:           { aspect: 1.485, fw: 0.747, fh: 0.343, subjH: 42 },
   'hay-bales':      { aspect: 1.244, fw: 1.0, fh: 1.0, subjH: 78 },
+  // Autumn/winter recolours (issue #48): same items in seasonal palettes,
+  // cropped to the solid subject (fh 1) so they keep each base's on-screen
+  // height (subjH) and sit on the same baseline; only the width follows the art.
+  'flower-buckets-autumn': { aspect: 0.956, fw: 1, fh: 1, subjH: 70 },
+  'flower-buckets-winter': { aspect: 0.986, fw: 1, fh: 1, subjH: 70 },
+  'flower-barrow-autumn':  { aspect: 1.420, fw: 1, fh: 1, subjH: 72 },
+  'flower-barrow-winter':  { aspect: 1.441, fw: 1, fh: 1, subjH: 72 },
+  'hay-bales-autumn':      { aspect: 1.384, fw: 1, fh: 1, subjH: 78 },
+  'hay-bales-winter':      { aspect: 1.413, fw: 1, fh: 1, subjH: 78 },
   'play-balls':     { aspect: 1.487, fw: 1.0, fh: 1.0, subjH: 52 },
   muffin:           { aspect: 1.500, fw: 0.502, fh: 0.541, subjH: 66 },
   joya:             { aspect: 1.500, fw: 0.581, fh: 0.645, subjH: 78 },
@@ -1002,13 +1031,24 @@ const GROUND_IMAGES = {
   'statue-gold':    { aspect: 1.0, fw: 0.783, fh: 0.909, subjH: 84 },
 };
 
-function groundImage(id, cx) {
-  const p = GROUND_IMAGES[id];
+// A few decor pieces have autumn/winter recolours (flower buckets/barrow/hay
+// bales, and the fence garland). In those seasons the image silently swaps to
+// its seasonal variant; spring and summer keep the vibrant base art. It's a
+// free, purely cosmetic swap — the item, its cost and its effect are unchanged.
+const SEASONAL_DECOR = new Set(['flower-buckets', 'flower-barrow', 'hay-bales', 'flower-garland']);
+function seasonalDecorKey(id, seasonKey) {
+  return (SEASONAL_DECOR.has(id) && (seasonKey === 'autumn' || seasonKey === 'winter'))
+    ? `${id}-${seasonKey}` : id;
+}
+
+function groundImage(id, cx, seasonKey) {
+  const key = seasonalDecorKey(id, seasonKey);
+  const p = GROUND_IMAGES[key];
   const hImg = p.subjH / p.fh;
   const wImg = hImg * p.aspect;
   const x = cx - wImg / 2;
   const y = (GROUND_BASELINE - p.subjH / 2) - hImg / 2;
-  return `<image href="assets/decor/${id}.png" x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${wImg.toFixed(1)}" height="${hImg.toFixed(1)}"/>`;
+  return `<image href="assets/decor/${key}.png" x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${wImg.toFixed(1)}" height="${hImg.toFixed(1)}"/>`;
 }
 
 /** Build the ground-props row for one paddock. Always present (even empty) so
@@ -1018,6 +1058,7 @@ function groundImage(id, cx) {
  *  round-robin so every view feels dressed. Fence decor (garland/bunting) and
  *  butterflies are drawn elsewhere. */
 function groundDecorRow(state, paddock, view = 0, viewCount = 1) {
+  const seasonKey = currentSeason(state.stats.playSeconds).key;
   const props = paddockDecor(state, paddock)
     .filter((id) => GROUND_IMAGES[id])
     .filter((_, i) => i % viewCount === view);
@@ -1029,7 +1070,7 @@ function groundDecorRow(state, paddock, view = 0, viewCount = 1) {
   const slot = 900 / PADDOCK_CAP;
   const vbw = viewCap() * slot;
   const images = props
-    .map((id, i) => groundImage(id, (vbw * (i + 1)) / (props.length + 1)))
+    .map((id, i) => groundImage(id, (vbw * (i + 1)) / (props.length + 1), seasonKey))
     .join('');
   const row = document.createElement('div');
   row.className = 'ground-decor';

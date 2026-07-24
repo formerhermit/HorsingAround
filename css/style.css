@@ -543,28 +543,17 @@ main {
   animation: season-drift 8s ease-in-out .9s infinite;
 }
 
-/* Winter — a mild, wet Andalusian winter: longer rain streaks drifting down
-   through a cool grey-blue wash (no snow at this elevation, the pasture stays
-   green), with puddles pooled along the bottom (on the base layer). */
+/* Winter — a mild, wet Andalusian winter: a cool grey-blue wash (no snow at
+   this elevation, the pasture stays green) with puddles pooled along the
+   bottom. The rain streaks read poorly against the grass, so it's the puddles
+   that carry the "wet" — one broad and wide, a couple smaller. */
 .paddock.season-winter .paddock-weather {
   background:
     radial-gradient(130% 95% at 50% 0%, rgba(150,178,208,.22), transparent 64%),
     var(--puddle), var(--puddle), var(--puddle);
   background-repeat: no-repeat;
-  background-size: auto, 42px 15px, 32px 12px, 38px 14px;
-  background-position: 0 0, 16% 98%, 54% 99%, 86% 96%;
-}
-.paddock.season-winter .paddock-weather::before {
-  background-image: var(--raindrop), var(--raindrop), var(--raindrop), var(--raindrop);
-  background-size: 7px 18px, 6px 15px, 7px 18px, 6px 15px;
-  background-position: 12% 14%, 38% 24%, 62% 12%, 88% 22%;
-  animation: season-drift 3.4s ease-in-out infinite;
-}
-.paddock.season-winter .paddock-weather::after {
-  background-image: var(--raindrop), var(--raindrop), var(--raindrop);
-  background-size: 7px 18px, 6px 15px, 7px 18px;
-  background-position: 25% 40%, 66% 44%, 92% 34%;
-  animation: season-drift 4.2s ease-in-out .5s infinite;
+  background-size: auto, 78px 22px, 34px 13px, 40px 15px;
+  background-position: 0 0, 22% 98%, 60% 99%, 87% 96%;
 }
 
 /* Nothing blooms in winter: the Meadow's wildflowers and butterflies and the
