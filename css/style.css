@@ -1872,6 +1872,22 @@ main {
   gap: 0.7rem;
 }
 
+/* Section heading (e.g. magical friends), spanning the whole grid row. */
+.residents-group {
+  grid-column: 1 / -1;
+  margin: 0.5rem 0 0;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #8a7d68;
+}
+.residents-group:first-child {
+  margin-top: 0;
+}
+
+#residents-grid .album-empty {
+  grid-column: 1 / -1;
+}
+
 .resident-card {
   margin: 0;
   background: #fffdf7;
