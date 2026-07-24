@@ -65,6 +65,7 @@ export function createHorse({
     bornHere,
     foalTraitRevealed,
     ageYears,
+    returned: false,   // set true when a rehomed horse comes home (issue #35)
     arrivedAt: Date.now(),
     lastCaredAt: Date.now(), // last care tap; drives the gentle-upkeep drift (game.js)
   };
@@ -298,6 +299,7 @@ function repair(save) {
     // one; everyone else gets a believable 3–20 assigned once, then persisted.
     horse.ageYears ??= horse.foal ? 0 : 3 + Math.floor(Math.random() * 18);
     horse.arrivedAt ??= Date.now();
+    horse.returned ??= false; // came back after an adoption (issue #35)
     // Joya is now reserved for the dog decor item; rename any horse
     if (horse.name === 'Joya') horse.name = 'Billy';
     if (horse.name === 'Pantoja 2' || horse.name === 'Panjota 2') horse.name = 'Binky';
@@ -340,6 +342,8 @@ function repair(save) {
   save.stats.foalsBorn ??= 0;
   save.stats.foalsGrown ??= 0;
   save.stats.homegrownRehomed ??= 0;
+  save.stats.horsesReturned ??= 0;   // adoptions that came home again (issue #35)
+  save.stats.returnedRehomed ??= 0;  // ...and then found a new forever home
   save.stats.traitsSeen ??= [...new Set((save.horses ?? []).map((h) => h.trait).filter(Boolean))];
   // The monthly leaderboard is opt-in and new; existing saves start off it.
   // Unlike the other backfilled nudges, the leaderboard one stays *on* for

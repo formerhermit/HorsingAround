@@ -573,10 +573,13 @@ function billPaidToast(res) {
 /** Turn one event into either a toast or a queued modal dialog. */
 function handleEvent(e) {
   if (e.type === 'rehome-offer') {
-    // A home-raised horse (grew up here from a foal) gets a fonder send-off.
-    const text = e.bornHere
-      ? `${e.horseName} was born and raised right here, and is ready for a home of their own. Agree to adoption for ${fig(`€${e.income}`)}?`
-      : `${e.horseName} is ready for rehoming. Agree to adoption for ${fig(`€${e.income}`)}?`;
+    // A home-raised horse (grew up here from a foal) gets a fonder send-off,
+    // and a returned horse's second try gets its own hopeful note.
+    const text = e.returned
+      ? `${e.horseName} came back to you once, and now a lovely new family is ready. Agree to adoption for ${fig(`€${e.income}`)}?`
+      : e.bornHere
+        ? `${e.horseName} was born and raised right here, and is ready for a home of their own. Agree to adoption for ${fig(`€${e.income}`)}?`
+        : `${e.horseName} is ready for rehoming. Agree to adoption for ${fig(`€${e.income}`)}?`;
     enqueueDialog({
       emoji: '🏡',
       text,
@@ -723,6 +726,16 @@ function handleEvent(e) {
     showSupporterPop(e.count); // subtle chip pop, not a toast
   } else if (e.type === 'supporter-milestone') {
     showToast(`🎉 ${e.count} people now follow the rescue 💛`);
+  } else if (e.type === 'horse-returned') {
+    // A rehomed horse comes home (issue #35). Show them back in the paddock
+    // first, then the story card: life happened, nobody failed, welcome home.
+    resetPaddockView();
+    renderAll(state);
+    enqueueDialog({
+      emoji: '', image: 'assets/events/returned.jpg', share: true,
+      text: `${fig(e.name)} is coming home: ${e.reason}. So the stable is theirs again, remembered and loved, and a little fussing will have them settled in no time 💛`,
+      buttons: [{ label: 'Welcome home 💛', variant: 'primary' }],
+    });
   } else if (e.type === 'foal-grown') {
     // The foal has grown up into an adult coat: show the change, then a warm,
     // share-worthy popup. It's now adoptable like any horse.
