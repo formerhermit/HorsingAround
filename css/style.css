@@ -977,6 +977,34 @@ main {
 
 /* A little signpost rather than a floating UI chip -- same flat solid-fill
    language as the horses and buttons (no gradients, strokes or shadows). */
+/* Season badge (issue #96): a small ambient pill, top-left, opposite the
+   wooden paddock sign, so the current game season reads at a glance. */
+.season-badge {
+  position: absolute;
+  top: 14px;
+  left: 18px;
+  z-index: 15;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: rgba(255, 253, 247, 0.92);
+  border: 1px solid rgba(61, 52, 40, 0.1);
+  border-radius: 999px;
+  padding: 0.22rem 0.62rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #5c5344;
+  box-shadow: 0 1px 3px rgba(61, 52, 40, 0.12);
+  pointer-events: none;
+}
+.season-badge[hidden] {
+  display: none;
+}
+.season-badge span {
+  font-size: 0.95rem;
+  line-height: 1;
+}
+
 .paddock-label {
   position: absolute;
   top: 14px;
