@@ -473,8 +473,9 @@ export function renderShopModal(state) {
 
   // --- wardrobe: choose a horse, then dress them ---
   // Magical gift horses (unicorn, rainbow, golden) are guests, not rescues --
-  // they don't get dressed up, so they never appear as a target here.
-  const horses = state.horses.filter((h) => !isMagicalCoat(h.paletteKey));
+  // they don't get dressed up, so they never appear as a target here. Nor do
+  // foals, until they've grown up (the costume anchors are tuned to adults).
+  const horses = state.horses.filter((h) => !isMagicalCoat(h.paletteKey) && !h.foal);
   if (!horses.some((h) => h.id === shopHorseTarget)) {
     shopHorseTarget = horses[horses.length - 1]?.id ?? null; // default: newest arrival
   }

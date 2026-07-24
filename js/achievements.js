@@ -25,9 +25,11 @@ const OUTFIT_SLOTS = [
   ['ear-flower', 'forelock-bow'],
 ];
 
-/** The home-paddock horses (newest PADDOCK_CAP rescues, magical ones aside). */
+/** The home-paddock horses (newest PADDOCK_CAP rescues, magical ones aside).
+ *  Foals are skipped: they can't be dressed until grown, so the "best dressed"
+ *  badge shouldn't wait on one. */
 function homePaddockHorses(state) {
-  return state.horses.filter((h) => !isMagicalCoat(h.paletteKey)).slice(-PADDOCK_CAP);
+  return state.horses.filter((h) => !isMagicalCoat(h.paletteKey) && !h.foal).slice(-PADDOCK_CAP);
 }
 
 function horseFullyDressed(horse) {

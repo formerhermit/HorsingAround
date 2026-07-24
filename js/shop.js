@@ -330,9 +330,10 @@ export function horseHasItem(horse, itemId) {
 }
 
 /** Horses this wardrobe item can still be bought for: they don't already own it,
- *  and aren't wearing its exclusive-group rival. */
+ *  and aren't wearing its exclusive-group rival. Foals can't be dressed until
+ *  they've grown up (the costume anchors are tuned to adult coats). */
 export function eligibleHorses(item, state) {
-  return state.horses.filter((h) => !horseHasItem(h, item.id) && !horseExclusiveRival(item, h));
+  return state.horses.filter((h) => !h.foal && !horseHasItem(h, item.id) && !horseExclusiveRival(item, h));
 }
 
 // Clothing is per-horse: you may buy one of each item for every horse (still
@@ -340,7 +341,7 @@ export function eligibleHorses(item, state) {
 // so there's no canOwnMore cap here -- just "this horse doesn't have it yet".
 export function canBuyWardrobeFor(item, horse, state) {
   return item.category === 'wardrobe' && isUnlocked(item, state) && isAffordable(item, state)
-    && !horseHasItem(horse, item.id) && !horseExclusiveRival(item, horse);
+    && !horse.foal && !horseHasItem(horse, item.id) && !horseExclusiveRival(item, horse);
 }
 
 export function buyWardrobe(itemId, horseId, state) {
@@ -356,7 +357,7 @@ export function buyWardrobe(itemId, horseId, state) {
 export function placeWardrobe(itemId, horseId, state) {
   const item = SHOP_ITEMS.find((i) => i.id === itemId && i.category === 'wardrobe');
   const horse = state.horses.find((h) => h.id === horseId);
-  if (!item || !horse || stockCount(itemId, state) < 1) return { ok: false, item: null };
+  if (!item || !horse || horse.foal || stockCount(itemId, state) < 1) return { ok: false, item: null };
   if (horseHasItem(horse, item.id) || horseExclusiveRival(item, horse)) return { ok: false, item: null };
   takeFromStock(itemId, state);
   horse.wardrobe.push(item.id);
