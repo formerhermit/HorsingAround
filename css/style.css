@@ -1392,6 +1392,50 @@ main {
   margin: 0;
 }
 
+/* "Build a new paddock": a full-width call to action under the decor head, so a
+   paddock can be built (even empty) whenever one is unlocked. */
+.shop-build-paddock:empty {
+  display: none;
+}
+
+.shop-build-paddock {
+  margin: 0 0 0.6rem;
+  padding: 0.6rem 0.75rem;
+  background: #f4f8ec;
+  border: 1px solid #dbe6c6;
+  border-radius: 12px;
+  text-align: center;
+}
+
+.build-paddock-btn {
+  font: inherit;
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: #fffdf7;
+  background: #6f8f4f;
+  border: none;
+  border-radius: 999px;
+  padding: 0.45rem 1rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.build-paddock-btn:hover:not(:disabled) {
+  background: #5f7d42;
+}
+
+.build-paddock-btn:disabled {
+  background: #dcd3bf;
+  color: #a89b83;
+  cursor: default;
+}
+
+.build-paddock-note {
+  margin: 0.4rem 0 0;
+  font-size: 0.75rem;
+  color: #8a7d68;
+}
+
 .shop-target-inner {
   display: flex;
   align-items: center;
