@@ -549,6 +549,7 @@ export function acceptRehome() {
   const [horse] = gameState.horses.splice(idx, 1);
   gameState.coins += income;
   gameState.stats.horsesRehomed += 1;
+  if (horse.bornHere) gameState.stats.homegrownRehomed = (gameState.stats.homegrownRehomed ?? 0) + 1;
   // The horse goes to its new home, but its clothes stay: anything it was
   // wearing comes off into the stores to re-use on another horse.
   const leftBehind = horse.wardrobe.length > 0;
@@ -860,6 +861,26 @@ const FOAL_SUPPORTERS_MIN = 4;
 const FOAL_SUPPORTERS_MAX = 7;
 const FOAL_GLOW = 120;             // seconds the new-foal buzz turns extra heads
 
+// A foal born at the rescue is a real horse in the herd that grows up over
+// active play (stats.playSeconds, the same clock seasons use): small and happy
+// at birth, a personality showing halfway, and grown-and-adoptable at the end.
+const FOAL_GROW_SECONDS = 8 * 60;  // active-play seconds a foal takes to grow up
+const FOAL_REVEAL_AT = 0.5;        // growth fraction at which its personality shows
+const FOAL_START_SCALE = 0.5;      // on-screen size (vs a grown horse) at birth
+const FOAL_WELLBEING = 88;         // foals arrive thriving and never droop
+// Foals draw a playful personality from this curated slice of the quirk pool
+// (never a fear). Filtered to real QUIRK_TRAITS so the badge catalog stays in
+// step even if a trait's wording changes; falls back to any quirk if empty.
+const FOAL_QUIRK_POOL = [
+  'obsessed with the hose',
+  'a dedicated shoelace-nibbler',
+  'an enthusiastic napper',
+  'ticklish behind the ears',
+  'convinced apples grow specifically for them',
+  'prone to falling asleep on your foot',
+  'a shameless attention hog',
+].filter((t) => QUIRK_TRAITS.includes(t));
+
 // Each bill's fee scales with the rescue's stage (via the next rescue's cost),
 // so it stays felt-but-friendly from a three-horse paddock to a full rescue.
 export const BILLS = {
@@ -1013,6 +1034,7 @@ export function acceptBill(now = Date.now()) {
   if (kind === 'vet' && variant === 'worming') st.wormings = (st.wormings ?? 0) + 1;
   const horse = gameState.horses.find((h) => h.id === horseId) ?? null;
   let supporters = 0;
+  let foalBorn = null;
   if (kind === 'vet' || kind === 'farrier') {
     if (horse) {
       horse.wellbeing = WELLBEING_MAX;
@@ -1039,6 +1061,10 @@ export function acceptBill(now = Date.now()) {
     gameState.supporters += supporters;
     gameState.stats.foalsBorn = (gameState.stats.foalsBorn ?? 0) + 1;
     glowUntil = now + FOAL_GLOW * 1000;
+    // ...and, new for #48, an actual foal joins the herd: born to the mare the
+    // bill named, happy and healthy, small for now. It grows up over play
+    // (updateFoals) and takes a slot like any horse until it's rehomed.
+    foalBorn = spawnFoal(horse, now);
   } else if (kind === 'mechanic') {
     supporters = MECHANIC_SUPPORTERS;
     gameState.supporters += MECHANIC_SUPPORTERS;
@@ -1051,7 +1077,75 @@ export function acceptBill(now = Date.now()) {
       dueAt: now + randomBetween(ARTICLE_DELAY_MIN, ARTICLE_DELAY_MAX) * 1000,
     };
   }
-  return { ok: true, kind, fee, horse, supporters };
+  return { ok: true, kind, fee, horse, supporters, foal: foalBorn, damName: foalBorn?.damName ?? null };
+}
+
+/** Bring a foal into the herd, born to `dam` (the mare the bill named). Arrives
+ *  small, happy and healthy, with a hidden playful personality; grows up over
+ *  active play (updateFoals). Returns the new foal. */
+function spawnFoal(dam, now = Date.now()) {
+  const herd = gameState.horses;
+  const name = randomUnused(HORSE_NAMES, herd.map((h) => h.name));
+  const pool = FOAL_QUIRK_POOL.length ? FOAL_QUIRK_POOL : QUIRK_TRAITS;
+  const trait = randomUnused(pool, herd.map((h) => h.trait).filter(Boolean));
+  const foal = createHorse({
+    id: `foal-${herd.length + 1}-${now.toString(36)}`,
+    name,
+    paletteKey: 'foal',
+    wellbeing: FOAL_WELLBEING,
+    rescueOrder: herd.length + 1,
+    trait,
+    foal: true,
+    bornAtPlay: gameState.stats.playSeconds,
+    damName: dam?.name ?? null,
+    bornHere: true,
+  });
+  herd.push(foal);
+  return foal;
+}
+
+/** Growth fraction of a foal, 0 (newborn) → 1 (grown), from active play time.
+ *  Returns 1 for any horse that isn't a foal. */
+export function foalGrowth(horse, state = gameState) {
+  if (!horse.foal) return 1;
+  const born = horse.bornAtPlay ?? state.stats.playSeconds;
+  return Math.max(0, Math.min(1, (state.stats.playSeconds - born) / FOAL_GROW_SECONDS));
+}
+
+/** On-screen size of a horse relative to a grown one: a foal starts small and
+ *  scales up as it grows; every other horse is 1. Read by render.js. */
+export function foalSizeFactor(horse, state = gameState) {
+  if (!horse.foal) return 1;
+  return FOAL_START_SCALE + (1 - FOAL_START_SCALE) * foalGrowth(horse, state);
+}
+
+/** Advance every foal's growth: a personality-showing beat at the halfway mark,
+ *  and growing up into an adult horse (a real, collectable coat) at the end. */
+function updateFoals(events) {
+  for (const horse of gameState.horses) {
+    if (!horse.foal) continue;
+    const growth = foalGrowth(horse);
+    if (!horse.foalTraitRevealed && growth >= FOAL_REVEAL_AT) {
+      horse.foalTraitRevealed = true;
+      recordTraitSeen(horse.trait);
+      gameState.stats.traitsRevealed = (gameState.stats.traitsRevealed ?? 0) + 1;
+      const near = horse.damName ? `, never far from ${horse.damName},` : '';
+      events.push({
+        type: 'foal-growing',
+        message: `${horse.name}${near} is all legs and mischief now: turns out ${horse.name} is ${horse.trait} 🐴`,
+      });
+    }
+    if (growth >= 1) {
+      horse.foal = false;
+      const coat = pickRescueCoat();
+      horse.paletteKey = coat;
+      horse.wellbeing = WELLBEING_MAX; // grown and thriving, ready for a home
+      horse.lastCaredAt = Date.now();
+      gameState.stats.foalsGrown = (gameState.stats.foalsGrown ?? 0) + 1;
+      const newForCollection = collectCoat(coat);
+      events.push({ type: 'foal-grown', name: horse.name, coat, damName: horse.damName, newForCollection });
+    }
+  }
 }
 
 /** Decline the pending bill. Always safe: nothing happens to any horse, the
@@ -1233,6 +1327,7 @@ export function tick(dt) {
   // investment rather than just more work. Checked here (not on the care
   // click) so it also catches horses that are already thriving.
   for (const horse of gameState.horses) {
+    if (horse.foal) continue; // a foal earns its sponsor once it's grown
     const sponsorThreshold = horse.rescueOrder === 1 ? FIRST_SPONSOR_AT : SPONSOR_AT;
     if (!horse.sponsor && horse.wellbeing >= sponsorThreshold) {
       horse.sponsor = randomFrom(SUPPORTER_NAMES);
@@ -1313,6 +1408,7 @@ export function tick(dt) {
   }
 
   updateDrift(dt, Date.now(), events); // the gentle-upkeep ease-down
+  updateFoals(events); // foals grow up over play (issue #48)
   maybeOfferRehome(dt, events);
   checkMilestones(events);
   updateWants(dt, Date.now()); // the little-needs cycle (bubbles drawn by main)
@@ -1326,6 +1422,7 @@ export function tick(dt) {
  *  out of "thriving", so the mechanic explains itself the moment it shows. */
 function updateDrift(dt, now, events) {
   for (const horse of gameState.horses) {
+    if (horse.foal) continue; // foals are doted on and never droop
     if (isMagicalCoat(horse.paletteKey) || horse.wellbeing <= DRIFT_FLOOR) continue;
     horse.lastCaredAt ??= now; // self-heal a save that predates the field
     // The hay barn keeps a well-fed herd steady longer (issue #48).
@@ -1349,13 +1446,13 @@ function maybeOfferRehome(dt, events) {
   rehomeCountdown -= dt;
   if (rehomeCountdown > 0) return;
   rehomeCountdown = randomBetween(REHOME_GAP_MIN, REHOME_GAP_MAX);
-  // Magical gift horses are permanent residents, never offered for rehoming.
-  const thriving = gameState.horses.filter((h) => h.wellbeing >= THRIVING_AT && !isMagicalCoat(h.paletteKey));
+  // Magical gift horses are permanent residents; foals aren't grown yet.
+  const thriving = gameState.horses.filter((h) => h.wellbeing >= THRIVING_AT && !isMagicalCoat(h.paletteKey) && !h.foal);
   if (!thriving.length) return; // no one ready; try again next interval
   const horse = randomFrom(thriving);
   const income = rehomeIncome();
   pendingRehome = { horseId: horse.id, income };
-  events.push({ type: 'rehome-offer', horseName: horse.name, income });
+  events.push({ type: 'rehome-offer', horseName: horse.name, income, bornHere: horse.bornHere });
 }
 
 /** Player-initiated rehoming: ask around for a forever home right now (the
@@ -1364,12 +1461,12 @@ function maybeOfferRehome(dt, events) {
  *  process, or null if no horse can be spared / one is already on offer. */
 export function requestRehome() {
   if (pendingRehome || gameState.horses.length <= REHOME_MIN_HERD) return null;
-  const thriving = gameState.horses.filter((h) => h.wellbeing >= THRIVING_AT && !isMagicalCoat(h.paletteKey));
+  const thriving = gameState.horses.filter((h) => h.wellbeing >= THRIVING_AT && !isMagicalCoat(h.paletteKey) && !h.foal);
   if (!thriving.length) return null;
   const horse = randomFrom(thriving);
   const income = rehomeIncome();
   pendingRehome = { horseId: horse.id, income };
-  return { type: 'rehome-offer', horseName: horse.name, income };
+  return { type: 'rehome-offer', horseName: horse.name, income, bornHere: horse.bornHere };
 }
 
 /** Reward + donate milestones for the rescue and rehome counters. Bonuses land

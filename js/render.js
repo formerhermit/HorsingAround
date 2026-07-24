@@ -1,7 +1,7 @@
 // render.js — turns gameState into DOM. No game logic lives here.
 
 import { horseFigureHTML, horseImageSrc, wellbeingLabel, wellbeingColor, isShinyCoat, isMagicalCoat, COAT_CATALOG } from './horse.js';
-import { rescuePrice, shareValue, shareCharge, SHARE_READY_AT, FRONT_ROW, getActiveWant } from './game.js';
+import { rescuePrice, shareValue, shareCharge, SHARE_READY_AT, FRONT_ROW, getActiveWant, foalSizeFactor, foalGrowth } from './game.js';
 import { ACHIEVEMENTS, ACHIEVEMENT_GROUPS, isEarned } from './achievements.js';
 import { FACILITIES, hasFacility, nextFacility, canBuyFacility } from './facilities.js';
 import { currentSeason, SEASON_CLASSES } from './seasons.js';
@@ -683,13 +683,14 @@ function renderPaddock(state) {
 
   const backRow = document.createElement('div');
   backRow.className = 'horses-back';
-  back.forEach((h) => backRow.append(horseCard(h, BACK_SCALE, true, h.wardrobe)));
+  // A foal renders smaller than a grown horse, scaling up as it grows (#48).
+  back.forEach((h) => backRow.append(horseCard(h, BACK_SCALE * foalSizeFactor(h, state), true, h.wardrobe)));
 
   const frontRow = document.createElement('div');
   frontRow.className = 'horses-front';
   front.forEach((h, i) => {
     const rank = front.length - 1 - i; // 0 = newest
-    frontRow.append(horseCard(h, FRONT_SCALES[rank] ?? BACK_SCALE, false, h.wardrobe));
+    frontRow.append(horseCard(h, (FRONT_SCALES[rank] ?? BACK_SCALE) * foalSizeFactor(h, state), false, h.wardrobe));
   });
   if (!chunk.length) {
     // An empty paddock (freshly built, or every horse rehomed) still reserves
@@ -908,9 +909,17 @@ function seasonOverlay(state, isMagic) {
 // (that was dropped from the cards long ago -- just name + status). Traits still
 // drive everything else: the arrival/reveal/breakthrough toasts, quirk care
 // moments, want bias, postcards, and the "all 29 personalities" badge.
+/** A foal's status line, by how grown it is (grown horses use wellbeingLabel). */
+function foalConditionLabel(horse) {
+  const g = foalGrowth(horse);
+  if (g < 0.34) return 'a wobbly new foal';
+  if (g < 0.67) return 'growing fast';
+  return 'nearly grown';
+}
+
 function horseCard(horse, scale = 1, isBack = false, wardrobe = []) {
   const card = document.createElement('div');
-  card.className = `horse${isBack ? ' is-back' : ''}${isShinyCoat(horse) ? ' is-shiny' : ''}`;
+  card.className = `horse${isBack ? ' is-back' : ''}${isShinyCoat(horse) ? ' is-shiny' : ''}${horse.foal ? ' is-foal' : ''}`;
   // Width and text both key off --horse-unit (a viewport-responsive length, see
   // CSS) so the whole scene shrinks to fit shorter screens instead of pushing
   // the buttons off the bottom. 70vw keeps a lone big horse off the edges.
@@ -925,7 +934,7 @@ function horseCard(horse, scale = 1, isBack = false, wardrobe = []) {
   card.innerHTML = `
     ${horseFigureHTML(horse, wardrobe)}
     <p class="horse-name">${horse.name}</p>
-    <p class="horse-condition">${wellbeingLabel(horse.wellbeing)}</p>
+    <p class="horse-condition">${horse.foal ? foalConditionLabel(horse) : wellbeingLabel(horse.wellbeing)}</p>
     <p class="horse-sponsor${horse.sponsor ? ' shown' : ''}">${horse.sponsor ? `sponsored by ${horse.sponsor} 💛` : ''}</p>
     <div class="wellbeing" role="meter" aria-label="${horse.name}'s wellbeing"
          aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(horse.wellbeing)}">

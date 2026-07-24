@@ -38,6 +38,11 @@ export function createHorse({
   wardrobe = [],       // shop.js wardrobe item ids bought for this horse specifically
   facing = Math.random() < 0.5 ? 'left' : 'right', // fixed at arrival, purely visual
   sizeJitter = 0.92 + Math.random() * 0.16,        // 0.92–1.08, breaks up row uniformity
+  foal = false,          // a foal born at the rescue: renders small and grows up (game.js)
+  bornAtPlay = null,     // stats.playSeconds at birth; drives the growth clock
+  damName = null,        // the mare it was born to, for the story beats
+  bornHere = false,      // stays true after growing up: marks a home-raised horse
+  foalTraitRevealed = false, // whether the mid-growth personality beat has fired
 }) {
   return {
     id,
@@ -53,6 +58,11 @@ export function createHorse({
     wardrobe,
     facing,
     sizeJitter,
+    foal,
+    bornAtPlay,
+    damName,
+    bornHere,
+    foalTraitRevealed,
     arrivedAt: Date.now(),
     lastCaredAt: Date.now(), // last care tap; drives the gentle-upkeep drift (game.js)
   };
@@ -178,6 +188,8 @@ export function defaultState() {
       visitorsDaysRun: 0,// Visitors Days held
       reunionsHeld: 0,   // Reunion Days held
       foalsBorn: 0,      // foals welcomed into the rescue
+      foalsGrown: 0,     // foals that have grown up into adult horses
+      homegrownRehomed: 0, // home-raised horses sent to a forever home (badge)
       playSeconds: 0,    // active play time, summed from the sim tick's clamped dt
       startedAt: Date.now(), // when this rescue began (for "caring since ...")
     },
@@ -271,6 +283,14 @@ function repair(save) {
     // the threshold did its overcoming off-screen, so mark it quietly rather
     // than greeting a returning player with a flood of retroactive beats.
     horse.fearOvercome ??= isFearTrait(horse.trait) && horse.wellbeing >= FEAR_OVERCOME_AT;
+    // Foals are new (issue #48): existing horses were never foals and aren't
+    // home-raised. bornAtPlay/damName/foalTraitRevealed only matter to a live
+    // foal, but backfill them so nothing reads undefined.
+    horse.foal ??= false;
+    horse.bornHere ??= false;
+    horse.bornAtPlay ??= null;
+    horse.damName ??= null;
+    horse.foalTraitRevealed ??= false;
     // Joya is now reserved for the dog decor item; rename any horse
     if (horse.name === 'Joya') horse.name = 'Billy';
     if (horse.name === 'Pantoja 2' || horse.name === 'Panjota 2') horse.name = 'Binky';
@@ -308,6 +328,8 @@ function repair(save) {
   save.stats.visitorsDaysRun ??= 0;
   save.stats.reunionsHeld ??= 0;
   save.stats.foalsBorn ??= 0;
+  save.stats.foalsGrown ??= 0;
+  save.stats.homegrownRehomed ??= 0;
   save.stats.traitsSeen ??= [...new Set((save.horses ?? []).map((h) => h.trait).filter(Boolean))];
   // The monthly leaderboard is opt-in and new; existing saves start off it.
   // Unlike the other backfilled nudges, the leaderboard one stays *on* for
