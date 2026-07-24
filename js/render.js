@@ -1047,6 +1047,8 @@ const GROUND_IMAGES = {
   'hay-bales-autumn':      { aspect: 1.384, fw: 1, fh: 1, subjH: 78 },
   'hay-bales-winter':      { aspect: 1.413, fw: 1, fh: 1, subjH: 78 },
   'play-balls':     { aspect: 1.487, fw: 1.0, fh: 1.0, subjH: 52 },
+  'play-balls-autumn': { aspect: 1.412, fw: 1, fh: 1, subjH: 52 },
+  'play-balls-winter': { aspect: 1.399, fw: 1, fh: 1, subjH: 52 },
   muffin:           { aspect: 1.500, fw: 0.502, fh: 0.541, subjH: 66 },
   joya:             { aspect: 1.500, fw: 0.581, fh: 0.645, subjH: 78 },
   marmalade:        { aspect: 1.465, fw: 0.509, fh: 0.532, subjH: 48 },
@@ -1059,10 +1061,12 @@ const GROUND_IMAGES = {
 };
 
 // A few decor pieces have autumn/winter recolours (flower buckets/barrow/hay
-// bales, and the fence garland). In those seasons the image silently swaps to
-// its seasonal variant; spring and summer keep the vibrant base art. It's a
-// free, purely cosmetic swap — the item, its cost and its effect are unchanged.
-const SEASONAL_DECOR = new Set(['flower-buckets', 'flower-barrow', 'hay-bales', 'flower-garland']);
+// bales, the play balls, and the fence garland). In those seasons the image
+// silently swaps to its seasonal variant; spring and summer keep the vibrant
+// base art. It's a free, purely cosmetic swap — the item, its cost and its
+// effect are unchanged. (The butterflies swap too, but they're a CSS layer, so
+// their seasonal art lives in the stylesheet rather than here.)
+const SEASONAL_DECOR = new Set(['flower-buckets', 'flower-barrow', 'hay-bales', 'flower-garland', 'play-balls']);
 function seasonalDecorKey(id, seasonKey) {
   return (SEASONAL_DECOR.has(id) && (seasonKey === 'autumn' || seasonKey === 'winter'))
     ? `${id}-${seasonKey}` : id;
