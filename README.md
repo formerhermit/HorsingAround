@@ -72,18 +72,21 @@ Every so often, a thriving horse is ready for a forever home. You'll get an offe
 
 When the rescue is full you don't have to wait for an offer: the full-paddocks popup lets you **ask around for a forever home** there and then.
 
+Sometimes, though, an adoption doesn't hold: a family moves abroad, or life takes a hard turn. It's never the horse's fault, and never a penalty: the horse simply comes home for a while, remembered by name, keeping everything it learned (a fear once overcome stays overcome), until the right new family comes along. Welcoming one back earns **Home again**, and seeing a returned horse off to its true forever home earns **Second time lucky**.
+
 ### The shop
 
-Spend your funds on nice things.
+The **Tack room** is organised into three tabs:
 
 - **Wardrobe**: winter rugs, boots, flowers and bows for a chosen horse. A dressed-up horse turns more heads, so it attracts supporters faster.
-- **Paddock decor**: bunting, flower buckets, hay bales, a water trough, even a dog or a cat. Decor makes every "share an update" worth more.
+- **Paddock decor**: bunting, flower buckets, hay bales, a water trough, even a dog or a cat. Decor makes every "share an update" worth more. **Keepsakes** — the little statues rehomed horses send back as gifts — sit in their own section here: earned, never bought, and yours to place wherever you like.
+- **Expansions**: the big, lasting investments — building a new paddock, and the *Grow the rescue* ladder (below).
 
 Each paddock gets its own decorations — the magical paddock included — up to a tidy limit. Some choices are one or the other: flower garland *or* bunting, an ear flower *or* a forelock bow. The dog and cat are the big splurges, for when the rescue's really thriving.
 
 ### Grow the rescue
 
-Once your rescue is well established, a new part of the Tack room opens up: **Grow the rescue**, a ladder of big, permanent upgrades to the rescue itself. These are the grandest goals a thriving rescue can save up for, and each one quietly makes running the place easier:
+Once your rescue is well established, the Tack room's **Expansions** tab gains **Grow the rescue**: a ladder of big, permanent upgrades to the rescue itself. These are the grandest goals a thriving rescue can save up for, and each one quietly makes running the place easier:
 
 - **Vet station** — vet and farrier bills cost less.
 - **Hay barn** — hay bills cost less, and a well-fed herd holds its shine longer.
@@ -94,6 +97,12 @@ Once your rescue is well established, a new part of the Tack room opens up: **Gr
 
 They're bought in order and priced to be a long chase, tens of thousands for the first, millions for the last, so there's always something to reach for. Most of the benefits are gentle savings rather than a money fountain, so the rescue grows without ever running away with itself.
 
+### Seasons
+
+The rescue lives through a game-time year that turns as you play: spring, summer, autumn, then winter, a fresh season roughly every ten minutes. A little badge up top tells you where you are (🌸 ☀️ 🍂 🌧️), and the paddock dresses for the weather: lush and blossoming in spring, parched and golden through the dry Andalusian summer, leaf-strewn in autumn, and green but rainy in winter (no snow at this elevation, and the flowers sit the cold out). The magical paddock stays magical all year round.
+
+The season quietly flavours paddock life too: summer is high season for Visitors Days and the parched troughs need refilling more often, spring brings more foals, autumn lays in the hay, and the wet winter leans on the bills a well-grown rescue can shrug off. Play through all four seasons and you'll earn the **Round the year** badge.
+
 ### Paddock life
 
 Every so often, rescue life turns up at the gate as an illustrated story card:
@@ -101,6 +110,7 @@ Every so often, rescue life turns up at the gate as an illustrated story card:
 - **Bills**: the vet is due for a check-up or a worming treatment, a horse needs new shoes, the hay or water delivery arrives, the horse box needs the mechanic, the stable roof starts letting the rain in, or one of your mares has a **foal**. Each one costs a slice of your fund, scaled to where your rescue is at. Paying always feels good: the vet and farrier leave their horse topped up and gleaming, a full hay barn settles the whole herd, a fixed-up horse box or a smart new roof turns admiring heads, and a cute new foal draws a little crowd of new supporters. Saying "not just yet" is always safe; the bill just comes around again later. And a bill never arrives that your fund can't comfortably pay.
 - **The Sur feature**: a journalist sometimes offers to write about the rescue, for a fee. Pay it and the story runs a little later, always bringing in more than it cost, sometimes much more, and once in a while it makes the front page. The story prints even if you're away; it'll be waiting when you come back.
 - **Visitors Day**: sometimes the volunteers get together and plan a Visitors Day instead. You get a heads-up a few minutes ahead, and that time matters: on the day, entry donations scale with your supporters, your decor, and above all how much of the herd is thriving. Groom everyone before the visitors arrive and the day can be a triumph.
+- **A foal grows up**: when a mare has a foal, it's more than a bill: a real foal joins the paddock, small and happy, born to that named mare. Over a while it grows before your eyes, shows a playful personality, and finally comes of age as a horse of its own, ready one day for a home. Home-raised horses can't be dressed up until they've grown, and finding one a forever home earns the **Born at the rescue** badge.
 - **Reunion Day**: once you've found horses their forever homes, they sometimes come back to visit, families in tow, and the visitors tend to leave as supporters.
 - **Utilidad Pública**: when the rescue is well established (15 rescues), official recognition arrives: Spain's public-interest status for charities, which brings tax relief on donations. From then on, supporter donations are worth 10% more, forever.
 
@@ -108,17 +118,21 @@ Every so often, rescue life turns up at the gate as an illustrated story card:
 
 Most rescues arrive as an everyday horse or donkey. Just occasionally a rarer one turns up: a **spotted** pony, a **chestnut**, a **piebald**, a **piebald donkey**, or even a **zebra**. Rares are uncommon on purpose (together about one rescue in seven), and they wear a soft shiny shimmer to set them apart.
 
+### The residents
+
+The 🐴 button up top opens **Residents**: a profile card for every horse living at the rescue right now — their portrait (in whatever they're wearing), breed, arrival date, a made-up age, and the personality they've turned out to have. Foals read as young until they grow up. The magical friends, who are here to stay rather than looking for homes, keep their own section apart from the rescues. It's a little who's-who of the herd, and the foundation for more per-horse touches down the line.
+
 ### The collection book
 
-Tap the book up top to open your collection: every coat there is to find, which ones you've already welcomed home, and dimmed silhouettes for the ones you haven't. It fills in as your rescue grows.
+Tap the book up top to open a set of tabs. The first is your **collection**: every coat there is to find, which ones you've already welcomed home, and dimmed silhouettes for the ones you haven't. It fills in as your rescue grows. Alongside it sit **Badges**, **Stats**, **Top rescuers**, and **Postcards** (the wall of settling-in notes from horses you've rehomed).
 
 ### Badges
 
-A second tab in the book collects **badges**: little pride-only milestones (no cash, just bragging rights). Some are one-offs (worm a horse, hold a Visitors Day, overcome a horse's fear, dress every horse to the nines, own one of everything in the shop, donate to the real ARCH). Others are long-haul goals with a progress bar ticking toward them: 100 then 250, 500, 1,000 rescues; forever homes found; supporters gathered; a million euros raised; a hundred postcards. They're what keeps a thriving rescue reaching for something, long after the last coat is collected.
+The book's **Badges** tab collects little pride-only milestones (no cash, just bragging rights). Some are one-offs (worm a horse, hold a Visitors Day, overcome a horse's fear, dress every horse to the nines, own one of everything in the shop, raise a foal to a home, welcome a returned horse and find it a new one, play through a whole year, donate to the real ARCH). Others are long-haul goals with a progress bar ticking toward them: 100 then 250, 500, 1,000 rescues; forever homes found; supporters gathered; a million euros raised; a hundred postcards. They're what keeps a thriving rescue reaching for something, long after the last coat is collected.
 
 ### Top rescuers
 
-Tap the book up top and there's a third tab alongside Collection and Stats: a monthly leaderboard of everyone playing. It's opt-in, so nobody appears until they join, and joining gives you a made-up stable name (like "Velvet Canter") rather than anything you type yourself — no real names, nothing to moderate. The board starts fresh on the 1st of every month; leave any time from the same tab.
+The book's **Top rescuers** tab is a monthly leaderboard of everyone playing. It's opt-in, so nobody appears until they join, and joining gives you a made-up stable name (like "Velvet Canter") rather than anything you type yourself — no real names, nothing to moderate. The board starts fresh on the 1st of every month; leave any time from the same tab.
 
 Winning a month is worth something. All the next month, the reigning champion's name wears a purple **rosette** on the board (with a "Reigning champion" line above the rankings), and the winner's first visit after the month turns opens with a celebration popup and a bonus for the fund.
 
@@ -132,7 +146,7 @@ The newest three horses stand up front, and older ones move to the back as the h
 
 Every paddock holds 8 horses, on every device — the newest 8 live in the **home paddock**, older friends in the paddocks beyond it, reachable with the ‹ › arrows. On a phone the same paddocks are just shown a couple of horses at a time ("Home paddock · 2 of 4"), so your rescue looks the same wherever you play it.
 
-You start with the home paddock and can build up to two more when the rescue needs the space: the second is a mid-game save-up, the third a proper end-game splurge. Each one is 8 more horse spaces and a fresh spot to decorate.
+You start with the home paddock and can build more from the Tack room's **Expansions** tab whenever you fancy the room — an empty paddock is fine, ready to fill and decorate. The second is a mid-game save-up, the third a proper end-game splurge, and a fourth opens up once you've built the **Sanctuary field**. Each one is 8 more horse spaces and a fresh spot to decorate.
 
 And if a magical friend comes to live with you, a **magical paddock** appears all by itself — free, sparkling, and home to the magical horses only.
 
@@ -165,6 +179,7 @@ css/style.css          all the styling
 js/state.js            what the game knows, plus saving to your browser
 js/game.js             the rules and the money maths
 js/traits.js           every personality: the quirks, the fears, and their mechanics
+js/seasons.js          the game-time year: seasons, their look and their event flavour
 js/achievements.js     the pride-only badge catalog and its earn checks
 js/facilities.js       the "grow the rescue" upgrade ladder and its effects
 js/shop.js             shop items and their rules
