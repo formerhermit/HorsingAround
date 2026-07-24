@@ -43,6 +43,7 @@ export function createHorse({
   damName = null,        // the mare it was born to, for the story beats
   bornHere = false,      // stays true after growing up: marks a home-raised horse
   foalTraitRevealed = false, // whether the mid-growth personality beat has fired
+  ageYears = 3 + Math.floor(Math.random() * 18), // a made-up but fixed age (3–20), shown on the residents card
 }) {
   return {
     id,
@@ -63,6 +64,7 @@ export function createHorse({
     damName,
     bornHere,
     foalTraitRevealed,
+    ageYears,
     arrivedAt: Date.now(),
     lastCaredAt: Date.now(), // last care tap; drives the gentle-upkeep drift (game.js)
   };
@@ -291,6 +293,10 @@ function repair(save) {
     horse.bornAtPlay ??= null;
     horse.damName ??= null;
     horse.foalTraitRevealed ??= false;
+    // A made-up but fixed age for the residents card (#89): foals count as under
+    // one; everyone else gets a believable 3–20 assigned once, then persisted.
+    horse.ageYears ??= horse.foal ? 0 : 3 + Math.floor(Math.random() * 18);
+    horse.arrivedAt ??= Date.now();
     // Joya is now reserved for the dog decor item; rename any horse
     if (horse.name === 'Joya') horse.name = 'Billy';
     if (horse.name === 'Pantoja 2' || horse.name === 'Panjota 2') horse.name = 'Binky';

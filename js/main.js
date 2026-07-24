@@ -7,7 +7,7 @@ import {
   showCareFeedback, showTipPop, showToast, showMoneyPop, showSupporterPop, burstConfetti, changePaddock, resetPaddockView,
   showNudgePopup, hideNudgePopup, showDialog,
   renderShopButton, openShopModal, closeShopModal, renderShopModal, shopDecorPaddock, setShopDecorPaddock, shopWardrobeHorse,
-  renderPostcardButton, openPostcardAlbum, closePostcardAlbum,
+  renderPostcardAlbum, openResidents, closeResidents,
   renderWantBubbles, showWantFulfilled,
   renderCollectionButton, openCollection, closeCollection, renderStats, renderAchievements,
   formatDate, paddockLabel,
@@ -470,7 +470,7 @@ function deliverPostcards(due) {
   } else {
     showToast(`💌 ${due.length} postcards arrived from horses you've rehomed!`);
   }
-  renderPostcardButton(state);
+  renderCollectionButton(state); // lights the book's dot + Postcards tab count
   persist();
 }
 
@@ -899,7 +899,7 @@ document.getElementById('shop-overlay').addEventListener('click', (event) => {
 document.addEventListener('keydown', (event) => {
   if (event.key !== 'Escape') return;
   if (!document.getElementById('shop-overlay').hidden) closeShop();
-  if (!document.getElementById('album-overlay').hidden) closePostcardAlbum();
+  if (!document.getElementById('residents-overlay').hidden) closeResidents();
   if (!document.getElementById('collection-overlay').hidden) closeCollection();
   if (!document.getElementById('privacy-overlay').hidden) closePrivacy();
   if (!document.getElementById('sync-overlay').hidden) closeSync();
@@ -1186,15 +1186,13 @@ updateRestoreWhisper();
 
 // ---- postcard album ----
 
-document.getElementById('album-btn').addEventListener('click', () => {
-  markPostcardsRead(state);   // opening the album clears the unread badge
-  openPostcardAlbum(state);
-  renderPostcardButton(state);
-  persist();
+// ---- residents (the horses currently at the rescue) — issue #89 ----
+document.getElementById('residents-btn').addEventListener('click', () => {
+  openResidents(state);
 });
-document.getElementById('album-close').addEventListener('click', closePostcardAlbum);
-document.getElementById('album-overlay').addEventListener('click', (event) => {
-  if (event.target.id === 'album-overlay') closePostcardAlbum();
+document.getElementById('residents-close').addEventListener('click', closeResidents);
+document.getElementById('residents-overlay').addEventListener('click', (event) => {
+  if (event.target.id === 'residents-overlay') closeResidents();
 });
 
 // ---- collection book ----
@@ -1205,6 +1203,7 @@ const COLLECTION_TABS = {
   badges:      { tab: 'tab-badges',      panel: 'panel-badges',      title: 'Badges' },
   stats:       { tab: 'tab-stats',       panel: 'panel-stats',       title: 'Stats' },
   leaderboard: { tab: 'tab-leaderboard', panel: 'panel-leaderboard', title: 'Top rescuers' },
+  postcards:   { tab: 'tab-postcards',   panel: 'panel-postcards',   title: 'Postcards' },
 };
 
 function showCollectionTab(name) {
@@ -1224,6 +1223,12 @@ function showCollectionTab(name) {
   }
   if (name === 'stats') renderStats(state);
   if (name === 'leaderboard') renderLeaderboardPanel();
+  if (name === 'postcards') {
+    renderPostcardAlbum(state);
+    markPostcardsRead(state);      // opening the tab clears the unread count
+    renderCollectionButton(state); // ...and the book dot + tab badge with it
+    persist();
+  }
 }
 
 document.getElementById('collection-btn').addEventListener('click', () => {
@@ -1239,6 +1244,7 @@ document.getElementById('tab-collection').addEventListener('click', () => showCo
 document.getElementById('tab-badges').addEventListener('click', () => showCollectionTab('badges'));
 document.getElementById('tab-stats').addEventListener('click', () => showCollectionTab('stats'));
 document.getElementById('tab-leaderboard').addEventListener('click', () => showCollectionTab('leaderboard'));
+document.getElementById('tab-postcards').addEventListener('click', () => showCollectionTab('postcards'));
 
 // ---- monthly leaderboard panel ----
 

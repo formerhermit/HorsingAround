@@ -1829,6 +1829,81 @@ main {
   }
 }
 
+/* ---------- residents (the horses at the rescue) — issue #89 ---------- */
+
+/* A touch wider than the other modals so the compact cards fit three across. */
+#residents-modal {
+  max-width: 620px;
+}
+
+.residents-grid {
+  display: grid;
+  /* Fit as many ~160px cards as the width allows: three across on desktop,
+     reflowing to two then one on smaller screens. */
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 0.7rem;
+}
+
+.resident-card {
+  margin: 0;
+  background: #fffdf7;
+  border: 1px solid #ece3cf;
+  border-radius: 10px;
+  box-shadow: 0 3px 10px rgba(61, 52, 40, 0.12);
+  padding: 0.4rem 0.4rem 0.55rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.resident-photo {
+  background: linear-gradient(#eaf3dd, #dcecc9);
+  border-radius: 6px;
+  padding: 0.35rem;
+  aspect-ratio: 5 / 4;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.resident-info {
+  padding: 0.45rem 0.25rem 0;
+}
+
+.resident-name {
+  margin: 0 0 0.35rem;
+  font-weight: 800;
+  font-size: 0.92rem;
+  text-align: center;
+  color: #3d3428;
+}
+
+.resident-facts {
+  margin: 0;
+  font-size: 0.72rem;
+}
+
+.resident-facts > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.4rem;
+  padding: 0.18rem 0;
+  border-top: 1px dashed #ece3cf;
+}
+
+.resident-facts dt {
+  color: #8a7d68;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.resident-facts dd {
+  margin: 0;
+  color: #5c5344;
+  text-align: right;
+}
+
 /* ---------- collection book ---------- */
 
 /* ---------- modal tabs (Collection / Stats) ---------- */
@@ -1838,6 +1913,8 @@ main {
   gap: 0.4rem;
   margin: 0.2rem 0 0.9rem;
   border-bottom: 1.5px solid #ece3cf;
+  overflow-x: auto;           /* the five tabs scroll sideways on a narrow phone */
+  scrollbar-width: thin;
 }
 
 .modal-tab {
@@ -1851,6 +1928,8 @@ main {
   margin-bottom: -1.5px;
   padding: 0.4rem 0.6rem;
   cursor: pointer;
+  white-space: nowrap;        /* a tab label never wraps mid-scroll */
+  flex: 0 0 auto;
 }
 
 .modal-tab:hover {
@@ -1860,6 +1939,23 @@ main {
 .modal-tab.is-active {
   color: #6f8f4f;
   border-bottom-color: #6f8f4f;
+}
+
+/* Unread-postcards count on the 💌 tab. */
+.tab-badge {
+  display: inline-block;
+  min-width: 15px;
+  height: 15px;
+  padding: 0 4px;
+  margin-left: 3px;
+  border-radius: 999px;
+  background: #d9534f;
+  color: #fff;
+  font-size: 0.6rem;
+  font-weight: 800;
+  line-height: 15px;
+  text-align: center;
+  vertical-align: middle;
 }
 
 /* ---------- stats tab ---------- */

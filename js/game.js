@@ -1099,6 +1099,7 @@ function spawnFoal(dam, now = Date.now()) {
     bornAtPlay: gameState.stats.playSeconds,
     damName: dam?.name ?? null,
     bornHere: true,
+    ageYears: 0, // a newborn; becomes a yearling when it grows up
   });
   herd.push(foal);
   return foal;
@@ -1141,6 +1142,7 @@ function updateFoals(events) {
       horse.paletteKey = coat;
       horse.wellbeing = WELLBEING_MAX; // grown and thriving, ready for a home
       horse.lastCaredAt = Date.now();
+      horse.ageYears = 1; // a yearling now, all grown up
       gameState.stats.foalsGrown = (gameState.stats.foalsGrown ?? 0) + 1;
       const newForCollection = collectCoat(coat);
       events.push({ type: 'foal-grown', name: horse.name, coat, damName: horse.damName, newForCollection });
