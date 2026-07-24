@@ -1274,6 +1274,28 @@ main {
   overflow-y: auto;
 }
 
+/* Tack room tabs (issue #94): a steady box whatever tab is showing. The header,
+   intro and tabs stay pinned; only the active panel scrolls, so flicking
+   between Wardrobe / Decor / Expansions no longer resizes the popup. */
+#shop-modal {
+  display: flex;
+  flex-direction: column;
+  height: min(85vh, 560px);
+  overflow: hidden;
+}
+
+#shop-modal .shop-header,
+#shop-modal > .shop-intro,
+#shop-modal > .modal-tabs {
+  flex-shrink: 0;
+}
+
+#shop-modal .modal-panel {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
 .shop-header {
   display: flex;
   align-items: center;
