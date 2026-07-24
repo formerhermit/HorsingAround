@@ -225,10 +225,13 @@ main {
   border-radius: 18px;
   overflow: hidden;
   border: 1px solid #e0d6bf;
-  /* Reserved from the very first horse so the scene never visibly grows as more
-     horses or decor arrive. Derived from --horse-unit so it, too, shrinks to fit
-     shorter screens. */
-  min-height: calc(var(--horse-unit) * 2.55);
+  /* Reserved from the very first horse so the scene never visibly grows OR
+     shrinks (issue #113). Sized to the tallest layout — a full-scale front-row
+     horse (~3.12 horse-units of content) — so a shorter front row (e.g. when
+     the newest arrival is a small foal) leaves a little extra sky rather than
+     resizing the whole paddock. Derived from --horse-unit so it scales with the
+     scene on shorter screens. */
+  min-height: calc(var(--horse-unit) * 3.18);
   /* Split into separate layers instead of one gradient with stops 2px apart --
      Safari's rasterizer has known edge cases with near-zero-distance colour
      stops inside a single gradient, especially under border-radius clipping,
@@ -636,12 +639,15 @@ main {
 /* Butterflies: a scatter centred in the middle of the paddock. Sized well below
    full-bleed so it reads as a cluster, not wallpaper. They flutter in front of
    the ground props (trough, barrels) but behind the horses. */
+/* Butterflies flutter in the open air near the top of the scene, above the
+   grounded props rather than on top of them (issue #111). Kept centred for
+   balance, just lifted clear of anything sitting on the grass. */
 .paddock-butterflies {
   position: absolute;
   inset: 0;
   z-index: 2;
   pointer-events: none;
-  background: url('../assets/decor/butterflies.png') center 40% / 21% auto no-repeat;
+  background: url('../assets/decor/butterflies.png') center 20% / 21% auto no-repeat;
 }
 
 /* Stacking inside the paddock: ground props sit lowest, the butterflies flutter
