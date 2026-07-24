@@ -1502,9 +1502,11 @@ setInterval(() => {
 // ---- persistence ----
 
 setInterval(persist, 15000);
-document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'hidden') persist();
-});
+// Save when the tab leaves, and again when it comes back. Returning from a
+// locked screen re-pushes promptly (getValidSession refreshes a stale token
+// and any request the OS killed mid-flight retries) rather than waiting up to
+// 15s for the next autosave.
+document.addEventListener('visibilitychange', persist);
 
 // The number of horses one *view* shows is viewport-dependent (a paddock pages
 // across several views on mobile), so crossing that breakpoint -- rotating a

@@ -14,6 +14,18 @@ import { gameState, adoptCloudState } from './state.js';
 
 let clientPromise = null;
 
+// Cloud requests get a hard time budget. A request already in flight when the
+// OS suspends the tab (a phone screen locking) would otherwise hang until the
+// browser's own long timeout — the "request timed out" console error. Aborting
+// it quickly turns it into an ordinary caught failure that the next save
+// retries, and lets the tab move on.
+const CLOUD_TIMEOUT_MS = 12000;
+export function requestTimeout() {
+  const controller = new AbortController();
+  setTimeout(() => controller.abort(), CLOUD_TIMEOUT_MS);
+  return controller.signal;
+}
+
 // Cloud pushes are held until the boot reconciliation has settled (issue #67):
 // the 15-second autosave (or any event save) firing before syncOnLoad() had
 // decided could upsert this device's stale local save over a newer cloud one.
@@ -37,6 +49,44 @@ export function getClient() {
       .then(({ createClient }) => createClient(SUPABASE_URL, SUPABASE_ANON_KEY));
   }
   return clientPromise;
+}
+
+/**
+ * A session with a fresh-enough access token, ready to authorise a request.
+ *
+ * The supabase client auto-refreshes its hourly token on a timer, but a tab
+ * that was suspended (a locked phone, a sleeping laptop, a discarded tab) can
+ * wake with that timer having missed its window and an already-expired token —
+ * and then every save and leaderboard write 401s, silently, until the page is
+ * reloaded. So before a write we proactively refresh a token that's expired or
+ * about to be. Crucially, a *failed* refresh keeps the existing session rather
+ * than minting a new anonymous identity (which would orphan the player's cloud
+ * save); a brand-new anonymous user is only ever created when there's genuinely
+ * no session at all (a true first visit). Returns null only if auth is
+ * unavailable.
+ */
+export async function getValidSession(client) {
+  try {
+    let { data: { session } } = await client.auth.getSession();
+    if (!session) {
+      // No identity yet (first visit / cleared storage): mint one. This is the
+      // only path that creates a new anonymous user, so it can't lose a save.
+      const { data, error } = await client.auth.signInAnonymously();
+      if (error) throw error;
+      return data.session;
+    }
+    const expiresMs = (session.expires_at ?? 0) * 1000;
+    if (expiresMs && expiresMs - Date.now() < 90_000) { // expired, or within 90s
+      const { data, error } = await client.auth.refreshSession();
+      if (!error && data?.session) session = data.session;
+      // A failed refresh falls through with the stale session: the write may
+      // still fail (and a reload recovers), but we never swap identities.
+    }
+    return session;
+  } catch (err) {
+    console.warn('Could not establish a cloud session:', err);
+    return null;
+  }
 }
 
 /**
@@ -174,13 +224,14 @@ export async function pushCloudSave() {
   if (!isConfigured() || !syncSettled) return;
   try {
     const client = await getClient();
-    const { data: { session } } = await client.auth.getSession();
+    const session = await getValidSession(client);
     if (!session) return;
-    await client.from('saves').upsert({
+    const { error } = await client.from('saves').upsert({
       user_id: session.user.id,
       game_state: gameState,
       updated_at: new Date().toISOString(),
-    });
+    }).abortSignal(requestTimeout());
+    if (error) throw error; // previously ignored — a failed save was silent
   } catch (err) {
     console.warn('Cloud save failed, will retry next save:', err);
   }
