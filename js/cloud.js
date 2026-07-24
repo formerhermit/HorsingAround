@@ -14,6 +14,18 @@ import { gameState, adoptCloudState } from './state.js';
 
 let clientPromise = null;
 
+// Cloud requests get a hard time budget. A request already in flight when the
+// OS suspends the tab (a phone screen locking) would otherwise hang until the
+// browser's own long timeout — the "request timed out" console error. Aborting
+// it quickly turns it into an ordinary caught failure that the next save
+// retries, and lets the tab move on.
+const CLOUD_TIMEOUT_MS = 12000;
+export function requestTimeout() {
+  const controller = new AbortController();
+  setTimeout(() => controller.abort(), CLOUD_TIMEOUT_MS);
+  return controller.signal;
+}
+
 // Cloud pushes are held until the boot reconciliation has settled (issue #67):
 // the 15-second autosave (or any event save) firing before syncOnLoad() had
 // decided could upsert this device's stale local save over a newer cloud one.
@@ -218,7 +230,7 @@ export async function pushCloudSave() {
       user_id: session.user.id,
       game_state: gameState,
       updated_at: new Date().toISOString(),
-    });
+    }).abortSignal(requestTimeout());
     if (error) throw error; // previously ignored — a failed save was silent
   } catch (err) {
     console.warn('Cloud save failed, will retry next save:', err);
