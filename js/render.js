@@ -7,7 +7,7 @@ import { FACILITIES, hasFacility, nextFacility, canBuyFacility } from './facilit
 import { currentSeason, SEASON_CLASSES } from './seasons.js';
 import {
   SHOP_ITEMS, isUnlocked, isAffordable, hasNewAffordableItem,
-  PADDOCK_CAP, MAGIC_PADDOCK, paddockCount, decorTargets, herdAtCapacity, paddockDecor,
+  PADDOCK_CAP, MAGIC_PADDOCK, paddockCount, nextPaddockPrice, decorTargets, herdAtCapacity, paddockDecor,
   horseHasItem, isDecorInPaddock, paddockHasRoomFor,
   paddockExclusiveRival, horseExclusiveRival, EXCLUSIVE_GROUPS,
   STACKABLE_IDS, stockCount, decorLocation,
@@ -467,7 +467,8 @@ export function renderShopModal(state) {
   const decorTarget = document.getElementById('shop-target-decor');
   const wardrobeGrid = document.getElementById('shop-grid-wardrobe');
   const decorGrid = document.getElementById('shop-grid-decor');
-  [wardrobeTarget, decorTarget, wardrobeGrid, decorGrid].forEach((el) => el.replaceChildren());
+  const buildSlot = document.getElementById('shop-build-paddock');
+  [wardrobeTarget, decorTarget, wardrobeGrid, decorGrid, buildSlot].forEach((el) => el.replaceChildren());
 
   const unlocked = SHOP_ITEMS.filter((item) => isUnlocked(item, state));
 
@@ -502,6 +503,21 @@ export function renderShopModal(state) {
       selected: shopPaddockTarget, onChange: (v) => { shopPaddockTarget = Number(v); },
     }));
   }
+  // Build the next paddock right here, whenever one can be built — no need to
+  // fill the current ones first (issue #48). An empty paddock is fine; it opens
+  // up as a fresh space to fill and decorate. Priced/gated by nextPaddockPrice,
+  // so this only shows for a paddock the rescue is actually allowed to build
+  // (the fourth needs the Sanctuary field first).
+  const paddockPrice = nextPaddockPrice(state);
+  if (paddockPrice !== null) {
+    const afford = state.coins >= paddockPrice;
+    buildSlot.innerHTML = `
+      <button class="build-paddock-btn" type="button" data-build-paddock ${afford ? '' : 'disabled'}>
+        🔨 Build a new paddock · €${paddockPrice.toLocaleString()}
+      </button>
+      <p class="build-paddock-note">Room for ${PADDOCK_CAP} more horses, and a fresh spot to decorate.</p>`;
+  }
+
   fillGrid(decorGrid, unlocked.filter((i) => i.category === 'decor'),
     (item) => decorItemRow(item, shopPaddockTarget, state));
 
@@ -554,6 +570,12 @@ export function renderFacilities(state) {
 /** The paddock the decor section is currently targeting (read by the buy handler). */
 export function shopDecorPaddock() {
   return shopPaddockTarget;
+}
+
+/** Point the decor section at a specific paddock (e.g. one just built, so the
+ *  player can decorate it straight away). */
+export function setShopDecorPaddock(p) {
+  shopPaddockTarget = p;
 }
 
 /** The horse the wardrobe section is currently targeting (read by the buy handler). */

@@ -6,7 +6,7 @@ import {
   renderAll, renderHUD, renderActions, updateHorseCard,
   showCareFeedback, showTipPop, showToast, showMoneyPop, showSupporterPop, burstConfetti, changePaddock, resetPaddockView,
   showNudgePopup, hideNudgePopup, showDialog,
-  renderShopButton, openShopModal, closeShopModal, renderShopModal, shopDecorPaddock, shopWardrobeHorse,
+  renderShopButton, openShopModal, closeShopModal, renderShopModal, shopDecorPaddock, setShopDecorPaddock, shopWardrobeHorse,
   renderPostcardButton, openPostcardAlbum, closePostcardAlbum,
   renderWantBubbles, showWantFulfilled,
   renderCollectionButton, openCollection, closeCollection, renderStats, renderAchievements,
@@ -1373,6 +1373,22 @@ document.getElementById('collection-overlay').addEventListener('click', (event) 
 initShare();
 
 document.getElementById('shop-modal').addEventListener('click', (event) => {
+  // Build the next paddock straight from the shop, empty or not (issue #48).
+  if (event.target.closest('[data-build-paddock]')) {
+    const price = nextPaddockPrice(state);
+    const res = buyPaddock(state);
+    if (res.ok) {
+      showToast(`🎉 The ${paddockLabel(res.count - 1)} is ready: room for 8 more horses, and a fresh spot to decorate!`);
+      setShopDecorPaddock(res.count - 1); // decorate the new one straight away
+      renderShopModal(state); // refresh: new decor target + updated/hidden build button
+      renderAll(state);
+      refreshUI();
+      persist();
+    } else if (price !== null) {
+      showToast(`A new paddock costs €${price.toLocaleString()}. Keep fundraising!`, 'alert');
+    }
+    return;
+  }
   // "Grow the rescue" facility upgrades (issue #48) are their own big-ticket buy.
   const facilityBtn = event.target.closest('.facility-buy-btn');
   if (facilityBtn) {
