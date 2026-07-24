@@ -867,8 +867,13 @@ function renderPaddock(state) {
   // The game-time season (seasons.js) layers a weather tint over any real
   // paddock, stacking on the Meadow/Campo scatter; the magical dusk keeps its
   // own look and opts out. Exactly one season class sits on the scene root.
-  const seasonClass = currentSeason(state.stats.playSeconds).className;
-  SEASON_CLASSES.forEach((c) => scene.classList.toggle(c, !isMagic && c === seasonClass));
+  const season = currentSeason(state.stats.playSeconds);
+  SEASON_CLASSES.forEach((c) => scene.classList.toggle(c, !isMagic && c === season.className));
+  // A little season badge orients the player at a glance (issue #96). The
+  // magical paddock is timeless, so it doesn't get one.
+  const seasonBadge = document.getElementById('season-badge');
+  seasonBadge.hidden = isMagic;
+  if (!isMagic) seasonBadge.innerHTML = `<span aria-hidden="true">${season.emoji}</span> ${season.label}`;
 
   // edge arrows + label, only when there is more than one view
   const older = document.getElementById('nav-older');
