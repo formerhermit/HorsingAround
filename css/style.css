@@ -1831,10 +1831,17 @@ main {
 
 /* ---------- residents (the horses at the rescue) — issue #89 ---------- */
 
+/* A touch wider than the other modals so the compact cards fit three across. */
+#residents-modal {
+  max-width: 620px;
+}
+
 .residents-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.9rem;
+  /* Fit as many ~160px cards as the width allows: three across on desktop,
+     reflowing to two then one on smaller screens. */
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 0.7rem;
 }
 
 .resident-card {
@@ -1843,7 +1850,7 @@ main {
   border: 1px solid #ece3cf;
   border-radius: 10px;
   box-shadow: 0 3px 10px rgba(61, 52, 40, 0.12);
-  padding: 0.5rem 0.5rem 0.7rem;
+  padding: 0.4rem 0.4rem 0.55rem;
   display: flex;
   flex-direction: column;
 }
@@ -1851,7 +1858,7 @@ main {
 .resident-photo {
   background: linear-gradient(#eaf3dd, #dcecc9);
   border-radius: 6px;
-  padding: 0.4rem;
+  padding: 0.35rem;
   aspect-ratio: 5 / 4;
   display: flex;
   align-items: flex-end;
@@ -1860,28 +1867,28 @@ main {
 }
 
 .resident-info {
-  padding: 0.55rem 0.3rem 0;
+  padding: 0.45rem 0.25rem 0;
 }
 
 .resident-name {
-  margin: 0 0 0.45rem;
+  margin: 0 0 0.35rem;
   font-weight: 800;
-  font-size: 1rem;
+  font-size: 0.92rem;
   text-align: center;
   color: #3d3428;
 }
 
 .resident-facts {
   margin: 0;
-  font-size: 0.78rem;
+  font-size: 0.72rem;
 }
 
 .resident-facts > div {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  gap: 0.6rem;
-  padding: 0.22rem 0;
+  gap: 0.4rem;
+  padding: 0.18rem 0;
   border-top: 1px dashed #ece3cf;
 }
 
@@ -1895,12 +1902,6 @@ main {
   margin: 0;
   color: #5c5344;
   text-align: right;
-}
-
-@media (max-width: 480px) {
-  .residents-grid {
-    grid-template-columns: 1fr;
-  }
 }
 
 /* ---------- collection book ---------- */
