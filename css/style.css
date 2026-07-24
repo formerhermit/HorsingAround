@@ -1274,10 +1274,13 @@ main {
   overflow-y: auto;
 }
 
-/* Tack room tabs (issue #94): a steady box whatever tab is showing. The header,
-   intro and tabs stay pinned; only the active panel scrolls, so flicking
-   between Wardrobe / Decor / Expansions no longer resizes the popup. */
-#shop-modal {
+/* Tabbed popups keep a steady size whatever tab is showing (issues #94, #89):
+   the header, intro and tabs stay pinned and only the active panel scrolls, so
+   flicking between tabs never resizes the box (the tack room's Wardrobe / Decor
+   / Expansions, and the book's Collection / Badges / Stats / Top rescuers /
+   Postcards, whose panels otherwise range from tall grids to a short board). */
+#shop-modal,
+#collection-modal {
   display: flex;
   flex-direction: column;
   height: min(85vh, 560px);
@@ -1286,11 +1289,14 @@ main {
 
 #shop-modal .shop-header,
 #shop-modal > .shop-intro,
-#shop-modal > .modal-tabs {
+#shop-modal > .modal-tabs,
+#collection-modal .shop-header,
+#collection-modal > .modal-tabs {
   flex-shrink: 0;
 }
 
-#shop-modal .modal-panel {
+#shop-modal .modal-panel,
+#collection-modal .modal-panel {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
