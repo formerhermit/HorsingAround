@@ -424,6 +424,38 @@ main {
   --petal-white: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='10'%20height='11'%3E%3Cellipse%20cx='5'%20cy='5.5'%20rx='2'%20ry='3.5'%20fill='%23FBEFF3'%20transform='rotate(-22%205%205.5)'/%3E%3C/svg%3E");
   --leaf-amber:  url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='12'%20height='13'%3E%3Cellipse%20cx='6'%20cy='6.5'%20rx='2.6'%20ry='4.6'%20fill='%23D98A3D'%20transform='rotate(40%206%206.5)'/%3E%3C/svg%3E");
   --leaf-rust:   url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='12'%20height='13'%3E%3Cellipse%20cx='6'%20cy='6.5'%20rx='2.6'%20ry='4.6'%20fill='%23C15A2B'%20transform='rotate(-28%206%206.5)'/%3E%3C/svg%3E");
+  --raindrop:    url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='6'%20height='13'%3E%3Cline%20x1='4.2'%20y1='1'%20x2='1.8'%20y2='11.5'%20stroke='%238FB0D6'%20stroke-width='1.4'%20stroke-linecap='round'/%3E%3C/svg%3E");
+}
+
+/* Seasonal grass: the home paddock (and any un-themed paddock) lives its
+   Mediterranean year — lush green in spring, parched golden in the dry summer,
+   greening again through the wet autumn and winter. Same layered structure as
+   the base .paddock (grass / horizon line / sky), colours swapped. Scoped away
+   from Meadow and Campo, which keep their own fixed identities under whatever
+   weather passes over them. */
+.paddock.season-spring:not(.meadow-paddock):not(.campo-paddock) {
+  background:
+    linear-gradient(#98c765, #79b04d) 0 calc(var(--horse-unit) * 0.545) / 100% 100% no-repeat,
+    linear-gradient(#ecf7e2, #ecf7e2) 0 calc(var(--horse-unit) * 0.536) / 100% 2px no-repeat,
+    #d9ecf8;
+}
+.paddock.season-summer:not(.meadow-paddock):not(.campo-paddock) {
+  background:
+    linear-gradient(#ddc978, #c3ab5a) 0 calc(var(--horse-unit) * 0.545) / 100% 100% no-repeat,
+    linear-gradient(#f6f0d3, #f6f0d3) 0 calc(var(--horse-unit) * 0.536) / 100% 2px no-repeat,
+    #dcebef;
+}
+.paddock.season-autumn:not(.meadow-paddock):not(.campo-paddock) {
+  background:
+    linear-gradient(#aabf65, #8ba851) 0 calc(var(--horse-unit) * 0.545) / 100% 100% no-repeat,
+    linear-gradient(#eef4da, #eef4da) 0 calc(var(--horse-unit) * 0.536) / 100% 2px no-repeat,
+    #d9ecf8;
+}
+.paddock.season-winter:not(.meadow-paddock):not(.campo-paddock) {
+  background:
+    linear-gradient(#83ac65, #6d9853) 0 calc(var(--horse-unit) * 0.545) / 100% 100% no-repeat,
+    linear-gradient(#e4efda, #e4efda) 0 calc(var(--horse-unit) * 0.536) / 100% 2px no-repeat,
+    #cfdae1;
 }
 
 /* Base overlay: full scene, behind the horses (z2), inert. Present on every
@@ -501,28 +533,22 @@ main {
   animation: season-drift 8s ease-in-out .9s infinite;
 }
 
-/* Winter — soft snow drifting down through a cool blue wash. */
+/* Winter — a mild, wet Andalusian winter: soft rain drifting down through a
+   cool grey-blue wash (no snow at this elevation), the pasture staying green. */
 .paddock.season-winter .paddock-weather {
-  background: radial-gradient(130% 95% at 50% 0%, rgba(150,186,224,.18), transparent 64%);
+  background: radial-gradient(130% 95% at 50% 0%, rgba(150,178,208,.2), transparent 64%);
 }
 .paddock.season-winter .paddock-weather::before {
-  background-image:
-    radial-gradient(circle, rgba(255,255,255,.95) 0 2px, transparent 3px),
-    radial-gradient(circle, rgba(255,255,255,.85) 0 1.5px, transparent 3px),
-    radial-gradient(circle, rgba(255,255,255,.95) 0 2px, transparent 3px),
-    radial-gradient(circle, rgba(255,255,255,.85) 0 1.5px, transparent 3px);
-  background-size: 11px 11px, 8px 8px, 10px 10px, 7px 7px;
-  background-position: 13% 14%, 36% 22%, 60% 12%, 86% 20%;
-  animation: season-drift 7s ease-in-out infinite;
+  background-image: var(--raindrop), var(--raindrop), var(--raindrop), var(--raindrop);
+  background-size: 6px 13px, 5px 11px, 6px 13px, 5px 11px;
+  background-position: 14% 12%, 37% 24%, 61% 10%, 87% 22%;
+  animation: season-drift 4.5s ease-in-out infinite;
 }
 .paddock.season-winter .paddock-weather::after {
-  background-image:
-    radial-gradient(circle, rgba(255,255,255,.9) 0 1.7px, transparent 3px),
-    radial-gradient(circle, rgba(255,255,255,.8) 0 1.4px, transparent 3px),
-    radial-gradient(circle, rgba(255,255,255,.9) 0 1.7px, transparent 3px);
-  background-size: 9px 9px, 7px 7px, 10px 10px;
-  background-position: 24% 34%, 66% 40%, 92% 28%;
-  animation: season-drift 9s ease-in-out 1s infinite;
+  background-image: var(--raindrop), var(--raindrop), var(--raindrop);
+  background-size: 6px 13px, 5px 11px, 6px 13px;
+  background-position: 25% 36%, 66% 42%, 92% 30%;
+  animation: season-drift 5.5s ease-in-out .7s infinite;
 }
 
 /* A slow vertical drift for the falling scatter, and a soft twinkle for the

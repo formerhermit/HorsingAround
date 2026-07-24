@@ -12,25 +12,30 @@
 // One season lasts this many seconds of active play; a full year is 4× this.
 export const SEASON_SECONDS = 10 * 60; // 10 minutes/season → 40 minutes/year
 
-// Ordered so a brand-new rescue opens in spring. Each season layers lightly on
-// the existing paddock-life systems:
-//  - visitorsMult scales VISITORS_CHANCE (summer peaks, winter quietens).
-//  - billWeights bias the bill draw toward seasonal chores (unlisted kinds = 1).
-//    Winter leans on hay/barn/vet — the very bills the hay barn and vet station
-//    soften, so growing the rescue is what carries the herd through the storms.
-// className drives the CSS backdrop tint + weather scatter (render.js).
+// Ordered so a brand-new rescue opens in spring. The climate is ARCH's own:
+// inland Málaga (Alhaurín), a Mediterranean year — lush green springs, hot bone-
+// dry golden summers, the first rains and harvest in autumn, and mild wet winters
+// that stay green (no snow at this elevation). Each season layers lightly on the
+// existing paddock-life systems:
+//  - visitorsMult scales VISITORS_CHANCE (summer, the coast's high season, peaks;
+//    the wet winter quietens).
+//  - billWeights bias the bill draw toward seasonal chores (unlisted kinds = 1):
+//    spring foals; the parched summer needs water delivered often; autumn lays in
+//    hay; the wet winter leans on hay/barn/vet — the very bills the hay barn and
+//    vet station soften, so growing the rescue is what carries the herd through.
+// className drives the CSS backdrop (grass + weather scatter; render.js).
 export const SEASONS = [
   { key: 'spring', label: 'Spring', emoji: '🌸', className: 'season-spring',
-    toast: '🌸 Spring comes to the paddock: blossom on the breeze, and foals on the way 💛',
+    toast: '🌸 Spring greens the paddock: almond blossom and wildflowers, and foals on the way 💛',
     visitorsMult: 1, billWeights: { foal: 3 } },
   { key: 'summer', label: 'Summer', emoji: '☀️', className: 'season-summer',
-    toast: '☀️ Summer settles in: long warm days, and visitors flocking to meet the horses 💛',
-    visitorsMult: 1.7, billWeights: {} },
+    toast: '☀️ Summer bakes the campo golden: long dry days, water hauled out to the troughs, and visitors along the coast 💛',
+    visitorsMult: 1.7, billWeights: { water: 3 } },
   { key: 'autumn', label: 'Autumn', emoji: '🍂', className: 'season-autumn',
-    toast: '🍂 Autumn arrives: golden light, and hay laid in for the months ahead 💛',
+    toast: '🍂 Autumn brings the first rains and the harvest: the land greens again, and hay laid in for the year 💛',
     visitorsMult: 1, billWeights: { hay: 2.5 } },
-  { key: 'winter', label: 'Winter', emoji: '❄️', className: 'season-winter',
-    toast: '❄️ Winter closes in: rugs on, extra feed out, the whole herd kept cosy through the storms 💛',
+  { key: 'winter', label: 'Winter', emoji: '🌧️', className: 'season-winter',
+    toast: '🌧️ Winter settles in mild and wet: rugs on for the cold nights, and the rains keep the pasture green 💛',
     visitorsMult: 0.6, billWeights: { hay: 2, barn: 2, vet: 1.5 } },
 ];
 
