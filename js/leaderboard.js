@@ -9,7 +9,7 @@
 // never blocks on the board, and a player who never opts in sends nothing.
 
 import { gameState } from './state.js';
-import { isConfigured, getClient } from './cloud.js';
+import { isConfigured, getClient, getValidSession } from './cloud.js';
 
 // Months follow ARCH's clock (Europe/Madrid), so the board rolls over at the
 // same moment for everyone, wherever they play.
@@ -91,7 +91,9 @@ export function recordRescue() {
 async function getSession() {
   if (!isConfigured()) return null;
   const client = await getClient();
-  const { data: { session } } = await client.auth.getSession();
+  // getValidSession refreshes a stale token before we write, so a long-lived
+  // or just-woken tab doesn't silently drop leaderboard updates (see cloud.js).
+  const session = await getValidSession(client);
   return session ? { client, session } : null;
 }
 

@@ -40,6 +40,44 @@ export function getClient() {
 }
 
 /**
+ * A session with a fresh-enough access token, ready to authorise a request.
+ *
+ * The supabase client auto-refreshes its hourly token on a timer, but a tab
+ * that was suspended (a locked phone, a sleeping laptop, a discarded tab) can
+ * wake with that timer having missed its window and an already-expired token —
+ * and then every save and leaderboard write 401s, silently, until the page is
+ * reloaded. So before a write we proactively refresh a token that's expired or
+ * about to be. Crucially, a *failed* refresh keeps the existing session rather
+ * than minting a new anonymous identity (which would orphan the player's cloud
+ * save); a brand-new anonymous user is only ever created when there's genuinely
+ * no session at all (a true first visit). Returns null only if auth is
+ * unavailable.
+ */
+export async function getValidSession(client) {
+  try {
+    let { data: { session } } = await client.auth.getSession();
+    if (!session) {
+      // No identity yet (first visit / cleared storage): mint one. This is the
+      // only path that creates a new anonymous user, so it can't lose a save.
+      const { data, error } = await client.auth.signInAnonymously();
+      if (error) throw error;
+      return data.session;
+    }
+    const expiresMs = (session.expires_at ?? 0) * 1000;
+    if (expiresMs && expiresMs - Date.now() < 90_000) { // expired, or within 90s
+      const { data, error } = await client.auth.refreshSession();
+      if (!error && data?.session) session = data.session;
+      // A failed refresh falls through with the stale session: the write may
+      // still fail (and a reload recovers), but we never swap identities.
+    }
+    return session;
+  } catch (err) {
+    console.warn('Could not establish a cloud session:', err);
+    return null;
+  }
+}
+
+/**
  * Ensure an anonymous Supabase session exists for this browser, pull any
  * existing cloud save, and reconcile it against the local one by whichever
  * was played more recently. Call once, after the first local render.
@@ -174,13 +212,14 @@ export async function pushCloudSave() {
   if (!isConfigured() || !syncSettled) return;
   try {
     const client = await getClient();
-    const { data: { session } } = await client.auth.getSession();
+    const session = await getValidSession(client);
     if (!session) return;
-    await client.from('saves').upsert({
+    const { error } = await client.from('saves').upsert({
       user_id: session.user.id,
       game_state: gameState,
       updated_at: new Date().toISOString(),
     });
+    if (error) throw error; // previously ignored — a failed save was silent
   } catch (err) {
     console.warn('Cloud save failed, will retry next save:', err);
   }
