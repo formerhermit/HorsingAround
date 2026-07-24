@@ -563,12 +563,14 @@ export function renderShopModal(state) {
       selected: shopPaddockTarget, onChange: (v) => { shopPaddockTarget = Number(v); },
     }));
   }
-  // Build the next paddock right here, whenever one can be built — no need to
-  // fill the current ones first (issue #48). An empty paddock is fine; it opens
-  // up as a fresh space to fill and decorate. Priced/gated by nextPaddockPrice,
-  // so this only shows for a paddock the rescue is actually allowed to build
-  // (the fourth needs the Sanctuary field first).
+  // Build the next paddock (Expansions tab), whenever one can be built — no
+  // need to fill the current ones first (issue #48). An empty paddock is fine;
+  // it opens up as a fresh space to fill and decorate. Priced/gated by
+  // nextPaddockPrice, so this only shows for a paddock the rescue is actually
+  // allowed to build (the fourth needs the Sanctuary field first); the whole
+  // section folds away once the last paddock is built.
   const paddockPrice = nextPaddockPrice(state);
+  document.getElementById('shop-section-paddocks').hidden = paddockPrice === null;
   if (paddockPrice !== null) {
     const afford = state.coins >= paddockPrice;
     buildSlot.innerHTML = `
@@ -582,6 +584,32 @@ export function renderShopModal(state) {
     (item) => decorItemRow(item, shopPaddockTarget, state));
 
   renderFacilities(state);
+  applyShopTab();
+}
+
+// ---- tack room tabs (issue #94) ----
+// The shop grew past comfortable scrolling, so it splits into three tabs:
+// Wardrobe, Paddock decor, and Expansions (new paddocks + the facility ladder).
+// The chosen tab is remembered for the session, surviving the re-render every
+// purchase triggers.
+const SHOP_TABS = ['wardrobe', 'decor', 'expansions'];
+let shopTab = 'wardrobe';
+
+/** Switch the tack room to one of its tabs. */
+export function showShopTab(name) {
+  if (SHOP_TABS.includes(name)) shopTab = name;
+  applyShopTab();
+}
+
+function applyShopTab() {
+  for (const t of SHOP_TABS) {
+    const active = t === shopTab;
+    const tab = document.getElementById(`shop-tab-${t}`);
+    if (!tab) return;
+    tab.classList.toggle('is-active', active);
+    tab.setAttribute('aria-selected', String(active));
+    document.getElementById(`shop-panel-${t}`).hidden = !active;
+  }
 }
 
 // ---- "grow the rescue": facility upgrades (issue #48) ----

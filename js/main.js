@@ -6,7 +6,7 @@ import {
   renderAll, renderHUD, renderActions, updateHorseCard,
   showCareFeedback, showTipPop, showToast, showMoneyPop, showSupporterPop, burstConfetti, changePaddock, resetPaddockView,
   showNudgePopup, hideNudgePopup, showDialog,
-  renderShopButton, openShopModal, closeShopModal, renderShopModal, shopDecorPaddock, setShopDecorPaddock, shopWardrobeHorse,
+  renderShopButton, openShopModal, closeShopModal, renderShopModal, shopDecorPaddock, setShopDecorPaddock, shopWardrobeHorse, showShopTab,
   renderPostcardAlbum, openResidents, closeResidents,
   renderWantBubbles, showWantFulfilled,
   renderCollectionButton, openCollection, closeCollection, renderStats, renderAchievements,
@@ -913,6 +913,10 @@ document.getElementById('shop-close').addEventListener('click', closeShop);
 document.getElementById('shop-overlay').addEventListener('click', (event) => {
   if (event.target.id === 'shop-overlay') closeShop();
 });
+// The tack room's three tabs (issue #94).
+document.getElementById('shop-tab-wardrobe').addEventListener('click', () => showShopTab('wardrobe'));
+document.getElementById('shop-tab-decor').addEventListener('click', () => showShopTab('decor'));
+document.getElementById('shop-tab-expansions').addEventListener('click', () => showShopTab('expansions'));
 document.addEventListener('keydown', (event) => {
   if (event.key !== 'Escape') return;
   if (!document.getElementById('shop-overlay').hidden) closeShop();
@@ -1402,7 +1406,8 @@ document.getElementById('shop-modal').addEventListener('click', (event) => {
     const res = buyPaddock(state);
     if (res.ok) {
       showToast(`🎉 The ${paddockLabel(res.count - 1)} is ready: room for 8 more horses, and a fresh spot to decorate!`);
-      setShopDecorPaddock(res.count - 1); // decorate the new one straight away
+      setShopDecorPaddock(res.count - 1); // decorate the new one straight away...
+      showShopTab('decor');               // ...and land on the decor tab to do it
       renderShopModal(state); // refresh: new decor target + updated/hidden build button
       renderAll(state);
       refreshUI();
