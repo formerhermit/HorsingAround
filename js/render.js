@@ -175,9 +175,23 @@ export function renderResidents(state) {
   const grid = document.getElementById('residents-grid');
   if (!grid) return;
   const horses = [...state.horses].reverse();
-  grid.innerHTML = horses.length
-    ? horses.map(residentCardHTML).join('')
-    : '<p class="album-empty">No horses at the rescue just yet.</p>';
+  // Magical gift horses are permanent residents — never rehomed — so they get
+  // their own section apart from the rescues who are looking for homes (#89).
+  const rescues = horses.filter((h) => !isMagicalCoat(h.paletteKey));
+  const magical = horses.filter((h) => isMagicalCoat(h.paletteKey));
+  if (!horses.length) {
+    grid.innerHTML = '<p class="album-empty">No horses at the rescue just yet.</p>';
+    return;
+  }
+  const groupHead = (text) => `<h3 class="residents-group">${text}</h3>`;
+  const parts = [];
+  if (magical.length && rescues.length) parts.push(groupHead('Looking for homes'));
+  parts.push(...rescues.map(residentCardHTML));
+  if (magical.length) {
+    parts.push(groupHead('✨ Magical friends, here to stay'));
+    parts.push(...magical.map(residentCardHTML));
+  }
+  grid.innerHTML = parts.join('');
 }
 
 export function openResidents(state) {
