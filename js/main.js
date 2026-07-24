@@ -14,6 +14,7 @@ import {
 } from './render.js';
 import { ACHIEVEMENTS, checkAchievements } from './achievements.js';
 import { buyFacility } from './facilities.js';
+import { currentSeason } from './seasons.js';
 import {
   buyDecorIn, buyWardrobe, placeDecor, removeDecor, placeWardrobe, removeWardrobe,
   hasNewAffordableItem, buyPaddock, nextPaddockPrice,
@@ -712,6 +713,11 @@ function handleEvent(e) {
     showSupporterPop(e.count); // subtle chip pop, not a toast
   } else if (e.type === 'supporter-milestone') {
     showToast(`🎉 ${e.count} people now follow the rescue 💛`);
+  } else if (e.type === 'season-change') {
+    // A gentle toast; the paddock backdrop re-skins to match (renderPaddock
+    // reads the season), so re-render the scene without disturbing the view.
+    showToast(e.message);
+    renderAll(state);
   } else {
     showToast(e.message);
   }
@@ -1446,4 +1452,8 @@ window.matchMedia('(max-width: 560px)').addEventListener('change', () => {
 window.addEventListener('beforeunload', save); // no time for a network call here
 
 // Handy in the console while developing.
-window.HorsingAround = { get state() { return gameState; }, save, pushCloudSave, hurryPaddockLife };
+window.HorsingAround = {
+  get state() { return gameState; },
+  get season() { return currentSeason(gameState.stats.playSeconds); },
+  save, pushCloudSave, hurryPaddockLife,
+};

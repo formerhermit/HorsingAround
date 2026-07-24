@@ -18,6 +18,7 @@ import {
   billDiscount, adoptionMultiplier, rescueDiscount, rescueWellbeingBonus,
   eventDrawMultiplier, supporterCapMultiplier, driftGraceMultiplier,
 } from './facilities.js';
+import { SEASONS, currentSeason, seasonIndexFor } from './seasons.js';
 
 // ---- tuning ----
 export const CARE_GAIN = 2;          // wellbeing per care click
@@ -175,6 +176,18 @@ const CRIT_MESSAGES = [
 
 function randomFrom(list) {
   return list[Math.floor(Math.random() * list.length)];
+}
+
+/** Weighted pick from `list`, where `weights[item]` (default 1) scales its odds.
+ *  Used to lean the seasonal bill draw toward that season's chores. */
+function weightedFrom(list, weights = {}) {
+  const total = list.reduce((sum, item) => sum + (weights[item] ?? 1), 0);
+  let r = Math.random() * total;
+  for (const item of list) {
+    r -= weights[item] ?? 1;
+    if (r < 0) return item;
+  }
+  return list[list.length - 1];
 }
 
 /** Note a trait the player has now met, for the "all 29 personalities" badge
@@ -892,6 +905,12 @@ let pendingBill = null;        // { kind, fee, horseId } while a bill popup is u
 let visitorsPlanned = false;
 let visitorsDayCountdown = 0;  // live seconds until the day, once scheduled; 0 = not started
 
+// The game-time season (seasons.js). Derived live from stats.playSeconds, so
+// nothing extra is persisted; this only remembers the last-announced season so
+// the tick can toast the moment it turns over. Left null until the first tick
+// seeds it, so a reload lands quietly in the current season rather than toasting.
+let lastSeasonIndex = null;
+
 export function billFee(kind, state = gameState) {
   const bill = BILLS[kind];
   const raw = Math.max(bill.min, Math.round(rescueCost(state) * bill.fraction));
@@ -933,22 +952,28 @@ function updatePaddockLife(dt, now, events) {
   if (eventCountdown > 0) return;
   eventCountdown = randomBetween(EVENT_GAP_MIN, EVENT_GAP_MAX);
 
+  // The season flavours which event lands: summer draws more Visitors Days,
+  // winter fewer; each season leans the bill draw toward its seasonal chores
+  // (seasons.js). Purely a re-weighting — the events themselves are unchanged.
+  const season = currentSeason(gameState.stats.playSeconds);
+  const visitorsChance = VISITORS_CHANCE * season.visitorsMult;
+
   const roll = Math.random();
-  if (roll < VISITORS_CHANCE) {
+  if (roll < visitorsChance) {
     visitorsPlanned = true; // countdown starts when the popup is dismissed
     events.push({ type: 'visitors-planning' });
     return;
   }
   // Reunion Day (issue #61): only once there are old horses TO come back —
   // it's the horses this player rehomed, with their new families in tow.
-  if (roll < VISITORS_CHANCE + REUNION_CHANCE && gameState.stats.horsesRehomed >= 1) {
+  if (roll < visitorsChance + REUNION_CHANCE && gameState.stats.horsesRehomed >= 1) {
     events.push(runReunionDay());
     return;
   }
 
   // A bill — though never a second story while one is already at the printers.
   const kinds = Object.keys(BILLS).filter((k) => k !== 'journalist' || !gameState.pendingArticle);
-  const kind = randomFrom(kinds);
+  const kind = weightedFrom(kinds, season.billWeights);
   const fee = billFee(kind);
   // Never bill a fund that would struggle to pay: skip and look in again soon.
   if (gameState.coins < fee * BILL_AFFORD_MARGIN) {
@@ -1173,6 +1198,16 @@ export function collectOfflineEarnings(lastPlayedAt, now = Date.now()) {
 export function tick(dt) {
   const events = [];
   if (!gameState.unlocks.moneyUI) return events;
+
+  // Season turnover (seasons.js): a gentle toast the moment the game-time year
+  // rolls into its next season. The backdrop follows via render.js.
+  const seasonIndex = seasonIndexFor(gameState.stats.playSeconds);
+  if (lastSeasonIndex === null) {
+    lastSeasonIndex = seasonIndex;
+  } else if (seasonIndex !== lastSeasonIndex) {
+    lastSeasonIndex = seasonIndex;
+    events.push({ type: 'season-change', season: SEASONS[seasonIndex].key, message: SEASONS[seasonIndex].toast });
+  }
 
   // The loneliness beat: a little after the first donation, unlock the second
   // rescue -- horses are herd animals. The "wants a friend" message is delivered

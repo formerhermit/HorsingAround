@@ -4,6 +4,7 @@ import { horseFigureHTML, horseImageSrc, wellbeingLabel, wellbeingColor, isShiny
 import { rescuePrice, shareValue, shareCharge, SHARE_READY_AT, FRONT_ROW, getActiveWant } from './game.js';
 import { ACHIEVEMENTS, ACHIEVEMENT_GROUPS, isEarned } from './achievements.js';
 import { FACILITIES, hasFacility, nextFacility, canBuyFacility } from './facilities.js';
+import { currentSeason, SEASON_CLASSES } from './seasons.js';
 import {
   SHOP_ITEMS, isUnlocked, isAffordable, hasNewAffordableItem,
   PADDOCK_CAP, MAGIC_PADDOCK, paddockCount, decorTargets, herdAtCapacity, paddockDecor,
@@ -715,6 +716,8 @@ function renderPaddock(state) {
   const children = [backRow, groundDecorRow(state, paddock, view, viewCount), frontRow];
   const butterflies = butterfliesOverlay(state, paddock);
   if (butterflies) children.unshift(butterflies); // behind the horses
+  const weather = seasonOverlay(state, isMagic);
+  if (weather) children.unshift(weather); // seasonal scatter, furthest back
   document.getElementById('horses').replaceChildren(...children);
   renderPaddockDecor(state, paddock);
   // Scene theme per paddock: the buildable ones live up to their names with a
@@ -726,6 +729,11 @@ function renderPaddock(state) {
   scene.classList.toggle('magic-paddock', isMagic);
   scene.classList.toggle('meadow-paddock', !isMagic && paddock === 1);
   scene.classList.toggle('campo-paddock', !isMagic && paddock === 2);
+  // The game-time season (seasons.js) layers a weather tint over any real
+  // paddock, stacking on the Meadow/Campo scatter; the magical dusk keeps its
+  // own look and opts out. Exactly one season class sits on the scene root.
+  const seasonClass = currentSeason(state.stats.playSeconds).className;
+  SEASON_CLASSES.forEach((c) => scene.classList.toggle(c, !isMagic && c === seasonClass));
 
   // edge arrows + label, only when there is more than one view
   const older = document.getElementById('nav-older');
@@ -881,6 +889,17 @@ function butterfliesOverlay(state, paddock) {
   if (!paddockDecor(state, paddock).includes('butterflies')) return null;
   const layer = document.createElement('div');
   layer.className = 'paddock-butterflies';
+  layer.setAttribute('aria-hidden', 'true');
+  return layer;
+}
+
+/** The seasonal weather layer (seasons.js): a full-scene scatter behind the
+ *  horses (petals, sun-glints, leaves or snow), tinted and animated in CSS off
+ *  the season class on the scene root. Skipped on the magical paddock. */
+function seasonOverlay(state, isMagic) {
+  if (isMagic) return null;
+  const layer = document.createElement('div');
+  layer.className = 'paddock-weather';
   layer.setAttribute('aria-hidden', 'true');
   return layer;
 }

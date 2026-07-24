@@ -9,6 +9,7 @@
 import { SHOP_ITEMS, ownedCount, PADDOCK_CAP } from './shop.js';
 import { COAT_CATALOG, isMagicalCoat } from './horse.js';
 import { TRAITS } from './traits.js';
+import { yearsPlayed } from './seasons.js';
 
 // The bill kinds "Good books" wants a clean sheet on (kept in step with
 // game.js's BILLS; a spare kind here just makes the badge a touch harder).
@@ -94,6 +95,8 @@ export const ACHIEVEMENTS = [
     hint: 'Held a Visitors Day', earned: (s) => (s.stats.visitorsDaysRun ?? 0) >= 1 },
   { id: 'old-friends', name: 'Old friends', icon: '🤝', group: 'community',
     hint: 'Hosted a Reunion Day', earned: (s) => (s.stats.reunionsHeld ?? 0) >= 1 },
+  { id: 'round-the-year', name: 'Round the year', icon: '🗓️', group: 'community',
+    hint: 'Played through all four seasons', earned: (s) => yearsPlayed(s.stats.playSeconds ?? 0) >= 1 },
   { id: 'real-hero', name: 'Real hero', icon: '💝', group: 'community',
     hint: 'Donated to the real ARCH', earned: (s) => !!s.milestones.donatedForReal },
   { id: 'word-of-mouth', name: 'Word of mouth', icon: '📣', group: 'community',
