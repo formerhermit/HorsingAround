@@ -1,9 +1,10 @@
 // render.js — turns gameState into DOM. No game logic lives here.
 
 import { horseFigureHTML, horseImageSrc, wellbeingLabel, wellbeingColor, isShinyCoat, isMagicalCoat, COAT_CATALOG } from './horse.js';
-import { rescuePrice, shareValue, shareCharge, SHARE_READY_AT, FRONT_ROW, getActiveWant } from './game.js';
+import { rescuePrice, shareValue, shareCharge, SHARE_READY_AT, FRONT_ROW, getActiveWant, foalSizeFactor, foalGrowth } from './game.js';
 import { ACHIEVEMENTS, ACHIEVEMENT_GROUPS, isEarned } from './achievements.js';
 import { FACILITIES, hasFacility, nextFacility, canBuyFacility } from './facilities.js';
+import { currentSeason, SEASON_CLASSES } from './seasons.js';
 import {
   SHOP_ITEMS, isUnlocked, isAffordable, hasNewAffordableItem,
   PADDOCK_CAP, MAGIC_PADDOCK, paddockCount, decorTargets, herdAtCapacity, paddockDecor,
@@ -472,8 +473,9 @@ export function renderShopModal(state) {
 
   // --- wardrobe: choose a horse, then dress them ---
   // Magical gift horses (unicorn, rainbow, golden) are guests, not rescues --
-  // they don't get dressed up, so they never appear as a target here.
-  const horses = state.horses.filter((h) => !isMagicalCoat(h.paletteKey));
+  // they don't get dressed up, so they never appear as a target here. Nor do
+  // foals, until they've grown up (the costume anchors are tuned to adults).
+  const horses = state.horses.filter((h) => !isMagicalCoat(h.paletteKey) && !h.foal);
   if (!horses.some((h) => h.id === shopHorseTarget)) {
     shopHorseTarget = horses[horses.length - 1]?.id ?? null; // default: newest arrival
   }
@@ -682,13 +684,14 @@ function renderPaddock(state) {
 
   const backRow = document.createElement('div');
   backRow.className = 'horses-back';
-  back.forEach((h) => backRow.append(horseCard(h, BACK_SCALE, true, h.wardrobe)));
+  // A foal renders smaller than a grown horse, scaling up as it grows (#48).
+  back.forEach((h) => backRow.append(horseCard(h, BACK_SCALE * foalSizeFactor(h, state), true, h.wardrobe)));
 
   const frontRow = document.createElement('div');
   frontRow.className = 'horses-front';
   front.forEach((h, i) => {
     const rank = front.length - 1 - i; // 0 = newest
-    frontRow.append(horseCard(h, FRONT_SCALES[rank] ?? BACK_SCALE, false, h.wardrobe));
+    frontRow.append(horseCard(h, (FRONT_SCALES[rank] ?? BACK_SCALE) * foalSizeFactor(h, state), false, h.wardrobe));
   });
   if (!chunk.length) {
     // An empty paddock (freshly built, or every horse rehomed) still reserves
@@ -715,6 +718,8 @@ function renderPaddock(state) {
   const children = [backRow, groundDecorRow(state, paddock, view, viewCount), frontRow];
   const butterflies = butterfliesOverlay(state, paddock);
   if (butterflies) children.unshift(butterflies); // behind the horses
+  const weather = seasonOverlay(state, isMagic);
+  if (weather) children.unshift(weather); // seasonal scatter, furthest back
   document.getElementById('horses').replaceChildren(...children);
   renderPaddockDecor(state, paddock);
   // Scene theme per paddock: the buildable ones live up to their names with a
@@ -726,6 +731,11 @@ function renderPaddock(state) {
   scene.classList.toggle('magic-paddock', isMagic);
   scene.classList.toggle('meadow-paddock', !isMagic && paddock === 1);
   scene.classList.toggle('campo-paddock', !isMagic && paddock === 2);
+  // The game-time season (seasons.js) layers a weather tint over any real
+  // paddock, stacking on the Meadow/Campo scatter; the magical dusk keeps its
+  // own look and opts out. Exactly one season class sits on the scene root.
+  const seasonClass = currentSeason(state.stats.playSeconds).className;
+  SEASON_CLASSES.forEach((c) => scene.classList.toggle(c, !isMagic && c === seasonClass));
 
   // edge arrows + label, only when there is more than one view
   const older = document.getElementById('nav-older');
@@ -885,13 +895,32 @@ function butterfliesOverlay(state, paddock) {
   return layer;
 }
 
+/** The seasonal weather layer (seasons.js): a full-scene scatter behind the
+ *  horses (petals, sun-glints, leaves or snow), tinted and animated in CSS off
+ *  the season class on the scene root. Skipped on the magical paddock. */
+function seasonOverlay(state, isMagic) {
+  if (isMagic) return null;
+  const layer = document.createElement('div');
+  layer.className = 'paddock-weather';
+  layer.setAttribute('aria-hidden', 'true');
+  return layer;
+}
+
 // The personality trait is deliberately NOT shown as a line under the horse
 // (that was dropped from the cards long ago -- just name + status). Traits still
 // drive everything else: the arrival/reveal/breakthrough toasts, quirk care
 // moments, want bias, postcards, and the "all 29 personalities" badge.
+/** A foal's status line, by how grown it is (grown horses use wellbeingLabel). */
+function foalConditionLabel(horse) {
+  const g = foalGrowth(horse);
+  if (g < 0.34) return 'a wobbly new foal';
+  if (g < 0.67) return 'growing fast';
+  return 'nearly grown';
+}
+
 function horseCard(horse, scale = 1, isBack = false, wardrobe = []) {
   const card = document.createElement('div');
-  card.className = `horse${isBack ? ' is-back' : ''}${isShinyCoat(horse) ? ' is-shiny' : ''}`;
+  card.className = `horse${isBack ? ' is-back' : ''}${isShinyCoat(horse) ? ' is-shiny' : ''}${horse.foal ? ' is-foal' : ''}`;
   // Width and text both key off --horse-unit (a viewport-responsive length, see
   // CSS) so the whole scene shrinks to fit shorter screens instead of pushing
   // the buttons off the bottom. 70vw keeps a lone big horse off the edges.
@@ -906,7 +935,7 @@ function horseCard(horse, scale = 1, isBack = false, wardrobe = []) {
   card.innerHTML = `
     ${horseFigureHTML(horse, wardrobe)}
     <p class="horse-name">${horse.name}</p>
-    <p class="horse-condition">${wellbeingLabel(horse.wellbeing)}</p>
+    <p class="horse-condition">${horse.foal ? foalConditionLabel(horse) : wellbeingLabel(horse.wellbeing)}</p>
     <p class="horse-sponsor${horse.sponsor ? ' shown' : ''}">${horse.sponsor ? `sponsored by ${horse.sponsor} 💛` : ''}</p>
     <div class="wellbeing" role="meter" aria-label="${horse.name}'s wellbeing"
          aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(horse.wellbeing)}">

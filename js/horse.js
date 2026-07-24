@@ -71,8 +71,11 @@ function coatOf(horse) {
   return KNOWN_COATS.has(horse.paletteKey) ? horse.paletteKey : 'brown';
 }
 
-/** Path to the image for a horse's current coat + state. */
+/** Path to the image for a horse's current coat + state. A foal has a single
+ *  image (foals are always happy and healthy) until it grows up (game.js), at
+ *  which point it takes a real coat and this returns the usual per-state art. */
 export function horseImageSrc(horse) {
+  if (horse.foal) return 'assets/horses/foal.png';
   return `assets/horses/${coatOf(horse)}-${wellbeingState(horse.wellbeing)}.png`;
 }
 

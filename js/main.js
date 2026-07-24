@@ -14,6 +14,7 @@ import {
 } from './render.js';
 import { ACHIEVEMENTS, checkAchievements } from './achievements.js';
 import { buyFacility } from './facilities.js';
+import { currentSeason } from './seasons.js';
 import {
   buyDecorIn, buyWardrobe, placeDecor, removeDecor, placeWardrobe, removeWardrobe,
   hasNewAffordableItem, buyPaddock, nextPaddockPrice,
@@ -560,16 +561,25 @@ function billPaidToast(res) {
   if (res.kind === 'water') return '💧 The troughs are brimming with fresh water: the whole herd is content 💛';
   if (res.kind === 'barn') return '🔨 The stable is snug and dry again, and the smart new roof is turning heads 💛';
   if (res.kind === 'journalist') return '📰 The journalist got the full tour. Watch the paper: the story runs soon!';
-  if (res.kind === 'foal') return `🐴 The foal is up on its wobbly legs, and word of the new arrival is bringing visitors 💛`;
+  if (res.kind === 'foal') {
+    const born = res.foal
+      ? `${res.foal.name} is up on wobbly legs${res.damName ? ` beside ${res.damName}` : ''}`
+      : 'The foal is up on its wobbly legs';
+    return `🐴 ${born}, and word of the new arrival is bringing visitors 💛`;
+  }
   return '🔧 The horse box is roadworthy again, ready for the next rescue 💛';
 }
 
 /** Turn one event into either a toast or a queued modal dialog. */
 function handleEvent(e) {
   if (e.type === 'rehome-offer') {
+    // A home-raised horse (grew up here from a foal) gets a fonder send-off.
+    const text = e.bornHere
+      ? `${e.horseName} was born and raised right here, and is ready for a home of their own. Agree to adoption for ${fig(`€${e.income}`)}?`
+      : `${e.horseName} is ready for rehoming. Agree to adoption for ${fig(`€${e.income}`)}?`;
     enqueueDialog({
       emoji: '🏡',
-      text: `${e.horseName} is ready for rehoming. Agree to adoption for ${fig(`€${e.income}`)}?`,
+      text,
       buttons: [
         { label: 'Yes please!', variant: 'primary', onClick: () => {
           const res = acceptRehome();
@@ -651,6 +661,7 @@ function handleEvent(e) {
           if (!res?.ok) return;
           showToast(billPaidToast(res));
           if (res.supporters > 0) showSupporterPop(res.supporters); // mechanic admirers, foal well-wishers
+          if (res.foal) { resetPaddockView(); renderAll(state); } // show the newborn at the front
           state.horses.forEach(updateHorseCard); // topped-up bars show right away
           runAchievementCheck(); // farrier / worming / good-books badges
           refreshUI();
@@ -712,6 +723,23 @@ function handleEvent(e) {
     showSupporterPop(e.count); // subtle chip pop, not a toast
   } else if (e.type === 'supporter-milestone') {
     showToast(`🎉 ${e.count} people now follow the rescue 💛`);
+  } else if (e.type === 'foal-grown') {
+    // The foal has grown up into an adult coat: show the change, then a warm,
+    // share-worthy popup. It's now adoptable like any horse.
+    resetPaddockView();
+    renderAll(state);
+    const book = e.newForCollection ? ' 📖 A new coat for your collection!' : '';
+    const raised = e.damName ? `, raised alongside ${e.damName},` : '';
+    enqueueDialog({
+      emoji: '🎉', confetti: true, share: true,
+      text: `${fig(e.name)}${raised} has grown up into a fine horse, born and raised right here at the rescue. Ready now for a forever home of their own 💛${book}`,
+      buttons: [{ label: 'Wonderful!', variant: 'primary' }],
+    });
+  } else if (e.type === 'season-change') {
+    // A gentle toast; the paddock backdrop re-skins to match (renderPaddock
+    // reads the season), so re-render the scene without disturbing the view.
+    showToast(e.message);
+    renderAll(state);
   } else {
     showToast(e.message);
   }
@@ -1446,4 +1474,8 @@ window.matchMedia('(max-width: 560px)').addEventListener('change', () => {
 window.addEventListener('beforeunload', save); // no time for a network call here
 
 // Handy in the console while developing.
-window.HorsingAround = { get state() { return gameState; }, save, pushCloudSave, hurryPaddockLife };
+window.HorsingAround = {
+  get state() { return gameState; },
+  get season() { return currentSeason(gameState.stats.playSeconds); },
+  save, pushCloudSave, hurryPaddockLife,
+};
