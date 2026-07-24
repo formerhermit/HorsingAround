@@ -562,6 +562,10 @@ export function shopWardrobeHorse() {
 }
 
 export function openShopModal(state) {
+  // Open the decor section onto whichever paddock the player is looking at (#85),
+  // as long as it's a valid decor target (it always is: owned + magical).
+  const viewed = currentPaddockIndex(state);
+  if (decorTargets(state).includes(viewed)) shopPaddockTarget = viewed;
   renderShopModal(state);
   document.getElementById('shop-overlay').hidden = false;
 }
@@ -636,6 +640,16 @@ export function resetPaddockView() {
 export function changePaddock(delta, state) {
   currentView += delta;
   renderPaddock(state);
+}
+
+/** The paddock slot index currently on screen (Home = 0, Meadow = 1, Campo = 2,
+ *  the magical paddock = MAGIC_PADDOCK), derived from the view being shown. Lets
+ *  the shop open onto whichever paddock the player was just looking at (#85). */
+export function currentPaddockIndex(state) {
+  const views = paddockViews(state);
+  if (!views.length) return 0;
+  const idx = Math.max(0, Math.min(currentView, views.length - 1));
+  return views[idx].paddock;
 }
 
 /** Flatten the owned paddocks (plus the magical one, if a magical horse lives
