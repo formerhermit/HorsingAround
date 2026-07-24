@@ -645,30 +645,8 @@ main {
   padding: calc(var(--horse-unit) * 0.24) 1.25rem 1rem;
 }
 
-/* Butterflies: a scatter centred in the middle of the paddock. Sized well below
-   full-bleed so it reads as a cluster, not wallpaper. They flutter in front of
-   the ground props (trough, barrels) but behind the horses. */
-/* Butterflies flutter in the open air near the top of the scene, above the
-   grounded props rather than on top of them (issue #111). Kept centred for
-   balance, just lifted clear of anything sitting on the grass. */
-.paddock-butterflies {
-  position: absolute;
-  inset: 0;
-  z-index: 2;
-  pointer-events: none;
-  background: url('../assets/decor/butterflies.png') center 20% / 21% auto no-repeat;
-}
-/* Seasonal butterflies (issue #48): warm ambers in autumn, cool pastels in
-   winter. Only the image swaps; the position and size carry over from above. */
-.paddock.season-autumn .paddock-butterflies {
-  background-image: url('../assets/decor/butterflies-autumn.png');
-}
-.paddock.season-winter .paddock-butterflies {
-  background-image: url('../assets/decor/butterflies-winter.png');
-}
-
-/* Stacking inside the paddock: ground props sit lowest, the butterflies flutter
-   in front of them, and the horse rows sit in front of everything. */
+/* Stacking inside the paddock: ground props sit lowest, and the horse rows sit
+   in front of everything. */
 .ground-decor {
   position: relative;
   z-index: 1;

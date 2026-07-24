@@ -102,7 +102,7 @@ const ITEM_EMOJI = {
   'forelock-bow': '🎀', 'saddle-blanket': '🟦',
   'flower-garland': '🌼', bunting: '🎏', trough: '💧',
   'flower-buckets': '🪣', 'flower-barrow': '🌷', 'hay-bales': '🌾',
-  'play-balls': '🎾', butterflies: '🦋', muffin: '🐶', marmalade: '🐱', joya: '🐕',
+  'play-balls': '🎾', muffin: '🐶', marmalade: '🐱', joya: '🐕',
   'statue-wooden': '🪵', 'statue-stone': '🗿', 'statue-flowers': '🌸', 'statue-gold': '🏆',
 };
 
@@ -890,8 +890,6 @@ function renderPaddock(state) {
   }
 
   const children = [backRow, groundDecorRow(state, paddock, view, viewCount), frontRow];
-  const butterflies = butterfliesOverlay(state, paddock);
-  if (butterflies) children.unshift(butterflies); // behind the horses
   const weather = seasonOverlay(state, isMagic);
   if (weather) children.unshift(weather); // seasonal scatter, furthest back
   document.getElementById('horses').replaceChildren(...children);
@@ -1064,8 +1062,7 @@ const GROUND_IMAGES = {
 // bales, the play balls, and the fence garland). In those seasons the image
 // silently swaps to its seasonal variant; spring and summer keep the vibrant
 // base art. It's a free, purely cosmetic swap — the item, its cost and its
-// effect are unchanged. (The butterflies swap too, but they're a CSS layer, so
-// their seasonal art lives in the stylesheet rather than here.)
+// effect are unchanged.
 const SEASONAL_DECOR = new Set(['flower-buckets', 'flower-barrow', 'hay-bales', 'flower-garland', 'play-balls']);
 function seasonalDecorKey(id, seasonKey) {
   return (SEASONAL_DECOR.has(id) && (seasonKey === 'autumn' || seasonKey === 'winter'))
@@ -1086,8 +1083,8 @@ function groundImage(id, cx, seasonKey) {
  *  its height is reserved from the first render -- buying the first ground prop
  *  must never make the paddock grow. Grounded props spread evenly across the
  *  row; when a paddock spans several views (narrow screens) they deal out
- *  round-robin so every view feels dressed. Fence decor (garland/bunting) and
- *  butterflies are drawn elsewhere. */
+ *  round-robin so every view feels dressed. Fence decor (garland/bunting) is
+ *  drawn elsewhere. */
 function groundDecorRow(state, paddock, view = 0, viewCount = 1) {
   const seasonKey = currentSeason(state.stats.playSeconds).key;
   const props = paddockDecor(state, paddock)
@@ -1107,16 +1104,6 @@ function groundDecorRow(state, paddock, view = 0, viewCount = 1) {
   row.className = 'ground-decor';
   row.innerHTML = `<svg viewBox="0 0 ${vbw.toFixed(1)} 100" preserveAspectRatio="xMidYMax meet" aria-hidden="true">${images}</svg>`;
   return row;
-}
-
-/** Full-paddock butterfly layer -- a scatter that spans the whole grass, behind
- *  the horses. Only present when the paddock owns the butterflies decor. */
-function butterfliesOverlay(state, paddock) {
-  if (!paddockDecor(state, paddock).includes('butterflies')) return null;
-  const layer = document.createElement('div');
-  layer.className = 'paddock-butterflies';
-  layer.setAttribute('aria-hidden', 'true');
-  return layer;
 }
 
 /** The seasonal weather layer (seasons.js): a full-scene scatter behind the

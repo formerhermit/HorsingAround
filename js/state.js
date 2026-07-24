@@ -472,6 +472,15 @@ function repair(save) {
     if (idx >= 0) paddockDecor[idx] = 'flower-barrow';
   }
 
+  // The butterflies decor item was retired (it didn't read well in the paddock).
+  // Quietly drop any that were bought — from paddocks and from the stores — so
+  // no orphaned id lingers. Idempotent.
+  for (const p of Object.keys(save.shop.decorByPaddock ?? {})) {
+    save.shop.decorByPaddock[p] = save.shop.decorByPaddock[p].filter((id) => id !== 'butterflies');
+    if (save.shop.decorByPaddock[p].length === 0) delete save.shop.decorByPaddock[p];
+  }
+  if (save.shop.stock) delete save.shop.stock.butterflies;
+
   // "One of each" decor is new. The old model let you buy the same prop for many
   // paddocks; consolidate to keep the first placement and reclaim the rest into
   // the stores. Stackable banners are exempt, and clothing stays per-horse (a
