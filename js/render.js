@@ -528,7 +528,8 @@ export function renderShopModal(state) {
   const wardrobeGrid = document.getElementById('shop-grid-wardrobe');
   const decorGrid = document.getElementById('shop-grid-decor');
   const buildSlot = document.getElementById('shop-build-paddock');
-  [wardrobeTarget, decorTarget, wardrobeGrid, decorGrid, buildSlot].forEach((el) => el.replaceChildren());
+  const keepsakeGrid = document.getElementById('shop-grid-keepsakes');
+  [wardrobeTarget, decorTarget, wardrobeGrid, decorGrid, buildSlot, keepsakeGrid].forEach((el) => el.replaceChildren());
 
   const unlocked = SHOP_ITEMS.filter((item) => isUnlocked(item, state));
 
@@ -580,7 +581,15 @@ export function renderShopModal(state) {
       <p class="build-paddock-note">Room for ${PADDOCK_CAP} more horses, and a fresh spot to decorate.</p>`;
   }
 
-  fillGrid(decorGrid, unlocked.filter((i) => i.category === 'decor'),
+  // Bought decor and earned keepsakes (gift statues) get their own sections, so
+  // the treasures from rehomed horses aren't lost among the shop items (#94).
+  // Both place into the same chosen paddock (the selector above).
+  const decorItems = unlocked.filter((i) => i.category === 'decor');
+  fillGrid(decorGrid, decorItems.filter((i) => !i.gift),
+    (item) => decorItemRow(item, shopPaddockTarget, state));
+  const keepsakes = decorItems.filter((i) => i.gift);
+  document.getElementById('shop-section-keepsakes').hidden = keepsakes.length === 0;
+  fillGrid(keepsakeGrid, keepsakes,
     (item) => decorItemRow(item, shopPaddockTarget, state));
 
   renderFacilities(state);
