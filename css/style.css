@@ -426,11 +426,19 @@ main {
   --petal-pink:  url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='10'%20height='11'%3E%3Cellipse%20cx='5'%20cy='5.5'%20rx='2.2'%20ry='3.8'%20fill='%23F0A8C4'%20transform='rotate(35%205%205.5)'/%3E%3C/svg%3E");
   --petal-white: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='10'%20height='11'%3E%3Cellipse%20cx='5'%20cy='5.5'%20rx='2'%20ry='3.5'%20fill='%23FBEFF3'%20transform='rotate(-22%205%205.5)'/%3E%3C/svg%3E");
   /* Real little maple leaves in three autumn colours (issue #48), kept very
-     small so they read as leaves rather than blobs. They replace the earlier
-     inline-SVG silhouettes for the falling scatter and the settled leaves. */
-  --leaf-orange: url('../assets/decor/leaf-orange.png');
-  --leaf-red:    url('../assets/decor/leaf-red.png');
-  --leaf-yellow: url('../assets/decor/leaf-yellow.png');
+     small so they read as leaves rather than blobs. Each colour comes in three
+     baked-in rotations so the scatter points every which way (CSS can't rotate
+     individual background layers). They replace the earlier inline-SVG
+     silhouettes for the falling scatter and the settled leaves. */
+  --leaf-o1: url('../assets/decor/leaf-orange-1.png');
+  --leaf-o2: url('../assets/decor/leaf-orange-2.png');
+  --leaf-o3: url('../assets/decor/leaf-orange-3.png');
+  --leaf-r1: url('../assets/decor/leaf-red-1.png');
+  --leaf-r2: url('../assets/decor/leaf-red-2.png');
+  --leaf-r3: url('../assets/decor/leaf-red-3.png');
+  --leaf-y1: url('../assets/decor/leaf-yellow-1.png');
+  --leaf-y2: url('../assets/decor/leaf-yellow-2.png');
+  --leaf-y3: url('../assets/decor/leaf-yellow-3.png');
   /* Rain: longer, slanted, clearly falling streaks. */
   --raindrop:    url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='7'%20height='18'%3E%3Cline%20x1='5'%20y1='1'%20x2='1.5'%20y2='16'%20stroke='%237BA0C8'%20stroke-width='1.6'%20stroke-linecap='round'%20stroke-opacity='0.85'/%3E%3C/svg%3E");
   /* A shallow puddle catching the grey sky, so winter reads as wet. */
@@ -529,20 +537,20 @@ main {
 .paddock.season-autumn .paddock-weather {
   background:
     radial-gradient(130% 90% at 50% 0%, rgba(214,140,60,.15), transparent 62%),
-    var(--leaf-red), var(--leaf-orange), var(--leaf-yellow), var(--leaf-orange);
+    var(--leaf-r2), var(--leaf-o1), var(--leaf-y3), var(--leaf-o3);
   background-repeat: no-repeat;
-  background-size: auto, 15px 16px, 17px 19px, 14px 15px, 13px 14px;
-  background-position: 0 0, 12% 98%, 31% 99%, 62% 99%, 86% 97%;
+  background-size: auto, 24px 24px, 26px 26px, 22px 22px, 21px 21px;
+  background-position: 0 0, 12% 99%, 31% 100%, 62% 100%, 86% 98%;
 }
 .paddock.season-autumn .paddock-weather::before {
-  background-image: var(--leaf-orange), var(--leaf-red), var(--leaf-yellow), var(--leaf-orange), var(--leaf-red), var(--leaf-yellow), var(--leaf-orange), var(--leaf-red);
-  background-size: 13px 14px, 12px 13px, 11px 12px, 13px 14px, 12px 13px, 11px 12px, 13px 14px, 12px 13px;
+  background-image: var(--leaf-o1), var(--leaf-r2), var(--leaf-y1), var(--leaf-o3), var(--leaf-r1), var(--leaf-y2), var(--leaf-o2), var(--leaf-r3);
+  background-size: 20px 20px, 19px 19px, 18px 18px, 21px 21px, 19px 19px, 18px 18px, 20px 20px, 19px 19px;
   background-position: 8% 12%, 22% 20%, 34% 8%, 47% 26%, 60% 13%, 72% 23%, 85% 10%, 95% 29%;
   animation: season-drift 6.5s ease-in-out infinite;
 }
 .paddock.season-autumn .paddock-weather::after {
-  background-image: var(--leaf-red), var(--leaf-yellow), var(--leaf-orange), var(--leaf-yellow), var(--leaf-red), var(--leaf-orange);
-  background-size: 11px 12px, 12px 13px, 11px 12px, 12px 13px, 11px 12px, 12px 13px;
+  background-image: var(--leaf-r3), var(--leaf-y2), var(--leaf-o1), var(--leaf-y3), var(--leaf-r1), var(--leaf-o2);
+  background-size: 18px 18px, 19px 19px, 18px 18px, 19px 19px, 18px 18px, 19px 19px;
   background-position: 14% 34%, 29% 44%, 44% 40%, 58% 46%, 78% 44%, 90% 36%;
   animation: season-drift 8s ease-in-out .9s infinite;
 }
