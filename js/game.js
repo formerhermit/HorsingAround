@@ -17,6 +17,7 @@ import {
 import {
   billDiscount, adoptionMultiplier, rescueDiscount, rescueWellbeingBonus,
   eventDrawMultiplier, supporterCapMultiplier, driftGraceMultiplier, hasFacility,
+  donationMultiplier,
 } from './facilities.js';
 import { SEASONS, currentSeason, seasonIndexFor } from './seasons.js';
 
@@ -33,7 +34,13 @@ export const RESCUE_COST_FACTOR = 1.8;
 export const TRAIT_REVEAL_AT = 40;   // wellbeing at which personality shows
 export const SPONSOR_AT = 95;        // "thriving" — earns the horse a sponsor
 export const FIRST_SPONSOR_AT = 88;  // Biscuit sponsors a touch earlier, as its own beat
-export const SPONSOR_RATE = 0.15;    // € per sponsored horse per second
+export const SPONSOR_RATE = 0.15;    // € per sponsored horse per second, base
+// A sponsorship deepens as the rescue grows (issue #118): each non-magical
+// horse in the herd past the first raises every sponsor's giving by this
+// fraction of the base rate. This is the mid-game bridge — supporter income
+// caps with the herd (see supporterCapacity), and without a second stream that
+// grows with the rescue's stage, the facility ladder sits out of reach.
+export const SPONSOR_HERD_BONUS = 0.5;
 export const SHARE_BASE = 3;         // € per full-charge shared update...
 export const SHARE_PER_SUPPORTER = 0.3; // ...plus this per supporter
 // Sharing runs on a charge meter (issue #9): the button refills over
@@ -357,6 +364,15 @@ export function rescueCost(state = gameState) {
  *  second-horsebox discount (issue #48). Used for the button and the purchase. */
 export function rescuePrice(state = gameState) {
   return Math.round(rescueCost(state) * (1 - rescueDiscount(state)));
+}
+
+/** € per second one sponsored horse brings in right now. Starts at the base
+ *  rate with a single horse and grows linearly with the herd (SPONSOR_HERD_
+ *  BONUS): a bigger rescue is a bigger story, and its sponsors give more.
+ *  Counts the same herd rescueCost does, so the two stages always agree. */
+export function sponsorRatePerHorse(state = gameState) {
+  const herd = state.horses.filter((h) => !isMagicalCoat(h.paletteKey)).length;
+  return SPONSOR_RATE * (1 + SPONSOR_HERD_BONUS * Math.max(0, herd - 1));
 }
 
 /** The horse a rescue would bump from the front row back to the back row (the
@@ -1358,7 +1374,8 @@ export function collectOfflineEarnings(lastPlayedAt, now = Date.now()) {
   // the donations and the new-supporter count below.
   const seconds = Math.min(awaySeconds, OFFLINE_CAP_SECONDS) * OFFLINE_RATE;
   const sponsored = gameState.horses.filter((h) => h.sponsor).length;
-  const income = (gameState.supporters * SUPPORTER_RATE * utilidadMult() + sponsored * SPONSOR_RATE) * seconds;
+  const income = (gameState.supporters * SUPPORTER_RATE * utilidadMult()
+    + sponsored * sponsorRatePerHorse()) * donationMultiplier(gameState) * seconds;
   // New supporters arrive at the same per-second chance the live tick rolls,
   // but never past the herd's carrying capacity. They only start donating from
   // now on — we don't back-pay their giving.
@@ -1419,9 +1436,12 @@ export function tick(dt) {
   }
 
   // supporters donate steadily (a touch more once Utilidad Pública is won);
-  // sponsored horses bring extra committed income
+  // sponsored horses bring committed income that deepens as the rescue grows.
+  // Facilities lift the whole stream (donationMultiplier), so each rung of the
+  // ladder helps pay for the next.
   const sponsored = gameState.horses.filter((h) => h.sponsor).length;
-  const income = (gameState.supporters * SUPPORTER_RATE * utilidadMult() + sponsored * SPONSOR_RATE) * dt;
+  const income = (gameState.supporters * SUPPORTER_RATE * utilidadMult()
+    + sponsored * sponsorRatePerHorse()) * donationMultiplier(gameState) * dt;
   gameState.coins += income;
   gameState.stats.totalDonated += income;
 
