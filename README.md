@@ -43,7 +43,7 @@ Money comes in a few ways:
 
 - **Your first donation**: a one-off €12 the first time any horse reaches "content". It only ever happens once.
 - **Supporters**: everyone following the rescue chips in €0.04 a second, all the time, in the background. A herd of a given size and health sustains only so large a following, so this income settles at a steady level rather than climbing forever, grow and improve the herd to raise it.
-- **Sponsors**: every horse with a sponsor brings in an extra €0.15 a second, forever, on top of that.
+- **Sponsors**: every horse with a sponsor brings in extra money every second, forever, on top of that. A sponsorship starts at €0.15 a second and deepens as the rescue grows: the bigger your herd, the more every sponsor gives.
 - **Share an update**: a button you press to ask for support. It charges up over about half a minute (watch the little line fill), and the payout scales with the charge, so a full meter is worth the wait: `€3 + €0.30 for every supporter`. Mashing it harvests next to nothing. And once in a while, a full-charge share goes viral: five times the money, plus a little crowd of brand-new followers.
 
 You spend money on three things: **rescuing more horses**, **the shop**, and **keeping the place running**. Like the real rescue, the bills never quite stop: the vet calls, horses need shoes, the hay gets delivered, the horse box breaks down. That's the point: caring for rescue horses takes real, ongoing money.
@@ -56,7 +56,7 @@ Supporters pull double duty. They donate on their own, and they make every "shar
 
 ### Sponsors
 
-The first time a horse hits 95 wellbeing, someone falls for it and becomes its sponsor, paying €0.15 a second, forever. A horse you've nursed all the way back keeps paying its way.
+The first time a horse hits 95 wellbeing, someone falls for it and becomes its sponsor, paying money in every second, forever. A horse you've nursed all the way back keeps paying its way. And sponsorships deepen as the rescue grows: each horse in the herd raises what every sponsor gives, so a big, well-tended rescue earns real committed income rather than pocket money.
 
 ### Rescue more horses
 
@@ -88,14 +88,14 @@ Each paddock gets its own decorations — the magical paddock included — up to
 
 Once your rescue is well established, the Tack room's **Expansions** tab gains **Grow the rescue**: a ladder of big, permanent upgrades to the rescue itself. These are the grandest goals a thriving rescue can save up for, and each one quietly makes running the place easier:
 
-- **Vet station** — vet and farrier bills cost less.
-- **Hay barn** — hay bills cost less, and a well-fed herd holds its shine longer.
-- **Rehoming office** — adoption fees pay more.
-- **Second horsebox** — new rescues arrive in better shape, and cost less.
-- **Visitor centre** — Visitors Days and new foals draw a bigger crowd, and your following can grow larger.
-- **Sanctuary field** — the dream: a grand forever home, and room to build a fourth paddock.
+- **Vet station** — vet and farrier bills cost less, and donations give 10% more.
+- **Hay barn** — hay bills cost less, a well-fed herd holds its shine longer, and donations give 10% more.
+- **Rehoming office** — adoption fees pay more, and donations give 15% more.
+- **Second horsebox** — new rescues arrive in better shape, cost less, and donations give 15% more.
+- **Visitor centre** — Visitors Days and new foals draw a bigger crowd, your following can grow larger, and donations give 25% more.
+- **Sanctuary field** — the dream: a grand forever home, room to build a fourth paddock, and donations give 30% more.
 
-They're bought in order and priced to be a long chase, tens of thousands for the first, millions for the last, so there's always something to reach for. Most of the benefits are gentle savings rather than a money fountain, so the rescue grows without ever running away with itself.
+They're bought in order and priced to be a long chase, tens of thousands for the first, millions for the last, so there's always something to reach for. Alongside its savings, every facility permanently lifts all donation income, and the bonuses stack: each rung of the ladder helps pay for the next, so the climb keeps a steady rhythm instead of stalling.
 
 ### Seasons
 
