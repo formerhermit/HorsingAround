@@ -44,10 +44,17 @@ export function hasMagicalHorse(state) {
 // count against a paddock's decoration budget.
 export const FENCE_DECOR_IDS = new Set(['flower-garland', 'bunting']);
 
-// Items you may own more than one of. The fence banners are per-paddock scenery
-// you'd want in every paddock, so they escape the "one of each" rule; everything
-// else is a single object you relocate rather than re-buy.
-export const STACKABLE_IDS = FENCE_DECOR_IDS;
+// Ground/ambient props that live one-per-paddock (issue #112): a paddock may
+// hold one of each, so a player who's built several paddocks can decorate them
+// all. The pets (Muffin, Marmalade, Joya) are the exception — each is
+// one-of-a-kind for the whole game — so they are deliberately NOT listed here.
+const PER_PADDOCK_FLOOR = new Set(['flower-buckets', 'flower-barrow', 'butterflies', 'trough', 'hay-bales', 'play-balls']);
+
+// Items you may own more than one of, because each lives one-per-paddock: the
+// fence banners and the ground props above. A player with several paddocks can
+// keep one of each in every paddock. Everything else — the pets, and the gift
+// statues — is a single object you relocate rather than re-buy.
+export const STACKABLE_IDS = new Set([...FENCE_DECOR_IDS, ...PER_PADDOCK_FLOOR]);
 
 // Ground/ambient props a single paddock can hold, beyond the fence-line decor.
 // Props keep their fixed sizes and simply spread across the row (render.js), so
