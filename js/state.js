@@ -144,6 +144,7 @@ export function defaultState() {
     // story beats that must fire exactly once
     milestones: {
       firstDonation: false,
+      firstWantRewarded: false, // the first want's big one-off early-game payout (game.js)
       firstSponsorship: false,  // once true, sponsorship toasts go terse
       driftIntroShown: false,   // the one-time "horses love routine" top-up explainer
       utilidadShown: false,     // Utilidad Pública recognition earned (permanent +10% supporter donations)
@@ -308,6 +309,9 @@ function repair(save) {
   save.lastSharedAt ??= 0;
   // The gentle-upkeep drift is new; returning players get its explainer too.
   save.milestones.driftIntroShown ??= false;
+  // The first-want windfall is new: only a player still on their very first horse
+  // should ever see it, so anyone already past the second rescue is marked done.
+  save.milestones.firstWantRewarded ??= (save.stats?.horsesRescued ?? 1) > 1;
   // Paddock-life additions: the article chain, the Utilidad Pública beat (a
   // returning player past the mark earns its popup on next tick, on purpose),
   // and the once-per-month champion celebration.
