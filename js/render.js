@@ -163,7 +163,7 @@ function residentCardHTML(horse) {
     <dl class="resident-facts">
       <div><dt>Breed</dt><dd>${residentBreed(horse)}</dd></div>
       <div><dt>Age</dt><dd>${residentAge(horse)}</dd></div>
-      <div><dt>Arrived</dt><dd>${arrived}</dd></div>
+      <div><dt>${horse.returned ? 'Returned' : 'Arrived'}</dt><dd>${arrived}</dd></div>
       <div><dt>Personality</dt><dd>${residentPersonality(horse)}</dd></div>
     </dl>
   </figcaption>
@@ -376,6 +376,7 @@ export function renderStats(state) {
     statGroup('Horses', [
       statRow('Horses rescued', s.horsesRescued),
       statRow('Found new homes', s.horsesRehomed),
+      ...((s.horsesReturned ?? 0) > 0 ? [statRow('Welcomed back', s.horsesReturned)] : []),
       statRow('In your care now', state.horses.length),
       statRow('Personalities discovered', s.traitsRevealed),
     ]),

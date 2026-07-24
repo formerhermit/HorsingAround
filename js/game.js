@@ -555,6 +555,8 @@ export function acceptRehome() {
   gameState.coins += income;
   gameState.stats.horsesRehomed += 1;
   if (horse.bornHere) gameState.stats.homegrownRehomed = (gameState.stats.homegrownRehomed ?? 0) + 1;
+  // A returned horse re-adopted: the second second chance (issue #35's badge).
+  if (horse.returned) gameState.stats.returnedRehomed = (gameState.stats.returnedRehomed ?? 0) + 1;
   // The horse goes to its new home, but its clothes stay: anything it was
   // wearing comes off into the stores to re-use on another horse.
   const leftBehind = horse.wardrobe.length > 0;
@@ -643,6 +645,10 @@ function schedulePostcard(horse) {
     wardrobe: [...(horse.wardrobe ?? [])],
     adopter,
     message,
+    // Who they are, remembered in case they ever come home (issue #35). A fear
+    // overcome is part of their story now; it comes back overcome.
+    trait: horse.trait ?? null,
+    fearOvercome: !!horse.fearOvercome,
     dueAt: Date.now() + delaySec * 1000,
     deliveredAt: null,
     read: false,
@@ -927,6 +933,29 @@ const ARTICLE_DELAY_MIN = 3 * 60;    // seconds from paying to the story printin
 const ARTICLE_DELAY_MAX = 6 * 60;
 const ARTICLE_FRONT_PAGE = 0.125;    // ~1 in 8 stories lands the front page
 const REUNION_CHANCE = 0.12;         // windfall roll: Reunion Day (issue #61)
+
+// A returned adoption (issue #35): sometimes, in real rescue life, an adoption
+// doesn't hold — and it's never anyone's failing, least of all the horse's.
+// Life just happens: a move, a health setback, a sold yard. The horse comes
+// home free (no cost, no lost progress, no penalty of any kind), remembered by
+// name and coat from its own postcard, keeps any personality it had (a fear
+// once overcome STAYS overcome), and can be re-adopted like anyone else. Rare
+// by design so a return feels like a story beat, not a revolving door; each
+// rehomed horse returns at most once (its postcard is marked).
+const RETURN_CHANCE = 0.05;          // windfall-roll slice, after Reunion Day
+const RETURN_MIN_REHOMED = 3;        // only once rehoming is an established rhythm
+const RETURN_WELLBEING_MIN = 50;     // arrives "a little unsettled", never rough
+const RETURN_WELLBEING_MAX = 65;
+// Why the adoption ended: always life circumstances, never blame. {name} is the
+// horse, {adopter} the family it went to (from the original postcard). Phrased
+// so they read right for any adopter, singular or plural ("Abuela Rosa" and
+// "the García family" alike).
+const RETURN_REASONS = [
+  'a move abroad means a long journey ahead, and {adopter} would rather {name} kept these familiar fields',
+  'a health setback means {adopter} cannot manage {name}’s care for now',
+  'the yard where {name} lived is being sold, and {adopter} had nowhere for a horse to go',
+  'a new baby has turned life upside down for {adopter}, the lovely kind of upside down, and {name} needs more time than anyone can spare',
+];
 const BARN_GLOW = 120;               // seconds the fixed roof turns heads
 
 // Utilidad Pública (issue #62): a one-time recognition beat once the rescue is
@@ -1014,6 +1043,15 @@ function updatePaddockLife(dt, now, events) {
   if (roll < visitorsChance + REUNION_CHANCE && gameState.stats.horsesRehomed >= 1) {
     events.push(runReunionDay());
     return;
+  }
+  // A returned adoption (issue #35): rare, and only when a remembered horse
+  // can actually come back. No candidate or no room: quietly a bill instead.
+  if (roll < visitorsChance + REUNION_CHANCE + RETURN_CHANCE) {
+    const returned = maybeReturnHorse();
+    if (returned) {
+      events.push(returned);
+      return;
+    }
   }
 
   // A bill — though never a second story while one is already at the printers.
@@ -1206,6 +1244,45 @@ function runReunionDay() {
   gameState.supporters += newSupporters;
   gameState.stats.reunionsHeld = (gameState.stats.reunionsHeld ?? 0) + 1;
   return { type: 'reunion', returned, newSupporters };
+}
+
+/** A rehomed horse comes home (issue #35): drawn from its own postcard, so it's
+ *  a specific remembered horse, with the adopter's name in the story. Purely a
+ *  return, never a penalty: free, arrives only a little unsettled, keeps its
+ *  personality (an overcome fear stays overcome), and no counter ever goes
+ *  down. Returns the event, or null when no one can come back right now. */
+function maybeReturnHorse(now = Date.now()) {
+  if (gameState.stats.horsesRehomed < RETURN_MIN_REHOMED) return null;
+  if (herdAtCapacity(gameState)) return null;
+  // A candidate is a delivered postcard whose horse has never returned before
+  // (checked by name, so the fresh postcard a re-adoption writes can't bring
+  // them back a second time) and who isn't standing in the paddock already.
+  const herdNames = new Set(gameState.horses.map((h) => h.name));
+  const returnedNames = new Set((gameState.postcards ?? []).filter((pc) => pc.returned).map((pc) => pc.name));
+  const candidates = (gameState.postcards ?? [])
+    .filter((pc) => !pc.returned && !herdNames.has(pc.name) && !returnedNames.has(pc.name));
+  if (!candidates.length) return null;
+  const pc = randomFrom(candidates);
+  pc.returned = true; // each horse comes back at most once
+  const horse = createHorse({
+    id: `ret-${gameState.horses.length + 1}-${now.toString(36)}`,
+    name: pc.name,
+    paletteKey: pc.paletteKey,
+    wellbeing: Math.round(randomBetween(RETURN_WELLBEING_MIN, RETURN_WELLBEING_MAX)),
+    rescueOrder: gameState.horses.length + 1,
+    // Older postcards predate the trait field; a fresh personality then.
+    trait: pc.trait ?? randomUnused(TRAITS, gameState.horses.map((h) => h.trait)),
+  });
+  // Growth is theirs to keep: a fear overcome in their first stay (or any fear
+  // restored from before the field existed) never has to be overcome again.
+  if (isFearTrait(horse.trait)) horse.fearOvercome = pc.trait ? !!pc.fearOvercome : true;
+  horse.returned = true;
+  gameState.horses.push(horse);
+  gameState.stats.horsesReturned = (gameState.stats.horsesReturned ?? 0) + 1;
+  const reason = randomFrom(RETURN_REASONS)
+    .replaceAll('{name}', pc.name)
+    .replaceAll('{adopter}', pc.adopter ?? 'their family');
+  return { type: 'horse-returned', name: pc.name, reason };
 }
 
 /** The planned Visitors Day arrives: entry donations scale with the supporter
@@ -1478,7 +1555,7 @@ function maybeOfferRehome(dt, events) {
   const horse = randomFrom(thriving);
   const income = rehomeIncome();
   pendingRehome = { horseId: horse.id, income };
-  events.push({ type: 'rehome-offer', horseName: horse.name, income, bornHere: horse.bornHere });
+  events.push({ type: 'rehome-offer', horseName: horse.name, income, bornHere: horse.bornHere, returned: horse.returned });
 }
 
 /** Player-initiated rehoming: ask around for a forever home right now (the
@@ -1492,7 +1569,7 @@ export function requestRehome() {
   const horse = randomFrom(thriving);
   const income = rehomeIncome();
   pendingRehome = { horseId: horse.id, income };
-  return { type: 'rehome-offer', horseName: horse.name, income, bornHere: horse.bornHere };
+  return { type: 'rehome-offer', horseName: horse.name, income, bornHere: horse.bornHere, returned: horse.returned };
 }
 
 /** Reward + donate milestones for the rescue and rehome counters. Bonuses land
