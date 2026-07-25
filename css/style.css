@@ -636,7 +636,7 @@ main {
 .paddock-decor {
   position: absolute;
   left: 0;
-  top: calc(var(--horse-unit) * 0.24);
+  top: calc(var(--horse-unit) * 0.19);
   width: 100%;
   height: auto;
 }
@@ -647,8 +647,13 @@ main {
   flex-direction: column;
   min-height: calc(var(--horse-unit) * 2.55);
   /* top padding (responsive, like the fence) drops the back row onto the grass
-     just below the fence rather than up on the rails */
-  padding: calc(var(--horse-unit) * 0.24) 1.25rem 1rem;
+     just below the fence rather than up on the rails. Kept in sync with
+     .paddock-decor's own top offset just above, and tuned so the back row's
+     shorter-postured coats (donkeys, several rare coats -- their source art
+     carries more transparent headroom above the head than the common horses)
+     still reach roughly neck-height with the fence (issue #123), rather than
+     only the tallest-postured coats getting there. */
+  padding: calc(var(--horse-unit) * 0.19) 1.25rem 1rem;
 }
 
 /* Stacking inside the paddock: ground props sit lowest, and the horse rows sit
