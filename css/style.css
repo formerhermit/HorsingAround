@@ -68,6 +68,7 @@ textarea,
 }
 
 .hud {
+  position: relative; /* anchors the .lang-menu dropdown below */
   display: flex;
   align-items: center;
   gap: 0.6rem;
@@ -209,7 +210,59 @@ textarea,
   border-color: #d8c39a;
 }
 
-/* ---------- paddock scene ---------- */
+/* Language menu (js/translate.js): a small dropdown under the 🌐 button,
+   styled like the shop/album popovers rather than Google's own widget UI. */
+.lang-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  background: #fffdf7;
+  border: 1px solid #e6dcc6;
+  border-radius: 12px;
+  padding: 6px;
+  box-shadow: 0 6px 18px rgba(60, 45, 20, 0.12);
+  min-width: 160px;
+}
+.lang-menu[hidden] {
+  display: none;
+}
+.lang-menu button {
+  font: inherit;
+  font-size: 0.9rem;
+  text-align: left;
+  color: #6b5c44;
+  background: none;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 10px;
+  cursor: pointer;
+}
+.lang-menu button:hover {
+  background: #f3ead2;
+}
+.lang-menu button.is-active {
+  font-weight: 700;
+  color: #3d3428;
+}
+
+/* Google's Website Translator widget does real work (translating, and
+   re-scanning the page as new toasts/dialogs appear) but its own banner/
+   dropdown UI is never shown -- the .lang-menu above is the only control a
+   player sees. */
+/* Google obfuscates the banner iframe's own class name (it changes between
+   widget versions), but always tags it -- and its other utility iframes --
+   with "skiptranslate", so that's the stable hook to hide it by. */
+#google_translate_element,
+iframe.skiptranslate {
+  display: none !important;
+}
+body {
+  top: 0 !important; /* the widget sometimes nudges <body> down for its banner; undo it */
+  position: static !important;
+}
 
 main {
   flex: 1;
