@@ -375,34 +375,43 @@ main {
 }
 
 /* The sanctuary barn (issue #136) — the ladder's last and grandest purchase
-   gets its own indoor scene rather than a fourth field: whitewashed stable
-   walls and a wood-plank floor, warm lantern light rather than sky. Same
-   3-layer structure as the base .paddock (floor / trim line / wall), colours
-   and materials swapped for an interior. */
+   gets its own indoor scene rather than a fourth field: a golden wood-plank
+   wall, a woven-hay floor, and a row of proper stall doors in place of sky,
+   grass and a farm fence. Reference: a warm, sunlit stable interior (angled
+   dutch doors, bars, horseshoes, a hanging lantern) -- adapted here as a
+   flat front-on scene to fit the game's existing paddock layout, rather than
+   attempting the reference's own perspective. Same 3-layer structure as the
+   base .paddock (floor / trim line / wall), colours and materials swapped. */
 .paddock.sanctuary-paddock {
-  border-color: #d8c9a3;
+  border-color: #a9762f;
   background:
-    linear-gradient(#a9784a, #8a6238) 0 calc(var(--horse-unit) * 0.545) / 100% 100% no-repeat,
-    linear-gradient(#6b4a2f, #6b4a2f) 0 calc(var(--horse-unit) * 0.536) / 100% 2px no-repeat,
-    #f3ead2;
+    /* woven-hay floor: two faint crosshatch passes over the gold base */
+    repeating-linear-gradient(35deg, rgba(139,98,42,.16) 0 2px, transparent 2px 9px) 0 calc(var(--horse-unit) * 0.545) / 100% 100% no-repeat,
+    repeating-linear-gradient(-35deg, rgba(139,98,42,.16) 0 2px, transparent 2px 9px) 0 calc(var(--horse-unit) * 0.545) / 100% 100% no-repeat,
+    linear-gradient(#d1a352, #b9862f) 0 calc(var(--horse-unit) * 0.545) / 100% 100% no-repeat,
+    linear-gradient(#5a3d22, #5a3d22) 0 calc(var(--horse-unit) * 0.536) / 100% 3px no-repeat,
+    /* wall: horizontal wood-plank courses */
+    repeating-linear-gradient(180deg, rgba(90,61,34,.14) 0 2px, transparent 2px calc(var(--horse-unit) * 0.09)) 0 0 / 100% calc(var(--horse-unit) * 0.545) no-repeat,
+    #e0b56a;
 }
 
-/* Its "fence" becomes a stall front: dark wood uprights (same proportional
-   spacing as the outdoor fence, so fence-line decor stays in sync) between
-   whitewashed panels, capped with a dark wood rail instead of two pale rails. */
+/* Its "fence" becomes a row of stall doors: a repeating dutch-door tile (bars
+   above, an X-braced door below, a horseshoe on each post) at the same
+   proportional spacing as the outdoor fence, so fence-line decor placed here
+   stays in sync -- capped with a dark wood rail instead of two pale rails. */
 .sanctuary-paddock .fence {
   background:
-    repeating-linear-gradient(90deg,
-      #6b4a2f 0 1.2037%,
-      #f3ead2 1.2037% 14.4444%),
-    linear-gradient(#6b4a2f, #6b4a2f) 0 calc(var(--horse-unit) * 0.073) / 100% calc(var(--horse-unit) * 0.041) no-repeat;
+    url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20width%3D%27100%27%20height%3D%27240%27%3E%3Crect%20x%3D%270%27%20y%3D%270%27%20width%3D%27100%27%20height%3D%27240%27%20fill%3D%27%23e0c17e%27/%3E%3Crect%20x%3D%270%27%20y%3D%270%27%20width%3D%2715%27%20height%3D%27240%27%20fill%3D%27%236b4a2f%27/%3E%3Crect%20x%3D%270%27%20y%3D%270%27%20width%3D%27100%27%20height%3D%2714%27%20fill%3D%27%235a3d22%27/%3E%3Crect%20x%3D%2718%27%20y%3D%2718%27%20width%3D%2780%27%20height%3D%2794%27%20fill%3D%27none%27%20stroke%3D%27%238a6238%27%20stroke-width%3D%273%27%20rx%3D%272%27/%3E%3Crect%20x%3D%2724%27%20y%3D%2720%27%20width%3D%273%27%20height%3D%2788%27%20fill%3D%27%234a3520%27/%3E%3Crect%20x%3D%2742%27%20y%3D%2720%27%20width%3D%273%27%20height%3D%2788%27%20fill%3D%27%234a3520%27/%3E%3Crect%20x%3D%2760%27%20y%3D%2720%27%20width%3D%273%27%20height%3D%2788%27%20fill%3D%27%234a3520%27/%3E%3Crect%20x%3D%2778%27%20y%3D%2720%27%20width%3D%273%27%20height%3D%2788%27%20fill%3D%27%234a3520%27/%3E%3Crect%20x%3D%2716%27%20y%3D%27118%27%20width%3D%2782%27%20height%3D%27118%27%20rx%3D%273%27%20fill%3D%27%23c99a5c%27%20stroke%3D%27%238a6238%27%20stroke-width%3D%273%27/%3E%3Cline%20x1%3D%2720%27%20y1%3D%27122%27%20x2%3D%2794%27%20y2%3D%27232%27%20stroke%3D%27%238a6238%27%20stroke-width%3D%276%27%20stroke-linecap%3D%27round%27/%3E%3Cline%20x1%3D%2794%27%20y1%3D%27122%27%20x2%3D%2720%27%20y2%3D%27232%27%20stroke%3D%27%238a6238%27%20stroke-width%3D%276%27%20stroke-linecap%3D%27round%27/%3E%3Crect%20x%3D%2713%27%20y%3D%27140%27%20width%3D%278%27%20height%3D%2714%27%20rx%3D%271%27%20fill%3D%27%234a3520%27/%3E%3Crect%20x%3D%2713%27%20y%3D%27200%27%20width%3D%278%27%20height%3D%2714%27%20rx%3D%271%27%20fill%3D%27%234a3520%27/%3E%3Ccircle%20cx%3D%2793%27%20cy%3D%27176%27%20r%3D%274%27%20fill%3D%27%234a3520%27/%3E%3Cpath%20d%3D%27M4%20133%20a4.2%204.2%200%201%200%208.4%200%27%20stroke%3D%27%23b8b0a0%27%20stroke-width%3D%272.4%27%20fill%3D%27none%27%20stroke-linecap%3D%27round%27/%3E%3Ccircle%20cx%3D%274.2%27%20cy%3D%27133%27%20r%3D%271.1%27%20fill%3D%27%238a8478%27/%3E%3Ccircle%20cx%3D%2712.2%27%20cy%3D%27133%27%20r%3D%271.1%27%20fill%3D%27%238a8478%27/%3E%3C/svg%3E")
+      0 0 / 14.4444% 100% repeat-x,
+    linear-gradient(#5a3d22, #5a3d22) 0 0 / 100% calc(var(--horse-unit) * 0.06) no-repeat;
   opacity: 1;
 }
 
-/* Warm lantern glow (a soft pulse near the roofline) and a few wisps of hay
-   dust catching the light -- the barn's answer to weather, since none
-   reaches indoors. Same layering as the magical sparkle (z2, behind the
-   horses), stilled under reduced motion below. */
+/* A hanging lantern -- a small dark shape with a warm pulsing glow beneath
+   it, roughly centred over the stalls -- plus a few wisps of hay dust
+   catching the light. The barn's answer to weather, since none reaches
+   indoors. Same layering as the magical sparkle (z2, behind the horses),
+   stilled under reduced motion below. */
 .paddock.sanctuary-paddock::before,
 .paddock.sanctuary-paddock::after {
   content: '';
@@ -414,7 +423,9 @@ main {
 }
 .paddock.sanctuary-paddock::before {
   background:
-    radial-gradient(45% 60% at 50% 0%, rgba(255, 214, 140, .35), transparent 70%);
+    url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20width%3D%2728%27%20height%3D%2726%27%3E%3Cline%20x1%3D%2714%27%20y1%3D%270%27%20x2%3D%2714%27%20y2%3D%278%27%20stroke%3D%27%234a3520%27%20stroke-width%3D%272%27/%3E%3Cpath%20d%3D%27M4%208%20h20%20l-3%2014%20a7%207%200%200%201%20-14%200%20Z%27%20fill%3D%27%233a2c1c%27/%3E%3Cellipse%20cx%3D%2714%27%20cy%3D%2722%27%20rx%3D%275%27%20ry%3D%272.4%27%20fill%3D%27%23ffe6ab%27/%3E%3C/svg%3E")
+      50% calc(var(--horse-unit) * 0.03) / 28px 26px no-repeat,
+    radial-gradient(38% 55% at 50% 8%, rgba(255, 214, 140, .55), transparent 72%);
   animation: barn-glow 4.5s ease-in-out infinite;
 }
 .paddock.sanctuary-paddock::after {
