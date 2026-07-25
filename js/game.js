@@ -126,6 +126,7 @@ const SUPPORTER_NAMES = [
   'Susan', 'Gillian', 'Peter', 'Simon', 'Rich',
   'Keith', 'Judy', 'Daniel', 'Ben', 'Joel', 'Lucy',
   'Claire', 'Clara', 'Roo', 'Ruth', 'Jake', 'Bethan', 'Ellie',
+  'Calum', 'Matt', 'Mike', 'Tom', 'Jon', 'Paul', 'Steve', 'Sharon',
 ];
 
 const HORSE_NAMES = [
