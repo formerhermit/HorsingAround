@@ -514,31 +514,42 @@ const BILL_ART = {
   foal: 'assets/events/foal-born.jpg',
 };
 
+// Every bill has a real payoff, not just an outgoing cost (issue #129) --
+// paying one is always at least as good as the "not just yet" decline, never
+// worse. The line describing that payoff (after the em dash below) mirrors
+// what acceptBill() in game.js actually does for that kind, so the popup
+// never promises more than the click delivers:
+//  - vet/farrier: the horse is tipped straight to full wellbeing.
+//  - farrier/barn: a temporary attraction glow (more supporters drawn a while).
+//  - hay: the whole herd gains a little condition AND holds it longer.
+//  - water: the whole herd holds its condition longer (no direct top-up).
+//  - mechanic: an instant handful of new supporters.
+//  - journalist/foal: already stated their payoff before this issue; unchanged.
 function billCopy(e) {
   const fee = fig(`€${e.fee}`);
   if (e.kind === 'vet') {
     return {
       pay: 'Book the vet',
       text: e.variant === 'worming'
-        ? `${fig(e.horseName)} is due a worming treatment. The vet can pop out today for ${fee}.`
-        : `The vet is due to see ${fig(e.horseName)} for a check-up. She can come out today for ${fee}.`,
+        ? `${fig(e.horseName)} is due a worming treatment. The vet can pop out today for ${fee} — and leave them fighting fit.`
+        : `The vet is due to see ${fig(e.horseName)} for a check-up. She can come out today for ${fee} — and see them back to full health.`,
     };
   }
   if (e.kind === 'farrier') return {
     pay: 'Book the farrier',
-    text: `${fig(e.horseName)} needs new shoes! The farrier can come out today for ${fee}.`,
+    text: `${fig(e.horseName)} needs new shoes! The farrier can come out today for ${fee} — a fresh set always turns a few heads, and leaves them in full health.`,
   };
   if (e.kind === 'hay') return {
     pay: 'Pay for the hay',
-    text: `The hay delivery has arrived: enough bales to keep everyone fed and cosy. The bill comes to ${fee}.`,
+    text: `The hay delivery has arrived: enough bales to keep everyone fed and cosy. The bill comes to ${fee} — a well-fed herd gains a little condition, and holds its shine a good while longer.`,
   };
   if (e.kind === 'water') return {
     pay: 'Pay for the water',
-    text: `A water delivery has arrived to fill the troughs, fresh and clean for the whole herd. The bill comes to ${fee}.`,
+    text: `A water delivery has arrived to fill the troughs, fresh and clean for the whole herd. The bill comes to ${fee} — a well-watered herd holds its shine a good while longer too.`,
   };
   if (e.kind === 'barn') return {
     pay: 'Fix the stable',
-    text: `The stable roof is letting the rain in. The volunteers can patch it up properly for ${fee}.`,
+    text: `The stable roof is letting the rain in. The volunteers can patch it up properly for ${fee} — a smart new roof always turns a few heads.`,
   };
   if (e.kind === 'journalist') return {
     pay: 'Pay for the story',
@@ -550,7 +561,7 @@ function billCopy(e) {
   };
   return {
     pay: 'Fix the horse box',
-    text: `The horse box needs a repair before it can fetch any more horses. The mechanic can fix it today for ${fee}.`,
+    text: `The horse box needs a repair before it can fetch any more horses. The mechanic can fix it today for ${fee} — passers-by always stop to admire a freshly-fixed one.`,
   };
 }
 
