@@ -16,7 +16,7 @@
 export const FACILITIES = [
   { id: 'vet-station', name: 'Vet station', icon: '🩺', price: 60000, donationBonus: 0.10,
     art: 'assets/events/facility-vet-station.jpg',
-    blurb: "A proper on-site clinic. Vet and farrier bills cost 30% less, and a herd in glowing health earns 10% more in donations." },
+    blurb: "A proper on-site clinic. Vet and farrier bills cost 30% less, and donations give 10% more." },
   { id: 'hay-barn', name: 'Hay barn', icon: '🌾', price: 150000, donationBonus: 0.10,
     art: 'assets/events/facility-hay-barn.jpg',
     blurb: "Feed bought in bulk and stored dry. Hay bills cost 40% less, a well-fed herd holds its shine longer, and donations give 10% more." },
