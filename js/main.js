@@ -1,7 +1,7 @@
 // main.js — boot the game: load state, render, wire input and persistence.
 
 import { initState, save, gameState, adoptCloudState, DONATE_MILESTONE, SAVE_KEY, disableSaving } from './state.js';
-import { careFor, tick, rescueHorse, shareUpdate, rescueCost, rescuePrice, acceptRehome, declineRehome, requestRehome, collectOfflineEarnings, collectDuePostcards, collectDueStatues, markPostcardsRead, fulfilWant, grantUnicorn, hasUnicorn, acceptBill, declineBill, scheduleVisitorsDay, hurryPaddockLife, setKept, SANCTUARY_CAP } from './game.js';
+import { careFor, tick, rescueHorse, shareUpdate, rescueCost, rescuePrice, acceptRehome, declineRehome, requestRehome, collectOfflineEarnings, collectDuePostcards, collectDueStatues, markPostcardsRead, fulfilWant, grantUnicorn, hasUnicorn, acceptBill, declineBill, scheduleVisitorsDay, hurryPaddockLife, setKept, SANCTUARY_CAP, DRIFT_GRACE } from './game.js';
 import {
   renderAll, renderHUD, renderActions, updateHorseCard,
   showCareFeedback, showTipPop, showToast, showMoneyPop, showSupporterPop, burstConfetti, changePaddock, resetPaddockView,
@@ -13,7 +13,7 @@ import {
   formatDate, paddockLabel,
 } from './render.js';
 import { ACHIEVEMENTS, checkAchievements } from './achievements.js';
-import { buyFacility } from './facilities.js';
+import { buyFacility, driftGraceMultiplier } from './facilities.js';
 import { currentSeason } from './seasons.js';
 import {
   buyDecorIn, buyWardrobe, placeDecor, removeDecor, placeWardrobe, removeWardrobe,
@@ -516,52 +516,51 @@ const BILL_ART = {
 
 // Every bill has a real payoff, not just an outgoing cost (issue #129) --
 // paying one is always at least as good as the "not just yet" decline, never
-// worse. The line describing that payoff (after the em dash below) mirrors
-// what acceptBill() in game.js actually does for that kind, so the popup
-// never promises more than the click delivers:
-//  - vet/farrier: the horse is tipped straight to full wellbeing.
-//  - farrier/barn: a temporary attraction glow (more supporters drawn a while).
-//  - hay: the whole herd gains a little condition AND holds it longer.
-//  - water: the whole herd holds its condition longer (no direct top-up).
-//  - mechanic: an instant handful of new supporters.
-//  - journalist/foal: already stated their payoff before this issue; unchanged.
+// worse. The line describing that payoff (after the em dash below) states the
+// exact numbers acceptBill() in game.js actually delivers for that kind, so
+// the popup never promises more -- or less -- than the click delivers. The
+// drift-grace minutes are computed live (driftGraceMultiplier, hay barn
+// extends it) rather than hardcoded, so the text stays true even once that
+// facility's bought.
+const driftGraceMinutes = () => Math.round(DRIFT_GRACE * driftGraceMultiplier(state) / 60);
+
 function billCopy(e) {
   const fee = fig(`€${e.fee}`);
   if (e.kind === 'vet') {
     return {
       pay: 'Book the vet',
       text: e.variant === 'worming'
-        ? `${fig(e.horseName)} is due a worming treatment. The vet can pop out today for ${fee} — and leave them fighting fit.`
-        : `The vet is due to see ${fig(e.horseName)} for a check-up. She can come out today for ${fee} — and see them back to full health.`,
+        ? `${fig(e.horseName)} is due a worming treatment. The vet can pop out today for ${fee} — and take them straight to 100 wellbeing.`
+        : `The vet is due to see ${fig(e.horseName)} for a check-up. She can come out today for ${fee} — and take them straight to 100 wellbeing.`,
     };
   }
   if (e.kind === 'farrier') return {
     pay: 'Book the farrier',
-    text: `${fig(e.horseName)} needs new shoes! The farrier can come out today for ${fee} — a fresh set always turns a few heads, and leaves them in full health.`,
+    text: `${fig(e.horseName)} needs new shoes! The farrier can come out today for ${fee} — new shoes take them straight to 100 wellbeing, and turn heads for about a minute, drawing extra supporters.`,
   };
   if (e.kind === 'hay') return {
     pay: 'Pay for the hay',
-    text: `The hay delivery has arrived: enough bales to keep everyone fed and cosy. The bill comes to ${fee} — every horse gains +2 wellbeing, and won't need topping up again for a while.`,
+    text: `The hay delivery has arrived: enough bales to keep everyone fed and cosy. The bill comes to ${fee} — every horse gains +2 wellbeing, and won't need topping up again for about ${driftGraceMinutes()} minutes.`,
   };
   if (e.kind === 'water') return {
     pay: 'Pay for the water',
-    text: `A water delivery has arrived to fill the troughs, fresh and clean for the whole herd. The bill comes to ${fee} — a well-watered herd holds its shine a good while longer too.`,
+    text: `A water delivery has arrived to fill the troughs, fresh and clean for the whole herd. The bill comes to ${fee} — the whole herd won't need topping up again for about ${driftGraceMinutes()} minutes.`,
   };
   if (e.kind === 'barn') return {
     pay: 'Fix the stable',
-    text: `The stable roof is letting the rain in. The volunteers can patch it up properly for ${fee} — a smart new roof always turns a few heads.`,
+    text: `The stable roof is letting the rain in. The volunteers can patch it up properly for ${fee} — a smart new roof turns heads for about two minutes, drawing extra supporters.`,
   };
   if (e.kind === 'journalist') return {
     pay: 'Pay for the story',
-    text: `A journalist from the Sur wants to write a feature about the rescue. A story like that could bring in real support, for a fee of ${fee}.`,
+    text: `A journalist from the Sur wants to write a feature about the rescue. A story like that typically pays back 1.5–4 times the fee once it runs (more if it makes the front page), for a fee of ${fee}.`,
   };
   if (e.kind === 'foal') return {
     pay: 'Welcome the foal',
-    text: `Wonderful news: ${fig(e.horseName)} has had a foal! Raising a newborn and its mother isn't cheap, ${fee} to see them both right, but a cute new arrival is sure to draw some visitors.`,
+    text: `Wonderful news: ${fig(e.horseName)} has had a foal! Raising a newborn and its mother isn't cheap, ${fee} to see them both right, but a cute new arrival draws 4–7 new supporters.`,
   };
   return {
     pay: 'Fix the horse box',
-    text: `The horse box needs a repair before it can fetch any more horses. The mechanic can fix it today for ${fee} — passers-by always stop to admire a freshly-fixed one.`,
+    text: `The horse box needs a repair before it can fetch any more horses. The mechanic can fix it today for ${fee} — passers-by stop to admire it, and 3 of them become new supporters on the spot.`,
   };
 }
 
