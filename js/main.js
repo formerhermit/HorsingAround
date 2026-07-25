@@ -541,7 +541,7 @@ function billCopy(e) {
   };
   if (e.kind === 'hay') return {
     pay: 'Pay for the hay',
-    text: `The hay delivery has arrived: enough bales to keep everyone fed and cosy. The bill comes to ${fee} — a well-fed herd gains a little condition, and holds its shine a good while longer.`,
+    text: `The hay delivery has arrived: enough bales to keep everyone fed and cosy. The bill comes to ${fee} — every horse gains +2 wellbeing, and won't need topping up again for a while.`,
   };
   if (e.kind === 'water') return {
     pay: 'Pay for the water',
