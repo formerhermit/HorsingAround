@@ -501,15 +501,30 @@ main {
   background: radial-gradient(130% 90% at 50% 0%, rgba(240,168,196,.14), transparent 62%);
 }
 .paddock.season-spring .paddock-weather::before {
-  background-image: var(--petal-pink), var(--petal-white), var(--petal-pink), var(--petal-white);
-  background-size: 10px 11px, 9px 10px, 8px 9px, 10px 11px;
-  background-position: 12% 16%, 34% 9%, 58% 20%, 84% 12%;
+  background-image:
+    var(--petal-pink), var(--petal-white), var(--petal-pink), var(--petal-white),
+    var(--petal-pink), var(--petal-white), var(--petal-pink), var(--petal-white),
+    var(--petal-pink), var(--petal-white);
+  background-size:
+    10px 11px, 9px 10px, 8px 9px, 10px 11px,
+    9px 10px, 8px 9px, 10px 11px, 9px 10px,
+    8px 9px, 10px 11px;
+  background-position:
+    6% 10%, 18% 22%, 30% 8%, 42% 26%,
+    54% 14%, 66% 24%, 78% 10%, 90% 20%,
+    15% 38%, 75% 34%;
   animation: season-drift 6s ease-in-out infinite;
 }
 .paddock.season-spring .paddock-weather::after {
-  background-image: var(--petal-white), var(--petal-pink), var(--petal-white);
-  background-size: 9px 10px, 8px 9px, 9px 10px;
-  background-position: 22% 34%, 66% 40%, 91% 30%;
+  background-image:
+    var(--petal-white), var(--petal-pink), var(--petal-white), var(--petal-pink),
+    var(--petal-white), var(--petal-pink), var(--petal-white), var(--petal-pink);
+  background-size:
+    9px 10px, 8px 9px, 9px 10px, 8px 9px,
+    10px 11px, 9px 10px, 8px 9px, 10px 11px;
+  background-position:
+    12% 34%, 24% 42%, 36% 30%, 48% 44%,
+    60% 32%, 72% 40%, 84% 28%, 95% 40%;
   animation: season-drift 7.5s ease-in-out .8s infinite;
 }
 
@@ -538,15 +553,28 @@ main {
 }
 
 /* Autumn — orange, red and yellow leaves turning down over an amber wash, with
-   a few settled leaves resting along the bottom of the grass (painted on the
-   base layer, so both pseudo-layers stay free for falling leaves). */
+   four proper piles of fallen leaves raked up along the bottom of the grass
+   (each pile built from three overlapping leaves so it reads as a heap, not a
+   single stray leaf) -- painted on the base layer, so both pseudo-layers stay
+   free for falling leaves. */
 .paddock.season-autumn .paddock-weather {
   background:
     radial-gradient(130% 90% at 50% 0%, rgba(214,140,60,.15), transparent 62%),
-    var(--leaf-r2), var(--leaf-o1), var(--leaf-y3), var(--leaf-o3);
+    var(--leaf-o1), var(--leaf-r2), var(--leaf-y3),
+    var(--leaf-r1), var(--leaf-y2), var(--leaf-o3),
+    var(--leaf-y1), var(--leaf-o2), var(--leaf-r3),
+    var(--leaf-o1), var(--leaf-r1), var(--leaf-y1);
   background-repeat: no-repeat;
-  background-size: auto, 24px 24px, 26px 26px, 22px 22px, 21px 21px;
-  background-position: 0 0, 12% 99%, 31% 100%, 62% 100%, 86% 98%;
+  background-size:
+    auto, 20px 20px, 23px 23px, 17px 17px,
+    21px 21px, 24px 24px, 18px 18px,
+    19px 19px, 22px 22px, 16px 16px,
+    20px 20px, 23px 23px, 17px 17px;
+  background-position:
+    0 0, 9% 98%, 14% 100%, 12% 97%,
+    28% 99%, 34% 100%, 31% 97%,
+    59% 99%, 65% 100%, 62% 97%,
+    83% 98%, 89% 100%, 86% 97%;
 }
 .paddock.season-autumn .paddock-weather::before {
   background-image: var(--leaf-o1), var(--leaf-r2), var(--leaf-y1), var(--leaf-o3), var(--leaf-r1), var(--leaf-y2), var(--leaf-o2), var(--leaf-r3);
