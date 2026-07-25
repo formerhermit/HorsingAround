@@ -108,19 +108,21 @@ textarea,
   color: #8a7d68;
 }
 
+/* Icon-only, like the other HUD buttons (residents/collection/sound) -- the
+   full "Tack room" name would crowd the HUD, so it shows only once the shop
+   is open (the modal's own title). The emoji still carries an accessible name
+   via aria-label/title. */
 .shop-btn {
   position: relative;
-  display: flex;
-  align-items: center;
-  gap: 0.3rem;
   font: inherit;
-  font-weight: 700;
-  font-size: 0.95rem;
+  font-size: 1.1rem;
+  line-height: 1;
   color: #6b5c44;
   background: #fffdf7;
   border: 1px solid #e6dcc6;
   border-radius: 999px;
-  padding: 0.4rem 0.9rem;
+  width: 2.3rem;
+  height: 2.3rem;
   cursor: pointer;
 }
 
@@ -133,10 +135,14 @@ textarea,
 }
 
 .shop-badge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
   width: 9px;
   height: 9px;
   border-radius: 50%;
   background: #6f8f4f;
+  border: 1.5px solid #fffdf7;
 }
 
 .shop-badge[hidden] {
