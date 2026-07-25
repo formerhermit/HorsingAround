@@ -52,8 +52,29 @@
         📖<span class="album-badge" id="collection-badge" hidden></span>
       </button>
       <button class="sound-btn" id="sound-btn" aria-label="Mute music" title="Music">🔊</button>
+      <button class="sound-btn" id="lang-btn" aria-haspopup="menu" aria-controls="lang-menu" aria-label="Change language" title="Language">🌐</button>
+      <!-- Language menu (translate.js): a small, explicit list rather than Google's
+           own banner/dropdown, styled to match the rest of the HUD. Picking one
+           sets the googtrans cookie Google's widget reads and reloads the page;
+           "English (original)" clears it. See js/translate.js for why this exists
+           alongside the browser's own free page-translate feature. -->
+      <div class="lang-menu" id="lang-menu" role="menu" hidden>
+        <button role="menuitem" data-lang="">English (original)</button>
+        <button role="menuitem" data-lang="es">Español</button>
+        <button role="menuitem" data-lang="fr">Français</button>
+        <button role="menuitem" data-lang="de">Deutsch</button>
+        <button role="menuitem" data-lang="it">Italiano</button>
+        <button role="menuitem" data-lang="pt">Português</button>
+      </div>
     </div>
   </header>
+
+  <!-- Google's widget itself stays visually hidden (see .goog-te-banner-frame.skiptranslate
+       and #google_translate_element rules in style.css) -- the menu above is the only
+       UI a player sees; the widget just does the work of translating and of
+       re-scanning the page as new toasts/dialogs appear (issue: browser-native
+       translate doesn't always catch those). -->
+  <div id="google_translate_element"></div>
 
   <audio id="soundtrack" src="audio/soundtrack.mp3" loop preload="auto"></audio>
 
@@ -386,5 +407,7 @@
   </footer>
 
   <script type="module" src="js/main.js"></script>
+  <script src="js/translate.js"></script>
+  <script src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit" defer></script>
 </body>
 </html>
