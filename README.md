@@ -78,7 +78,7 @@ Sometimes, though, an adoption doesn't hold: a family moves abroad, or life take
 
 The **Tack room** is organised into three tabs:
 
-- **Wardrobe**: winter rugs, boots, flowers and bows for a chosen horse. A dressed-up horse turns more heads, so it attracts supporters faster.
+- **Wardrobe**: winter rugs, boots, flowers and bows for a chosen horse. A dressed-up horse turns more heads, so it attracts supporters faster. Every coloured piece quietly recolours with the season (the same rust and amber of autumn, the cool blues of winter), so a wardrobe you've already bought just keeps looking right all year, no need to buy it again.
 - **Paddock decor**: bunting, flower buckets, hay bales, a water trough, even a dog or a cat. Decor makes every "share an update" worth more. **Keepsakes** — the little statues rehomed horses send back as gifts — sit in their own section here: earned, never bought, and yours to place wherever you like.
 - **Expansions**: the big, lasting investments — building a new paddock, and the *Grow the rescue* ladder (below).
 
