@@ -785,8 +785,10 @@ function viewCap() {
 
 /** Human label for a paddock slot, matching the on-scene label wording.
  *  The buildable paddocks have names with a bit of personality (issue #60)
- *  rather than "Paddock 2": a meadow, then a proper Andalusian campo. */
-const PADDOCK_NAMES = ['Home paddock', 'Meadow paddock', 'Campo paddock'];
+ *  rather than "Paddock 2": a meadow, then a proper Andalusian campo, then
+ *  the sanctuary's own stable (issue #136 -- a barn interior rather than a
+ *  fourth field, since it's the one paddock the whole ladder builds toward). */
+const PADDOCK_NAMES = ['Home paddock', 'Meadow paddock', 'Campo paddock', 'Sanctuary barn'];
 export function paddockLabel(index) {
   if (index === MAGIC_PADDOCK) return '✨ Magical paddock';
   return PADDOCK_NAMES[index] ?? `Paddock ${index + 1}`;
@@ -898,30 +900,39 @@ function renderPaddock(state) {
     }
   }
 
+  // The sanctuary (paddock 3, gated by the Sanctuary field facility, #136) is
+  // a barn interior rather than another field -- like the magical paddock,
+  // it keeps its own fixed look year-round rather than living the seasons.
+  const isSanctuary = !isMagic && paddock === 3;
+  const timeless = isMagic || isSanctuary;
+
   const children = [backRow, groundDecorRow(state, paddock, view, viewCount), frontRow];
-  const weather = seasonOverlay(state, isMagic);
+  const weather = seasonOverlay(state, timeless);
   if (weather) children.unshift(weather); // seasonal scatter, furthest back
   document.getElementById('horses').replaceChildren(...children);
   renderPaddockDecor(state, paddock);
   // Scene theme per paddock: the buildable ones live up to their names with a
   // built-in scatter of flowers (Meadow) / poppies (Campo), painted in CSS so
-  // they cost nothing and never crowd the horses. Home and the magical paddock
-  // keep their own looks. `paddock` is the slot index (0 = home, 1 = Meadow,
-  // 2 = Campo); the magical paddock uses MAGIC_PADDOCK, handled by isMagic.
+  // they cost nothing and never crowd the horses. Home, the magical paddock
+  // and the sanctuary barn keep their own looks. `paddock` is the slot index
+  // (0 = home, 1 = Meadow, 2 = Campo, 3 = Sanctuary barn); the magical
+  // paddock uses MAGIC_PADDOCK, handled by isMagic.
   const scene = document.getElementById('paddock');
   scene.classList.toggle('magic-paddock', isMagic);
   scene.classList.toggle('meadow-paddock', !isMagic && paddock === 1);
   scene.classList.toggle('campo-paddock', !isMagic && paddock === 2);
+  scene.classList.toggle('sanctuary-paddock', isSanctuary);
   // The game-time season (seasons.js) layers a weather tint over any real
-  // paddock, stacking on the Meadow/Campo scatter; the magical dusk keeps its
-  // own look and opts out. Exactly one season class sits on the scene root.
+  // paddock, stacking on the Meadow/Campo scatter; the magical dusk and the
+  // sanctuary barn keep their own look and opt out. Exactly one season class
+  // sits on the scene root (or none, for the two timeless paddocks).
   const season = currentSeason(state.stats.playSeconds);
-  SEASON_CLASSES.forEach((c) => scene.classList.toggle(c, !isMagic && c === season.className));
+  SEASON_CLASSES.forEach((c) => scene.classList.toggle(c, !timeless && c === season.className));
   // A little season badge orients the player at a glance (issue #96). The
-  // magical paddock is timeless, so it doesn't get one.
+  // magical paddock and the sanctuary barn are timeless, so neither gets one.
   const seasonBadge = document.getElementById('season-badge');
-  seasonBadge.hidden = isMagic;
-  if (!isMagic) seasonBadge.innerHTML = `<span aria-hidden="true">${season.emoji}</span> ${season.label}`;
+  seasonBadge.hidden = timeless;
+  if (!timeless) seasonBadge.innerHTML = `<span aria-hidden="true">${season.emoji}</span> ${season.label}`;
 
   // edge arrows + label, only when there is more than one view
   const older = document.getElementById('nav-older');
@@ -1117,9 +1128,11 @@ function groundDecorRow(state, paddock, view = 0, viewCount = 1) {
 
 /** The seasonal weather layer (seasons.js): a full-scene scatter behind the
  *  horses (petals, sun-glints, leaves or snow), tinted and animated in CSS off
- *  the season class on the scene root. Skipped on the magical paddock. */
-function seasonOverlay(state, isMagic) {
-  if (isMagic) return null;
+ *  the season class on the scene root. Skipped on paddocks with their own
+ *  fixed look year-round (the magical paddock, and the sanctuary barn --
+ *  weather doesn't reach indoors). */
+function seasonOverlay(state, skipWeather) {
+  if (skipWeather) return null;
   const layer = document.createElement('div');
   layer.className = 'paddock-weather';
   layer.setAttribute('aria-hidden', 'true');

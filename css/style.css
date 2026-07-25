@@ -374,6 +374,64 @@ main {
   50%      { opacity: 1; }
 }
 
+/* The sanctuary barn (issue #136) — the ladder's last and grandest purchase
+   gets its own indoor scene rather than a fourth field: whitewashed stable
+   walls and a wood-plank floor, warm lantern light rather than sky. Same
+   3-layer structure as the base .paddock (floor / trim line / wall), colours
+   and materials swapped for an interior. */
+.paddock.sanctuary-paddock {
+  border-color: #d8c9a3;
+  background:
+    linear-gradient(#a9784a, #8a6238) 0 calc(var(--horse-unit) * 0.545) / 100% 100% no-repeat,
+    linear-gradient(#6b4a2f, #6b4a2f) 0 calc(var(--horse-unit) * 0.536) / 100% 2px no-repeat,
+    #f3ead2;
+}
+
+/* Its "fence" becomes a stall front: dark wood uprights (same proportional
+   spacing as the outdoor fence, so fence-line decor stays in sync) between
+   whitewashed panels, capped with a dark wood rail instead of two pale rails. */
+.sanctuary-paddock .fence {
+  background:
+    repeating-linear-gradient(90deg,
+      #6b4a2f 0 1.2037%,
+      #f3ead2 1.2037% 14.4444%),
+    linear-gradient(#6b4a2f, #6b4a2f) 0 calc(var(--horse-unit) * 0.073) / 100% calc(var(--horse-unit) * 0.041) no-repeat;
+  opacity: 1;
+}
+
+/* Warm lantern glow (a soft pulse near the roofline) and a few wisps of hay
+   dust catching the light -- the barn's answer to weather, since none
+   reaches indoors. Same layering as the magical sparkle (z2, behind the
+   horses), stilled under reduced motion below. */
+.paddock.sanctuary-paddock::before,
+.paddock.sanctuary-paddock::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background-repeat: no-repeat;
+}
+.paddock.sanctuary-paddock::before {
+  background:
+    radial-gradient(45% 60% at 50% 0%, rgba(255, 214, 140, .35), transparent 70%);
+  animation: barn-glow 4.5s ease-in-out infinite;
+}
+.paddock.sanctuary-paddock::after {
+  background-image:
+    radial-gradient(circle, rgba(227, 165, 66, .5) 0 2px, transparent 4px),
+    radial-gradient(circle, rgba(227, 165, 66, .4) 0 1.5px, transparent 3px),
+    radial-gradient(circle, rgba(227, 165, 66, .45) 0 2px, transparent 4px),
+    radial-gradient(circle, rgba(227, 165, 66, .4) 0 1.5px, transparent 3px);
+  background-size: 6px 6px, 4px 4px, 5px 5px, 4px 4px;
+  background-position: 20% 22%, 38% 30%, 62% 20%, 78% 34%;
+  animation: season-petal-drift 7s ease-in-out infinite;
+}
+@keyframes barn-glow {
+  0%, 100% { opacity: .6; }
+  50%      { opacity: 1; }
+}
+
 /* Built-in scenery for the named buildable paddocks (Meadow, Campo). Little
    flowers and butterflies painted right into the grass in CSS — like the decor
    items, but free and permanent, so each paddock lives up to its name. Tiny
@@ -704,6 +762,8 @@ main {
   .paddock.campo-paddock::after,
   .paddock.magic-paddock::before,
   .paddock.magic-paddock::after,
+  .paddock.sanctuary-paddock::before,
+  .paddock.sanctuary-paddock::after,
   .paddock-weather::before,
   .paddock-weather::after {
     animation: none;
