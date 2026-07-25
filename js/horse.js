@@ -99,17 +99,28 @@ const DEFAULT_EAR_FLOWER = { cx: 392, cy: 70 };
 // across the different builds. Its slot went to the winter rug, which is
 // back-worn like the saddle blanket.)
 
-// Donkeys (and to a lesser extent the zebra) stand lower in the shared
-// 500x480 frame than the common horses, so a back garment tuned to the
-// horses' withers line floats well above a donkey's actual back (issue #128).
-// Offsets measured from the art itself: the y-distance between each coat's
-// back line and the horse-tuned path, sampled across each garment's own
-// x-span (the rug reaches further along the back than the blanket, so it
-// gets its own slightly larger offsets). Coats not listed sit right with no
-// offset.
+// Several coats stand at a different height in the shared 500x480 frame than
+// the common horses (donkeys and a few of the rare coats sit lower; golden
+// sits higher), so a back garment tuned to the common horses' withers line
+// floats above or sinks below the actual back on those coats (issue #128,
+// and a follow-up once piebald/spotty/etc turned out to need the same fix).
+// Offsets are ~80% of the raw y-distance measured between each coat's back
+// line and the horse-tuned path (sampled across each garment's own x-span --
+// the rug reaches further along the back than the blanket, so it gets its
+// own slightly larger offsets): the raw distance runs a bit high because it
+// catches mane pixels standing proud of the back on some coats, and the 80%
+// figure is calibrated against the donkeys, where player feedback on the
+// first pass confirmed the raw number overshot by almost exactly that much.
+// Coats not listed sit right with no offset.
 const BACK_GARMENT_OFFSET = {
-  rug:     { 'brown-donkey': 52, 'grey-donkey': 60, 'piebald-donkey': 44, zebra: 30 },
-  blanket: { 'brown-donkey': 47, 'grey-donkey': 55, 'piebald-donkey': 36, zebra: 30 },
+  rug: {
+    'brown-donkey': 52, 'grey-donkey': 60, 'piebald-donkey': 44, zebra: 30,
+    piebald: 26, spotty: 39, 'red-boy': 16, patchy: 8, creamy: 19, golden: -39,
+  },
+  blanket: {
+    'brown-donkey': 47, 'grey-donkey': 55, 'piebald-donkey': 36, zebra: 30,
+    piebald: 25, spotty: 37, 'red-boy': 16, patchy: 8, creamy: 20, golden: -40,
+  },
 };
 
 // Where the four lower legs sit (each [x0, x1]) for boots and leg-wraps. Donkeys
