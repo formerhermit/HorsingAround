@@ -97,7 +97,20 @@ const DEFAULT_EAR_FLOWER = { cx: 392, cy: 70 };
 
 // (The neck scarf was retired in issue #38: neck placement never sat right
 // across the different builds. Its slot went to the winter rug, which is
-// back-worn like the saddle blanket and needs no per-coat tuning.)
+// back-worn like the saddle blanket.)
+
+// Donkeys (and to a lesser extent the zebra) stand lower in the shared
+// 500x480 frame than the common horses, so a back garment tuned to the
+// horses' withers line floats well above a donkey's actual back (issue #128).
+// Offsets measured from the art itself: the y-distance between each coat's
+// back line and the horse-tuned path, sampled across each garment's own
+// x-span (the rug reaches further along the back than the blanket, so it
+// gets its own slightly larger offsets). Coats not listed sit right with no
+// offset.
+const BACK_GARMENT_OFFSET = {
+  rug:     { 'brown-donkey': 64, 'grey-donkey': 73, 'piebald-donkey': 54, zebra: 37 },
+  blanket: { 'brown-donkey': 59, 'grey-donkey': 68, 'piebald-donkey': 45, zebra: 37 },
+};
 
 // Where the four lower legs sit (each [x0, x1]) for boots and leg-wraps. Donkeys
 // stand a little narrower and the zebra's forelegs sit further forward, so the
@@ -165,10 +178,15 @@ function costumeMarkup(wardrobe = [], coat = 'bay', seasonKey = 'default') {
   let m = '';
   if (wardrobe.includes('winter-rug')) {
     // a cozy rug over the whole back, withers to rump, hanging well down the
-    // barrel, with a lighter hem band.
+    // barrel, with a lighter hem band. Dropped to the coat's own back line on
+    // the shorter-standing coats (issue #128's fix, applied here too since the
+    // rug shares the exact same horse-tuned coordinates).
+    const dy = BACK_GARMENT_OFFSET.rug[coat] ?? 0;
+    m += `<g transform="translate(0,${dy})">`;
     m += `<path d="M152,206 Q232,186 314,197 Q327,204 324,255 Q321,300 313,309 Q234,323 160,309 Q150,298 148,252 Q147,212 152,206 Z" fill="${c.rugMain}"/>`;
     m += `<path d="M156,292 Q236,308 318,290" fill="none" stroke="${c.rugHem}" stroke-width="8" stroke-linecap="round"/>`;
     m += `<path d="M160,309 Q234,322 313,309" fill="none" stroke="${c.rugTrim}" stroke-width="6" stroke-linecap="round"/>`;
+    m += `</g>`;
   }
   if (wardrobe.includes('ear-flower')) {
     // a small daisy tucked at the base of the forward ear
@@ -188,10 +206,15 @@ function costumeMarkup(wardrobe = [], coat = 'bay', seasonKey = 'default') {
     m += `<rect x="${bx - 6}" y="${by - 7}" width="12" height="14" rx="4" fill="${c.bowKnot}"/>`;
   }
   if (wardrobe.includes('saddle-blanket')) {
-    // a cloth draped over the back behind the withers, hanging down the barrel.
+    // a cloth draped over the back behind the withers, hanging down the
+    // barrel. Dropped to the coat's own back line on the shorter-standing
+    // coats -- it was floating well above a donkey's actual back (#128).
+    const dy = BACK_GARMENT_OFFSET.blanket[coat] ?? 0;
+    m += `<g transform="translate(0,${dy})">`;
     m += `<path d="M175,200 Q230,189 278,195 Q288,199 286,238 Q284,272 277,282 Q228,289 179,283 Q170,273 168,238 Q166,199 175,200 Z" fill="${c.blanketMain}"/>`;
     // light trim stripe near the hem
     m += `<path d="M173,266 Q228,277 282,266" fill="none" stroke="${c.blanketTrim}" stroke-width="7" stroke-linecap="round"/>`;
+    m += `</g>`;
   }
   const legs = LEG_POSITIONS[coat] ?? DEFAULT_LEGS;
   // leg wraps first so boots layer in front of them when both are worn
