@@ -108,8 +108,8 @@ const DEFAULT_EAR_FLOWER = { cx: 392, cy: 70 };
 // gets its own slightly larger offsets). Coats not listed sit right with no
 // offset.
 const BACK_GARMENT_OFFSET = {
-  rug:     { 'brown-donkey': 64, 'grey-donkey': 73, 'piebald-donkey': 54, zebra: 37 },
-  blanket: { 'brown-donkey': 59, 'grey-donkey': 68, 'piebald-donkey': 45, zebra: 37 },
+  rug:     { 'brown-donkey': 52, 'grey-donkey': 60, 'piebald-donkey': 44, zebra: 30 },
+  blanket: { 'brown-donkey': 47, 'grey-donkey': 55, 'piebald-donkey': 36, zebra: 30 },
 };
 
 // Where the four lower legs sit (each [x0, x1]) for boots and leg-wraps. Donkeys
