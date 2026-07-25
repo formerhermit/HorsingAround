@@ -112,27 +112,70 @@ const LEG_POSITIONS = {
   'zebra':          [[96, 130], [146, 179], [297, 331], [343, 377]],
 };
 
+// Seasonal wardrobe colours (issue #48-style recolour): every coloured
+// wardrobe piece takes on the season's palette, so a dressed herd looks right
+// for the time of year without the player ever re-buying anything. Spring and
+// summer keep the original cozy colours (the year-round "default"); only
+// autumn and winter swap in. Autumn and winter are sampled straight from the
+// seasonal flower-buckets art (assets/decor/flower-buckets-{autumn,winter}
+// .png) so the wardrobe reads as the same bright gold/orange/coral or soft
+// sky-blue/lilac as the rest of the seasonal decor -- deliberately light and
+// cheerful, not the deep rust/browns or dark navy an early pass used, which
+// read as bolder and muddier than everything else in the scene. Each boot's
+// sole is the one place a touch more depth than the sampled art is added, so
+// the thin sole band stays visible against the boot body above it.
+const WARDROBE_PALETTES = {
+  default: {
+    rugMain: '#E895B3', rugHem: '#F9EFE3', rugTrim: '#D3719B',
+    flowerPetal: '#A971D6', flowerCenter: '#F1C40F',
+    bowRibbon: '#F7CD3A', bowKnot: '#E0A81E',
+    blanketMain: '#A971D6', blanketTrim: '#E6D6F5',
+    wrapBase: '#F7F7F4', wrapLine: '#D5DBE0',
+    bootMain: '#A971D6', bootCuff: '#BE8FE0', bootSole: '#7E51AE',
+  },
+  autumn: {
+    rugMain: '#F87B13', rugHem: '#FFE9A6', rugTrim: '#E95633',
+    flowerPetal: '#FFC808', flowerCenter: '#E95633',
+    bowRibbon: '#F87B13', bowKnot: '#E95633',
+    blanketMain: '#F87B13', blanketTrim: '#FFE9A6',
+    wrapBase: '#FFE9A6', wrapLine: '#E95633',
+    bootMain: '#E95633', bootCuff: '#FFC808', bootSole: '#C2451C',
+  },
+  winter: {
+    rugMain: '#8FB0D6', rugHem: '#CBDCEE', rugTrim: '#5E7EA8',
+    flowerPetal: '#8FB0D6', flowerCenter: '#CBDCEE',
+    bowRibbon: '#8FB0D6', bowKnot: '#5E7EA8',
+    blanketMain: '#8FB0D6', blanketTrim: '#CBDCEE',
+    wrapBase: '#E7E4FF', wrapLine: '#5E7EA8',
+    bootMain: '#5E7EA8', bootCuff: '#8FB0D6', bootSole: '#4A7096',
+  },
+};
+function wardrobeColors(seasonKey) {
+  return WARDROBE_PALETTES[seasonKey] ?? WARDROBE_PALETTES.default;
+}
+
 /**
  * Costume overlay markup, in the image's 500x480 space. Split by where it sits
  * so head-worn pieces could be tuned independently of leg/back pieces.
  * Coordinates are re-tuned for the raster horse (task in progress) — empty for
  * now so horses render bare until the overlay is dialled in.
  */
-function costumeMarkup(wardrobe = [], coat = 'bay') {
+function costumeMarkup(wardrobe = [], coat = 'bay', seasonKey = 'default') {
+  const c = wardrobeColors(seasonKey);
   let m = '';
   if (wardrobe.includes('winter-rug')) {
     // a cozy rug over the whole back, withers to rump, hanging well down the
-    // barrel. Soft rosy pink from the flower palette, with a cream hem band.
-    m += `<path d="M152,206 Q232,186 314,197 Q327,204 324,255 Q321,300 313,309 Q234,323 160,309 Q150,298 148,252 Q147,212 152,206 Z" fill="#E895B3"/>`;
-    m += `<path d="M156,292 Q236,308 318,290" fill="none" stroke="#F9EFE3" stroke-width="8" stroke-linecap="round"/>`;
-    m += `<path d="M160,309 Q234,322 313,309" fill="none" stroke="#D3719B" stroke-width="6" stroke-linecap="round"/>`;
+    // barrel, with a lighter hem band.
+    m += `<path d="M152,206 Q232,186 314,197 Q327,204 324,255 Q321,300 313,309 Q234,323 160,309 Q150,298 148,252 Q147,212 152,206 Z" fill="${c.rugMain}"/>`;
+    m += `<path d="M156,292 Q236,308 318,290" fill="none" stroke="${c.rugHem}" stroke-width="8" stroke-linecap="round"/>`;
+    m += `<path d="M160,309 Q234,322 313,309" fill="none" stroke="${c.rugTrim}" stroke-width="6" stroke-linecap="round"/>`;
   }
   if (wardrobe.includes('ear-flower')) {
     // a small daisy tucked at the base of the forward ear
     const { cx, cy } = EAR_FLOWER_ANCHOR[coat] ?? DEFAULT_EAR_FLOWER;
     const petals = [[cx, cy - 10], [cx + 9.5, cy - 3.1], [cx + 5.9, cy + 8.1], [cx - 5.9, cy + 8.1], [cx - 9.5, cy - 3.1]];
-    for (const [px, py] of petals) m += `<circle cx="${px}" cy="${py}" r="6.5" fill="#A971D6"/>`;
-    m += `<circle cx="${cx}" cy="${cy}" r="5" fill="#F1C40F"/>`;
+    for (const [px, py] of petals) m += `<circle cx="${px}" cy="${py}" r="6.5" fill="${c.flowerPetal}"/>`;
+    m += `<circle cx="${cx}" cy="${cy}" r="5" fill="${c.flowerCenter}"/>`;
   }
   if (wardrobe.includes('forelock-bow')) {
     // a ribbon bow on the forehead, tracking the same per-coat head position as
@@ -140,35 +183,33 @@ function costumeMarkup(wardrobe = [], coat = 'bay') {
     // that sit lower in the frame.
     const f = EAR_FLOWER_ANCHOR[coat] ?? DEFAULT_EAR_FLOWER;
     const bx = f.cx + 20, by = f.cy + 14;
-    m += `<path d="M${bx},${by} L${bx - 23},${by - 10} Q${bx - 29},${by} ${bx - 23},${by + 10} Z" fill="#F7CD3A"/>`;
-    m += `<path d="M${bx},${by} L${bx + 23},${by - 10} Q${bx + 29},${by} ${bx + 23},${by + 10} Z" fill="#F7CD3A"/>`;
-    m += `<rect x="${bx - 6}" y="${by - 7}" width="12" height="14" rx="4" fill="#E0A81E"/>`;
+    m += `<path d="M${bx},${by} L${bx - 23},${by - 10} Q${bx - 29},${by} ${bx - 23},${by + 10} Z" fill="${c.bowRibbon}"/>`;
+    m += `<path d="M${bx},${by} L${bx + 23},${by - 10} Q${bx + 29},${by} ${bx + 23},${by + 10} Z" fill="${c.bowRibbon}"/>`;
+    m += `<rect x="${bx - 6}" y="${by - 7}" width="12" height="14" rx="4" fill="${c.bowKnot}"/>`;
   }
   if (wardrobe.includes('saddle-blanket')) {
     // a cloth draped over the back behind the withers, hanging down the barrel.
-    // Cozy purple, the same family as the ear flower's petals (issue #54).
-    m += `<path d="M175,200 Q230,189 278,195 Q288,199 286,238 Q284,272 277,282 Q228,289 179,283 Q170,273 168,238 Q166,199 175,200 Z" fill="#A971D6"/>`;
+    m += `<path d="M175,200 Q230,189 278,195 Q288,199 286,238 Q284,272 277,282 Q228,289 179,283 Q170,273 168,238 Q166,199 175,200 Z" fill="${c.blanketMain}"/>`;
     // light trim stripe near the hem
-    m += `<path d="M173,266 Q228,277 282,266" fill="none" stroke="#E6D6F5" stroke-width="7" stroke-linecap="round"/>`;
+    m += `<path d="M173,266 Q228,277 282,266" fill="none" stroke="${c.blanketTrim}" stroke-width="7" stroke-linecap="round"/>`;
   }
   const legs = LEG_POSITIONS[coat] ?? DEFAULT_LEGS;
   // leg wraps first so boots layer in front of them when both are worn
   if (wardrobe.includes('leg-wraps')) {
-    // white bandage wrapped around each lower leg (cannon), above the hoof
+    // a bandage wrapped around each lower leg (cannon), above the hoof
     for (const [x0, x1] of legs) {
       const w = x1 - x0;
-      m += `<rect x="${x0 - 2}" y="388" width="${w + 4}" height="52" rx="6" fill="#F7F7F4"/>`;
-      for (const wy of [400, 413, 426]) m += `<line x1="${x0 - 1}" y1="${wy}" x2="${x1 + 1}" y2="${wy + 4}" stroke="#D5DBE0" stroke-width="2.5"/>`;
+      m += `<rect x="${x0 - 2}" y="388" width="${w + 4}" height="52" rx="6" fill="${c.wrapBase}"/>`;
+      for (const wy of [400, 413, 426]) m += `<line x1="${x0 - 1}" y1="${wy}" x2="${x1 + 1}" y2="${wy + 4}" stroke="${c.wrapLine}" stroke-width="2.5"/>`;
     }
   }
   if (wardrobe.includes('boots')) {
     // a boot over each lower leg + hoof: body, cuff band, darker sole.
-    // Same cozy purple family as the saddle blanket (issue #54).
     for (const [x0, x1] of legs) {
       const w = x1 - x0;
-      m += `<rect x="${x0 - 3}" y="414" width="${w + 6}" height="52" rx="8" fill="#A971D6"/>`;
-      m += `<rect x="${x0 - 5}" y="409" width="${w + 10}" height="12" rx="5" fill="#BE8FE0"/>`;
-      m += `<rect x="${x0 - 3}" y="457" width="${w + 6}" height="10" rx="4" fill="#7E51AE"/>`;
+      m += `<rect x="${x0 - 3}" y="414" width="${w + 6}" height="52" rx="8" fill="${c.bootMain}"/>`;
+      m += `<rect x="${x0 - 5}" y="409" width="${w + 10}" height="12" rx="5" fill="${c.bootCuff}"/>`;
+      m += `<rect x="${x0 - 3}" y="457" width="${w + 6}" height="10" rx="4" fill="${c.bootSole}"/>`;
     }
   }
   return m;
@@ -178,12 +219,12 @@ function costumeMarkup(wardrobe = [], coat = 'bay') {
  * Full figure HTML for one horse: soft ground shadow, the coat/state image,
  * and the costume overlay. Driven entirely by horse data.
  */
-export function horseFigureHTML(horse, wardrobe = []) {
+export function horseFigureHTML(horse, wardrobe = [], seasonKey = 'default') {
   return `
 <div class="horse-figure">
   <div class="horse-shadow"></div>
   <img class="horse-img" src="${horseImageSrc(horse)}" alt="${horse.name} the horse" draggable="false">
-  <svg class="horse-costume" viewBox="0 0 ${FIGURE_W} ${FIGURE_H}" aria-hidden="true">${costumeMarkup(wardrobe, horse.paletteKey)}</svg>
+  <svg class="horse-costume" viewBox="0 0 ${FIGURE_W} ${FIGURE_H}" aria-hidden="true">${costumeMarkup(wardrobe, horse.paletteKey, seasonKey)}</svg>
 </div>`;
 }
 

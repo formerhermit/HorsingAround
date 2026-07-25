@@ -169,6 +169,7 @@ function residentCardHTML(horse, ctx) {
   const portrait = horseFigureHTML(
     { name: horse.name, paletteKey: horse.paletteKey, wellbeing: 100, foal: horse.foal },
     horse.foal ? [] : horse.wardrobe,
+    ctx.seasonKey,
   );
   const arrived = new Date(horse.arrivedAt).toLocaleDateString(undefined, {
     day: 'numeric', month: 'short', year: 'numeric',
@@ -203,7 +204,10 @@ export function renderResidents(state) {
   const magical = horses.filter((h) => isMagicalCoat(h.paletteKey));
   const kept = horses.filter((h) => !isMagicalCoat(h.paletteKey) && h.kept);
   const rescues = horses.filter((h) => !isMagicalCoat(h.paletteKey) && !h.kept);
-  const ctx = { canKeep: canKeep(state), keptCount: keptCount(state), cap: SANCTUARY_CAP };
+  const ctx = {
+    canKeep: canKeep(state), keptCount: keptCount(state), cap: SANCTUARY_CAP,
+    seasonKey: currentSeason(state.stats.playSeconds).key,
+  };
   const groupHead = (text) => `<h3 class="residents-group">${text}</h3>`;
   const card = (h) => residentCardHTML(h, ctx);
   const parts = [];
@@ -856,16 +860,21 @@ function renderPaddock(state) {
   const front = chunk.slice(0, FRONT_COUNT).reverse();
   const back = chunk.slice(FRONT_COUNT).reverse();
 
+  // Worn wardrobe items take on the game-time season's palette (horse.js),
+  // same idea as the seasonal decor recolours: dress a horse once and it
+  // keeps looking right through the year without a re-purchase.
+  const seasonKey = currentSeason(state.stats.playSeconds).key;
+
   const backRow = document.createElement('div');
   backRow.className = 'horses-back';
   // A foal renders smaller than a grown horse, scaling up as it grows (#48).
-  back.forEach((h) => backRow.append(horseCard(h, BACK_SCALE * foalSizeFactor(h, state), true, h.wardrobe)));
+  back.forEach((h) => backRow.append(horseCard(h, BACK_SCALE * foalSizeFactor(h, state), true, h.wardrobe, seasonKey)));
 
   const frontRow = document.createElement('div');
   frontRow.className = 'horses-front';
   front.forEach((h, i) => {
     const rank = front.length - 1 - i; // 0 = newest
-    frontRow.append(horseCard(h, (FRONT_SCALES[rank] ?? BACK_SCALE) * foalSizeFactor(h, state), false, h.wardrobe));
+    frontRow.append(horseCard(h, (FRONT_SCALES[rank] ?? BACK_SCALE) * foalSizeFactor(h, state), false, h.wardrobe, seasonKey));
   });
   if (!chunk.length) {
     // An empty paddock (freshly built, or every horse rehomed) still reserves
@@ -1129,7 +1138,7 @@ function foalConditionLabel(horse) {
   return 'nearly grown';
 }
 
-function horseCard(horse, scale = 1, isBack = false, wardrobe = []) {
+function horseCard(horse, scale = 1, isBack = false, wardrobe = [], seasonKey = 'default') {
   const card = document.createElement('div');
   card.className = `horse${isBack ? ' is-back' : ''}${isShinyCoat(horse) ? ' is-shiny' : ''}${horse.foal ? ' is-foal' : ''}`;
   // Width and text both key off --horse-unit (a viewport-responsive length, see
@@ -1144,7 +1153,7 @@ function horseCard(horse, scale = 1, isBack = false, wardrobe = []) {
   // The sponsor line stays in the layout (visibility-toggled by the "shown"
   // class) so a sponsorship reveal never changes card height mid-game.
   card.innerHTML = `
-    ${horseFigureHTML(horse, wardrobe)}
+    ${horseFigureHTML(horse, wardrobe, seasonKey)}
     <p class="horse-name">${horse.name}</p>
     <p class="horse-condition">${horse.foal ? foalConditionLabel(horse) : wellbeingLabel(horse.wellbeing)}</p>
     <p class="horse-sponsor${horse.sponsor ? ' shown' : ''}">${horse.sponsor ? `sponsored by ${horse.sponsor} 💛` : ''}</p>
