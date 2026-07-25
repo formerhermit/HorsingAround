@@ -265,12 +265,13 @@ main {
 }
 
 /* Its fence turns magical too: lilac wood, golden rails. Same layered-gradient
-   structure and metrics as .fence, colours swapped. */
+   structure and metrics as .fence (including the proportional post spacing),
+   colours swapped. */
 .magic-paddock .fence {
   background:
     repeating-linear-gradient(90deg,
-      #c3aae2 0 10px,
-      transparent 10px 120px),
+      #c3aae2 0 1.2037%,
+      transparent 1.2037% 14.4444%),
     linear-gradient(#e0be74, #e0be74) 0 calc(var(--horse-unit) * 0.073) / 100% calc(var(--horse-unit) * 0.041) no-repeat,
     linear-gradient(#e0be74, #e0be74) 0 calc(var(--horse-unit) * 0.218) / 100% calc(var(--horse-unit) * 0.041) no-repeat;
 }
@@ -611,7 +612,14 @@ main {
 
 /* fence: posts + two rails, drawn with layered gradients so it tiles at any
    width. Vertical metrics scale with --horse-unit (ratios from the original
-   60/78/16/48px design at a 220px unit) so it shrinks with the horses. */
+   60/78/16/48px design at a 220px unit) so it shrinks with the horses. Post
+   spacing is a fraction of the fence's own (=paddock's) width rather than a
+   fixed pixel repeat, so it always lands on the same 130-of-900 cadence the
+   fence-line decor (bunting/garland, render.js) draws its posts-to-posts
+   swags in -- a fixed-px repeat drifts in and out of sync with that as the
+   paddock resizes, which is what made bunting look strung in the wrong
+   places (issue #123 follow-up). 14.4444% = 130/900, 1.2037% keeps the post
+   the same fraction of its cell as the original 10px-of-120px design. */
 .fence {
   position: absolute;
   left: 0;
@@ -621,8 +629,8 @@ main {
   background:
     /* posts */
     repeating-linear-gradient(90deg,
-      #c7a97e 0 10px,
-      transparent 10px 120px),
+      #c7a97e 0 1.2037%,
+      transparent 1.2037% 14.4444%),
     /* upper rail */
     linear-gradient(#bd9d70, #bd9d70) 0 calc(var(--horse-unit) * 0.073) / 100% calc(var(--horse-unit) * 0.041) no-repeat,
     /* lower rail */
