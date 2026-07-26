@@ -1238,6 +1238,7 @@ document.getElementById('residents-grid').addEventListener('click', (event) => {
     ? `🏡 ${res.horse.name} is a permanent resident now, home for good 💛`
     : `${res.horse.name} is back in the adoptable herd.`);
   renderResidents(state);
+  renderAll(state); // moves the horse into (or out of) the sanctuary barn on screen
   refreshUI();
   persist();
 });

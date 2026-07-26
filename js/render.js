@@ -7,7 +7,8 @@ import { FACILITIES, hasFacility, nextFacility, canBuyFacility } from './facilit
 import { currentSeason, SEASON_CLASSES } from './seasons.js';
 import {
   SHOP_ITEMS, isUnlocked, isAffordable, hasNewAffordableItem,
-  PADDOCK_CAP, MAGIC_PADDOCK, paddockCount, nextPaddockPrice, decorTargets, herdAtCapacity, paddockDecor,
+  PADDOCK_CAP, isSanctuaryPaddock, paddockCapacity,
+  MAGIC_PADDOCK, paddockCount, nextPaddockPrice, decorTargets, herdAtCapacity, paddockDecor,
   horseHasItem, isDecorInPaddock, paddockHasRoomFor,
   paddockExclusiveRival, horseExclusiveRival, EXCLUSIVE_GROUPS,
   STACKABLE_IDS, stockCount, decorLocation,
@@ -619,11 +620,15 @@ export function renderShopModal(state) {
   document.getElementById('shop-section-paddocks').hidden = paddockPrice === null;
   if (paddockPrice !== null) {
     const afford = state.coins >= paddockPrice;
+    const buildingSanctuary = isSanctuaryPaddock(paddockCount(state), state);
+    const note = buildingSanctuary
+      ? `Room for ${SANCTUARY_CAP} horses to stay forever, and a fresh spot to decorate.`
+      : `Room for ${PADDOCK_CAP} more horses, and a fresh spot to decorate.`;
     buildSlot.innerHTML = `
       <button class="build-paddock-btn" type="button" data-build-paddock ${afford ? '' : 'disabled'}>
         🔨 Build a new paddock · €${paddockPrice.toLocaleString()}
       </button>
-      <p class="build-paddock-note">Room for ${PADDOCK_CAP} more horses, and a fresh spot to decorate.</p>`;
+      <p class="build-paddock-note">${note}</p>`;
   }
 
   // Bought decor and earned keepsakes (gift statues) get their own sections, so
@@ -785,8 +790,10 @@ function viewCap() {
 
 /** Human label for a paddock slot, matching the on-scene label wording.
  *  The buildable paddocks have names with a bit of personality (issue #60)
- *  rather than "Paddock 2": a meadow, then a proper Andalusian campo. */
-const PADDOCK_NAMES = ['Home paddock', 'Meadow paddock', 'Campo paddock'];
+ *  rather than "Paddock 2": a meadow, then a proper Andalusian campo, then
+ *  the sanctuary's own stable (issue #136 -- a barn interior rather than a
+ *  fourth field, since it's the one paddock the whole ladder builds toward). */
+const PADDOCK_NAMES = ['Home paddock', 'Meadow paddock', 'Campo paddock', 'Sanctuary barn'];
 export function paddockLabel(index) {
   if (index === MAGIC_PADDOCK) return '✨ Magical paddock';
   return PADDOCK_NAMES[index] ?? `Paddock ${index + 1}`;
@@ -821,7 +828,10 @@ export function currentPaddockIndex(state) {
  *  membership is fixed — the newest PADDOCK_CAP rescues are the home paddock,
  *  the next oldest are paddock 2, and so on — while each paddock spans one
  *  view on a wide screen and several on a phone. Never leaves a single horse
- *  alone in a view — herd animals, even in the UI. */
+ *  alone in a view — herd animals, even in the UI. The sanctuary barn is the
+ *  one exception: it holds exactly the "kept" permanent residents (issue #83),
+ *  moved there by the Keep forever control rather than by arrival order, and
+ *  those horses are pulled out of the regular age-ordered herd entirely. */
 function paddockViews(state) {
   const cap = viewCap();
   const views = [];
@@ -839,10 +849,21 @@ function paddockViews(state) {
     chunks.forEach((chunk, i) =>
       views.push({ paddock, horses: chunk, view: i, viewCount: chunks.length, isMagic }));
   };
-  const regular = state.horses.filter((h) => !isMagicalCoat(h.paletteKey));
+  // Paddocks are filled from the newest end backward, each taking its own
+  // capacity's worth -- uniform PADDOCK_CAP, except the sanctuary barn (the
+  // last paddock, once built), which shows its kept residents instead.
+  const nonMagical = state.horses.filter((h) => !isMagicalCoat(h.paletteKey));
+  const kept = nonMagical.filter((h) => h.kept);
+  const regular = nonMagical.filter((h) => !h.kept);
+  let cursor = regular.length;
   for (let p = 0; p < paddockCount(state); p++) {
-    const end = Math.max(0, regular.length - p * PADDOCK_CAP);
-    const start = Math.max(0, regular.length - (p + 1) * PADDOCK_CAP);
+    if (isSanctuaryPaddock(p, state)) {
+      pushViews(p, kept.slice(0, paddockCapacity(p, state)), false);
+      continue;
+    }
+    const end = cursor;
+    const start = Math.max(0, end - paddockCapacity(p, state));
+    cursor = start;
     pushViews(p, regular.slice(start, end), false);
   }
   const magical = state.horses.filter((h) => isMagicalCoat(h.paletteKey));
@@ -898,30 +919,39 @@ function renderPaddock(state) {
     }
   }
 
+  // The sanctuary (paddock 3, gated by the Sanctuary field facility, #136) is
+  // a barn interior rather than another field -- like the magical paddock,
+  // it keeps its own fixed look year-round rather than living the seasons.
+  const isSanctuary = !isMagic && paddock === 3;
+  const timeless = isMagic || isSanctuary;
+
   const children = [backRow, groundDecorRow(state, paddock, view, viewCount), frontRow];
-  const weather = seasonOverlay(state, isMagic);
+  const weather = seasonOverlay(state, timeless);
   if (weather) children.unshift(weather); // seasonal scatter, furthest back
   document.getElementById('horses').replaceChildren(...children);
   renderPaddockDecor(state, paddock);
   // Scene theme per paddock: the buildable ones live up to their names with a
   // built-in scatter of flowers (Meadow) / poppies (Campo), painted in CSS so
-  // they cost nothing and never crowd the horses. Home and the magical paddock
-  // keep their own looks. `paddock` is the slot index (0 = home, 1 = Meadow,
-  // 2 = Campo); the magical paddock uses MAGIC_PADDOCK, handled by isMagic.
+  // they cost nothing and never crowd the horses. Home, the magical paddock
+  // and the sanctuary barn keep their own looks. `paddock` is the slot index
+  // (0 = home, 1 = Meadow, 2 = Campo, 3 = Sanctuary barn); the magical
+  // paddock uses MAGIC_PADDOCK, handled by isMagic.
   const scene = document.getElementById('paddock');
   scene.classList.toggle('magic-paddock', isMagic);
   scene.classList.toggle('meadow-paddock', !isMagic && paddock === 1);
   scene.classList.toggle('campo-paddock', !isMagic && paddock === 2);
+  scene.classList.toggle('sanctuary-paddock', isSanctuary);
   // The game-time season (seasons.js) layers a weather tint over any real
-  // paddock, stacking on the Meadow/Campo scatter; the magical dusk keeps its
-  // own look and opts out. Exactly one season class sits on the scene root.
+  // paddock, stacking on the Meadow/Campo scatter; the magical dusk and the
+  // sanctuary barn keep their own look and opt out. Exactly one season class
+  // sits on the scene root (or none, for the two timeless paddocks).
   const season = currentSeason(state.stats.playSeconds);
-  SEASON_CLASSES.forEach((c) => scene.classList.toggle(c, !isMagic && c === season.className));
+  SEASON_CLASSES.forEach((c) => scene.classList.toggle(c, !timeless && c === season.className));
   // A little season badge orients the player at a glance (issue #96). The
-  // magical paddock is timeless, so it doesn't get one.
+  // magical paddock and the sanctuary barn are timeless, so neither gets one.
   const seasonBadge = document.getElementById('season-badge');
-  seasonBadge.hidden = isMagic;
-  if (!isMagic) seasonBadge.innerHTML = `<span aria-hidden="true">${season.emoji}</span> ${season.label}`;
+  seasonBadge.hidden = timeless;
+  if (!timeless) seasonBadge.innerHTML = `<span aria-hidden="true">${season.emoji}</span> ${season.label}`;
 
   // edge arrows + label, only when there is more than one view
   const older = document.getElementById('nav-older');
@@ -1019,12 +1049,31 @@ function fenceDecorMarkup(id, seasonKey) {
   return '';
 }
 
+// The sanctuary barn's own hay barrow and hay bales (issue #136): fixed
+// furniture along the back wall, not shop decor -- free, permanent, and
+// specific to this one paddock, the same way Meadow/Campo get built-in
+// scenery. Placed either side of the window, sitting on the floor at the
+// base of the wall. cx/aspect are in the 900x130 .paddock-decor viewBox.
+const SANCTUARY_BACK_WALL_DECOR = [
+  { key: 'barn-hay-barrow', aspect: 1.573, subjH: 65, cx: 150, baselineY: 150 },
+  { key: 'barn-hay-bales', aspect: 1.452, subjH: 95, cx: 750, baselineY: 153 },
+];
+function sanctuaryBackWallDecorMarkup() {
+  return SANCTUARY_BACK_WALL_DECOR.map(({ key, aspect, subjH, cx, baselineY }) => {
+    const w = subjH * aspect;
+    const x = cx - w / 2;
+    const y = baselineY - subjH;
+    return `<image href="assets/decor/${key}.png" x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${w.toFixed(1)}" height="${subjH.toFixed(1)}"/>`;
+  }).join('');
+}
+
 /** Draw the fence-line decor placed in the on-screen paddock. */
 function renderPaddockDecor(state, paddock) {
   const layer = document.getElementById('paddock-decor');
   const seasonKey = currentSeason(state.stats.playSeconds).key;
   const markup = paddockDecor(state, paddock).map((id) => fenceDecorMarkup(id, seasonKey)).join('');
-  layer.innerHTML = markup;
+  const fixed = isSanctuaryPaddock(paddock, state) ? sanctuaryBackWallDecorMarkup() : '';
+  layer.innerHTML = markup + fixed;
 }
 
 // Ground props: rendered as a real flex row between the back and front horse
@@ -1117,9 +1166,11 @@ function groundDecorRow(state, paddock, view = 0, viewCount = 1) {
 
 /** The seasonal weather layer (seasons.js): a full-scene scatter behind the
  *  horses (petals, sun-glints, leaves or snow), tinted and animated in CSS off
- *  the season class on the scene root. Skipped on the magical paddock. */
-function seasonOverlay(state, isMagic) {
-  if (isMagic) return null;
+ *  the season class on the scene root. Skipped on paddocks with their own
+ *  fixed look year-round (the magical paddock, and the sanctuary barn --
+ *  weather doesn't reach indoors). */
+function seasonOverlay(state, skipWeather) {
+  if (skipWeather) return null;
   const layer = document.createElement('div');
   layer.className = 'paddock-weather';
   layer.setAttribute('aria-hidden', 'true');
