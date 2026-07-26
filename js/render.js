@@ -1055,8 +1055,8 @@ function fenceDecorMarkup(id, seasonKey) {
 // scenery. Placed either side of the window, sitting on the floor at the
 // base of the wall. cx/aspect are in the 900x130 .paddock-decor viewBox.
 const SANCTUARY_BACK_WALL_DECOR = [
-  { key: 'barn-hay-barrow', aspect: 1.573, subjH: 65, cx: 150, baselineY: 130 },
-  { key: 'barn-hay-bales', aspect: 1.452, subjH: 95, cx: 750, baselineY: 133 },
+  { key: 'barn-hay-barrow', aspect: 1.573, subjH: 65, cx: 150, baselineY: 150 },
+  { key: 'barn-hay-bales', aspect: 1.452, subjH: 95, cx: 750, baselineY: 153 },
 ];
 function sanctuaryBackWallDecorMarkup() {
   return SANCTUARY_BACK_WALL_DECOR.map(({ key, aspect, subjH, cx, baselineY }) => {

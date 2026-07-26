@@ -837,6 +837,9 @@ main {
   top: calc(var(--horse-unit) * 0.19);
   width: 100%;
   height: auto;
+  /* The sanctuary barn's fixed furniture sits below the 130-unit viewBox edge
+     (down on the barn floor); without this the SVG clips it mid-shape. */
+  overflow: visible;
 }
 
 .horses {
