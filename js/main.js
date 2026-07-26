@@ -629,7 +629,7 @@ function handleEvent(e) {
       buttons: [{ label: 'Collect', variant: 'primary' }],
     });
   } else if (e.type === 'gift-horse') {
-    // A magical gift horse (rainbow at 50, golden at 100). It's already in the
+    // A magical gift horse (rainbow at 100, golden at 500). It's already in the
     // herd; show it, then a congratulations popup.
     resetPaddockView();
     renderAll(state);

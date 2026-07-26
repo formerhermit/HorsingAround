@@ -529,10 +529,11 @@ export function grantUnicorn() {
 }
 
 // Rescue-count milestones that hand over a magical gift horse instead of a cash
-// bonus: a rainbow at 50, a golden pegasus at 100.
+// bonus: a rainbow at 100, a golden pegasus at 500 (issue #140 -- pushed back
+// from 50/100, which made the magical coats too easy to earn).
 const RESCUE_GIFTS = {
-  50:  { coat: 'rainbow', name: 'Iris',   trait: 'woven from a whole rainbow' },
-  100: { coat: 'golden',  name: 'Dorado', trait: 'winged, and pure gold through and through' },
+  100: { coat: 'rainbow', name: 'Iris',   trait: 'woven from a whole rainbow' },
+  500: { coat: 'golden',  name: 'Dorado', trait: 'winged, and pure gold through and through' },
 };
 
 // ---- rehoming ----

@@ -51,8 +51,8 @@ export const COAT_CATALOG = [
   { id: 'patchy',         name: 'Patchy',        rarity: 'rare' },
   { id: 'creamy',         name: 'Creamy mane',   rarity: 'rare' },
   { id: 'unicorn',        name: 'Unicorn',       rarity: 'magical', unlock: 'Donate to ARCH' },
-  { id: 'rainbow',        name: 'Rainbow',       rarity: 'magical', unlock: 'Rescue 50 horses' },
-  { id: 'golden',         name: 'Golden',        rarity: 'magical', unlock: 'Rescue 100 horses' },
+  { id: 'rainbow',        name: 'Rainbow',       rarity: 'magical', unlock: 'Rescue 100 horses' },
+  { id: 'golden',         name: 'Golden',        rarity: 'magical', unlock: 'Rescue 500 horses' },
 ];
 
 // Normalised image canvas (see scripts that build assets/horses/*). Costume

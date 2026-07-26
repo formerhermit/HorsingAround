@@ -138,7 +138,7 @@ Winning a month is worth something. All the next month, the reigning champion's 
 
 ### Little celebrations
 
-The game cheers you on. Hit 5, 25 (and beyond) rescues, or rehomings, and you'll get a pat on the back and a bit of extra cash. Reach 10 rescues and there's confetti, plus a gentle nudge toward the real ARCH, with a magical friend in it for you if you help (more on that below). And at 50 and 100 rescues, instead of cash, a magical gift horse comes to live with you: first a **rainbow horse**, then a **golden pegasus**.
+The game cheers you on. Hit 5, 25 (and beyond) rescues, or rehomings, and you'll get a pat on the back and a bit of extra cash. Reach 10 rescues and there's confetti, plus a gentle nudge toward the real ARCH, with a magical friend in it for you if you help (more on that below). And at 100 and 500 rescues, instead of cash, a magical gift horse comes to live with you: first a **rainbow horse**, then a **golden pegasus**.
 
 ### The paddocks
 
