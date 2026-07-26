@@ -1049,12 +1049,32 @@ function fenceDecorMarkup(id, seasonKey) {
   return '';
 }
 
+// The sanctuary barn's own hay barrow and hay bales (issue #136): fixed
+// furniture along the back wall, not shop decor -- free, permanent, and
+// specific to this one paddock, the same way Meadow/Campo get built-in
+// scenery. Placed either side of the window, sitting on the floor at the
+// base of the wall. cx/aspect are in the 900x130 .paddock-decor viewBox.
+const SANCTUARY_BACK_WALL_DECOR = [
+  { key: 'barn-hay-barrow', aspect: 1.573, subjH: 85, cx: 150 },
+  { key: 'barn-hay-bales', aspect: 1.452, subjH: 95, cx: 750 },
+];
+function sanctuaryBackWallDecorMarkup() {
+  const baselineY = 130; // floor level, flush with the bottom of the decor box
+  return SANCTUARY_BACK_WALL_DECOR.map(({ key, aspect, subjH, cx }) => {
+    const w = subjH * aspect;
+    const x = cx - w / 2;
+    const y = baselineY - subjH;
+    return `<image href="assets/decor/${key}.png" x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${w.toFixed(1)}" height="${subjH.toFixed(1)}"/>`;
+  }).join('');
+}
+
 /** Draw the fence-line decor placed in the on-screen paddock. */
 function renderPaddockDecor(state, paddock) {
   const layer = document.getElementById('paddock-decor');
   const seasonKey = currentSeason(state.stats.playSeconds).key;
   const markup = paddockDecor(state, paddock).map((id) => fenceDecorMarkup(id, seasonKey)).join('');
-  layer.innerHTML = markup;
+  const fixed = isSanctuaryPaddock(paddock, state) ? sanctuaryBackWallDecorMarkup() : '';
+  layer.innerHTML = markup + fixed;
 }
 
 // Ground props: rendered as a real flex row between the back and front horse
