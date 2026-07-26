@@ -828,7 +828,10 @@ export function currentPaddockIndex(state) {
  *  membership is fixed — the newest PADDOCK_CAP rescues are the home paddock,
  *  the next oldest are paddock 2, and so on — while each paddock spans one
  *  view on a wide screen and several on a phone. Never leaves a single horse
- *  alone in a view — herd animals, even in the UI. */
+ *  alone in a view — herd animals, even in the UI. The sanctuary barn is the
+ *  one exception: it holds exactly the "kept" permanent residents (issue #83),
+ *  moved there by the Keep forever control rather than by arrival order, and
+ *  those horses are pulled out of the regular age-ordered herd entirely. */
 function paddockViews(state) {
   const cap = viewCap();
   const views = [];
@@ -848,10 +851,16 @@ function paddockViews(state) {
   };
   // Paddocks are filled from the newest end backward, each taking its own
   // capacity's worth -- uniform PADDOCK_CAP, except the sanctuary barn (the
-  // last paddock, once built), which only ever holds SANCTUARY_CAP.
-  const regular = state.horses.filter((h) => !isMagicalCoat(h.paletteKey));
+  // last paddock, once built), which shows its kept residents instead.
+  const nonMagical = state.horses.filter((h) => !isMagicalCoat(h.paletteKey));
+  const kept = nonMagical.filter((h) => h.kept);
+  const regular = nonMagical.filter((h) => !h.kept);
   let cursor = regular.length;
   for (let p = 0; p < paddockCount(state); p++) {
+    if (isSanctuaryPaddock(p, state)) {
+      pushViews(p, kept.slice(0, paddockCapacity(p, state)), false);
+      continue;
+    }
     const end = cursor;
     const start = Math.max(0, end - paddockCapacity(p, state));
     cursor = start;
