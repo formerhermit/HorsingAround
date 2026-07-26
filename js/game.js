@@ -602,11 +602,17 @@ const POSTCARD_BUCKETS = [
 ];
 
 // Warm, regional homes a rehomed horse might go to (shown on the postcard).
+// Mostly Andalusia (ARCH's own patch), plus a spread of other Spanish regions
+// so the album doesn't read like every horse settled in the same corner of
+// the country (issue #142).
 const ADOPTERS = [
   'the García family', 'the Morales family', 'the Ruiz family',
   'the Fernández family', 'the Cabrera family', 'Abuela Rosa',
   'Don Emilio', 'a young couple in Ronda', 'a riding school near Sevilla',
-  'a little farm outside Málaga',
+  'a little farm outside Málaga', 'a smallholding up in Galicia',
+  'a riding club in the Basque Country', 'a finca out in Extremadura',
+  'a family in the hills above Barcelona', 'a yard in the Pyrenean foothills',
+  'a coastal stable near Valencia', 'a farm tucked into the Asturian valleys',
 ];
 
 // Settling-in notes. {name}, {adopter}, {trait} are filled per horse; the trait
@@ -632,6 +638,93 @@ const POSTCARD_TEMPLATES_BRAVE = [
   '{name} sends a happy nicker from their new home with {adopter}. Braver than ever: not {trait} anymore 💛',
 ];
 
+// A handful of other stories a postcard can tell (issue #142), each with its
+// own flavour of ending on top of the usual name/adopter/trait. Picked
+// per-postcard alongside the plain "settled in" note above, so the album
+// reads with real variety rather than the same story reworded. Fear-overcome
+// and no-trait horses are handled separately (see schedulePostcard) and never
+// roll one of these -- their own templates matter more than a change of
+// scenery.
+const COUNTRIES = [
+  'the south of France', 'Portugal', 'Ireland', 'the Netherlands',
+  'Germany', 'Argentina', 'the UK',
+];
+const GYMKHANA_EVENTS = [
+  'the regional gymkhana', 'a junior show-jumping cup', 'the village feria showcase',
+  'a dressage heat at the county fair', 'the summer gymkhana over in Ronda',
+];
+const FILM_ROLES = [
+  'a costume drama filming nearby', 'a shampoo advert (of all things)',
+  'a period film shooting in the hills', 'a local TV commercial', 'a music video, no less',
+];
+const COMPANIONS = [
+  'another rescue horse', 'a scruffy little donkey', 'a goat who refuses to leave its side',
+  "the barn cat, who has decided they're old friends", 'a retired police horse next door',
+];
+
+const POSTCARD_STORY_KINDS = [
+  {
+    id: 'settled', weight: 55, eligible: () => true,
+    templates: POSTCARD_TEMPLATES,
+  },
+  {
+    id: 'abroad', weight: 8, eligible: () => true,
+    templates: () => {
+      const country = randomFrom(COUNTRIES);
+      return [
+        `{name} sends a postcard from abroad: {adopter} moved to ${country}, and of course {name} went along. Still {trait} 💛`,
+        `Big news: {name} is now living in ${country} with {adopter}. Still {trait}, just with a longer journey home 🌍`,
+      ];
+    },
+  },
+  {
+    id: 'gymkhana', weight: 10, eligible: () => true,
+    templates: () => {
+      const event = randomFrom(GYMKHANA_EVENTS);
+      return [
+        `{name} has settled in with {adopter} — and just came home from ${event} with a rosette! Still {trait} 🏆`,
+        `Proud news from {adopter}: {name} placed at ${event} last weekend. Still {trait}, just with a ribbon to show for it 🎀`,
+      ];
+    },
+  },
+  {
+    id: 'actor', weight: 6, eligible: () => true,
+    templates: () => {
+      const role = randomFrom(FILM_ROLES);
+      return [
+        `{name} is living the high life with {adopter}: it turns out ${role} needed a calm, photogenic horse, and {name} got the part! Still {trait} 🎬`,
+        `You'll never guess: {name}, now with {adopter}, was cast in ${role}. Still {trait}, just a little more famous 🎬`,
+      ];
+    },
+  },
+  {
+    id: 'soulmate', weight: 10, eligible: () => true,
+    templates: () => {
+      const companion = randomFrom(COMPANIONS);
+      return [
+        `{name} has settled in with {adopter}, and has found a real soulmate in ${companion}. Still {trait}, but never alone these days 💛`,
+        `The sweetest update from {adopter}: {name} is inseparable from ${companion} now. Still {trait}, just better company than ever 🥰`,
+      ];
+    },
+  },
+  {
+    id: 'retirement', weight: 15, eligible: (horse) => (horse.ageYears ?? 0) >= 15,
+    templates: [
+      '{name} is enjoying a well-earned retirement with {adopter}: slow mornings, soft grass, and not a job in the world. Still {trait} 💛',
+      'A quiet note from {adopter}: {name} has settled into retired life, all long naps and easy days. Still {trait}, some things never fade 🌼',
+    ],
+  },
+];
+
+/** Pick a story kind for a postcard, weighted, restricted to kinds eligible
+ *  for this horse (currently only the retirement story, gated on age). */
+function pickPostcardStoryTemplates(horse) {
+  const pool = POSTCARD_STORY_KINDS.filter((k) => k.eligible(horse));
+  const kind = weightedPick(pool);
+  const templates = typeof kind.templates === 'function' ? kind.templates() : kind.templates;
+  return templates;
+}
+
 function weightedPick(buckets) {
   const total = buckets.reduce((sum, b) => sum + b.weight, 0);
   let roll = Math.random() * total;
@@ -651,7 +744,8 @@ function schedulePostcard(horse) {
   const adopter = randomFrom(ADOPTERS);
   const overcameFear = isFearTrait(horse.trait) && horse.fearOvercome;
   const templates = overcameFear ? POSTCARD_TEMPLATES_BRAVE
-    : horse.trait ? POSTCARD_TEMPLATES : POSTCARD_TEMPLATES_NOTRAIT;
+    : !horse.trait ? POSTCARD_TEMPLATES_NOTRAIT
+    : pickPostcardStoryTemplates(horse);
   const message = randomFrom(templates)
     .replaceAll('{name}', horse.name)
     .replaceAll('{adopter}', adopter)
