@@ -29,9 +29,9 @@ export const FACILITIES = [
   { id: 'visitor-centre', name: 'Visitor centre', icon: '🎪', price: 2000000, donationBonus: 0.25,
     art: 'assets/events/facility-visitor-centre.jpg',
     blurb: "A welcome barn, a little café, a gift shop. Visitors Days and new foals draw 50% more, your following can grow bigger, and donations give 25% more." },
-  { id: 'sanctuary-field', name: 'Sanctuary field', icon: '✨', price: 5000000, donationBonus: 0.30,
+  { id: 'sanctuary-field', name: 'Sanctuary Barn', icon: '✨', price: 5000000, donationBonus: 0.30,
     art: 'assets/events/facility-sanctuary-field.jpg',
-    blurb: "The dream: acres of rolling pasture, a forever home. Room to build a fourth paddock, and a story that moves donors like nothing else: donations give 30% more." },
+    blurb: "The dream: a barn of their own, a forever home for three lucky old friends, and a story that moves donors like nothing else: donations give 30% more." },
 ];
 
 export function hasFacility(state, id) {
@@ -56,6 +56,10 @@ export function buyFacility(state, id) {
   if (!f || !canBuyFacility(state, id)) return { ok: false, facility: null };
   state.coins -= f.price;
   (state.facilities ??= []).push(id);
+  // The Sanctuary Barn's whole point IS the barn: unlike the other three
+  // paddocks, there's no separate "build it" purchase afterward -- it just
+  // spawns, already built, the moment the facility does.
+  if (id === 'sanctuary-field') state.paddocksOwned = 4;
   return { ok: true, facility: f };
 }
 

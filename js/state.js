@@ -4,6 +4,7 @@
 import { SHOP_ITEMS, STACKABLE_IDS, PADDOCK_CAP, reclaimOrphanedDecor } from './shop.js';
 import { isMagicalCoat } from './horse.js';
 import { isFearTrait, FEAR_OVERCOME_AT } from './traits.js';
+import { hasFacility } from './facilities.js';
 
 export const SAVE_KEY = 'horsing-around:save';
 export const SAVE_VERSION = 1;
@@ -501,6 +502,11 @@ function repair(save) {
   // this herd needs, free — never shrink a count the player already has.
   const regularHerd = (save.horses ?? []).filter((h) => !isMagicalCoat(h.paletteKey)).length;
   save.paddocksOwned = Math.max(save.paddocksOwned ?? 1, Math.ceil(regularHerd / PADDOCK_CAP), 1);
+  // The Sanctuary Barn now spawns already built the moment its facility is
+  // bought (no separate purchase); this catches anyone caught mid-flow under
+  // the old two-step version, who bought the facility but hadn't yet built
+  // paddock 4 when this changed.
+  if (hasFacility(save, 'sanctuary-field')) save.paddocksOwned = Math.max(save.paddocksOwned, 4);
 
   // Sweep up any decor stranded in paddocks that no longer exist (mobile saves
   // could have decorated up to six of them under the viewport model).

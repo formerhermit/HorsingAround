@@ -613,22 +613,19 @@ export function renderShopModal(state) {
   // Build the next paddock (Expansions tab), whenever one can be built — no
   // need to fill the current ones first (issue #48). An empty paddock is fine;
   // it opens up as a fresh space to fill and decorate. Priced/gated by
-  // nextPaddockPrice, so this only shows for a paddock the rescue is actually
-  // allowed to build (the fourth needs the Sanctuary field first); the whole
-  // section folds away once the last paddock is built.
+  // nextPaddockPrice, which only ever offers the second or third paddock now
+  // -- the fourth (the Sanctuary Barn) spawns already built the moment the
+  // Sanctuary field facility is bought, so it never appears here. The whole
+  // section folds away once the third paddock is built.
   const paddockPrice = nextPaddockPrice(state);
   document.getElementById('shop-section-paddocks').hidden = paddockPrice === null;
   if (paddockPrice !== null) {
     const afford = state.coins >= paddockPrice;
-    const buildingSanctuary = isSanctuaryPaddock(paddockCount(state), state);
-    const note = buildingSanctuary
-      ? `Room for ${SANCTUARY_CAP} horses to stay forever, and a fresh spot to decorate.`
-      : `Room for ${PADDOCK_CAP} more horses, and a fresh spot to decorate.`;
     buildSlot.innerHTML = `
       <button class="build-paddock-btn" type="button" data-build-paddock ${afford ? '' : 'disabled'}>
         🔨 Build a new paddock · €${paddockPrice.toLocaleString()}
       </button>
-      <p class="build-paddock-note">${note}</p>`;
+      <p class="build-paddock-note">Room for ${PADDOCK_CAP} more horses, and a fresh spot to decorate.</p>`;
   }
 
   // Bought decor and earned keepsakes (gift statues) get their own sections, so
@@ -1049,31 +1046,16 @@ function fenceDecorMarkup(id, seasonKey) {
   return '';
 }
 
-// The sanctuary barn's own hay barrow and hay bales (issue #136): fixed
-// furniture along the back wall, not shop decor -- free, permanent, and
-// specific to this one paddock, the same way Meadow/Campo get built-in
-// scenery. Placed either side of the window, sitting on the floor at the
-// base of the wall. cx/aspect are in the 900x130 .paddock-decor viewBox.
-const SANCTUARY_BACK_WALL_DECOR = [
-  { key: 'barn-hay-barrow', aspect: 1.573, subjH: 65, cx: 150, baselineY: 150 },
-  { key: 'barn-hay-bales', aspect: 1.452, subjH: 95, cx: 750, baselineY: 153 },
-];
-function sanctuaryBackWallDecorMarkup() {
-  return SANCTUARY_BACK_WALL_DECOR.map(({ key, aspect, subjH, cx, baselineY }) => {
-    const w = subjH * aspect;
-    const x = cx - w / 2;
-    const y = baselineY - subjH;
-    return `<image href="assets/decor/${key}.png" x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${w.toFixed(1)}" height="${subjH.toFixed(1)}"/>`;
-  }).join('');
-}
-
-/** Draw the fence-line decor placed in the on-screen paddock. */
+/** Draw the fence-line decor placed in the on-screen paddock. (The sanctuary
+ *  barn's fixed hay barrow/bales are NOT drawn here: this SVG scales with the
+ *  paddock's width while the floor line is set in horse-units, so items placed
+ *  in it drift up the wall on narrow screens. They live in CSS instead, as
+ *  bottom-anchored background layers on .sanctuary-paddock .fence.) */
 function renderPaddockDecor(state, paddock) {
   const layer = document.getElementById('paddock-decor');
   const seasonKey = currentSeason(state.stats.playSeconds).key;
   const markup = paddockDecor(state, paddock).map((id) => fenceDecorMarkup(id, seasonKey)).join('');
-  const fixed = isSanctuaryPaddock(paddock, state) ? sanctuaryBackWallDecorMarkup() : '';
-  layer.innerHTML = markup + fixed;
+  layer.innerHTML = markup;
 }
 
 // Ground props: rendered as a real flex row between the back and front horse
