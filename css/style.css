@@ -420,11 +420,11 @@ main {
   opacity: 1;
 }
 
-/* A hanging lantern -- a small dark shape with a warm pulsing glow beneath
-   it, centred over the window -- plus a few wisps of hay dust
-   catching the light. The barn's answer to weather, since none reaches
-   indoors. Same layering as the magical sparkle (z2, behind the horses),
-   stilled under reduced motion below. */
+/* Hanging lanterns -- small dark grey shapes with a warm pulsing glow beneath
+   each, two either side of the window and evenly spread across the scene --
+   plus a few wisps of hay dust catching the light. The barn's answer to
+   weather, since none reaches indoors. Same layering as the magical sparkle
+   (z2, behind the horses), stilled under reduced motion below. */
 .paddock.sanctuary-paddock::before,
 .paddock.sanctuary-paddock::after {
   content: '';
@@ -435,10 +435,16 @@ main {
   background-repeat: no-repeat;
 }
 .paddock.sanctuary-paddock::before {
+  --lantern: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%2728%27%20height%3D%2726%27%3E%3Cline%20x1%3D%2714%27%20y1%3D%270%27%20x2%3D%2714%27%20y2%3D%278%27%20stroke%3D%27%233a3a3a%27%20stroke-width%3D%272%27%2F%3E%3Cpath%20d%3D%27M4%208%20h20%20l-3%2014%20a7%207%200%200%201%20-14%200%20Z%27%20fill%3D%27%234a4a4a%27%2F%3E%3Cellipse%20cx%3D%2714%27%20cy%3D%2722%27%20rx%3D%275%27%20ry%3D%272.4%27%20fill%3D%27%23ffe6ab%27%2F%3E%3C%2Fsvg%3E");
   background:
-    url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20width%3D%2728%27%20height%3D%2726%27%3E%3Cline%20x1%3D%2714%27%20y1%3D%270%27%20x2%3D%2714%27%20y2%3D%278%27%20stroke%3D%27%234a3520%27%20stroke-width%3D%272%27/%3E%3Cpath%20d%3D%27M4%208%20h20%20l-3%2014%20a7%207%200%200%201%20-14%200%20Z%27%20fill%3D%27%233a2c1c%27/%3E%3Cellipse%20cx%3D%2714%27%20cy%3D%2722%27%20rx%3D%275%27%20ry%3D%272.4%27%20fill%3D%27%23ffe6ab%27/%3E%3C/svg%3E")
-      50% calc(var(--horse-unit) * 0.03) / 28px 26px no-repeat,
-    radial-gradient(38% 55% at 50% 8%, rgba(255, 214, 140, .55), transparent 72%);
+    var(--lantern) 10% calc(var(--horse-unit) * 0.03) / 28px 26px no-repeat,
+    var(--lantern) 30% calc(var(--horse-unit) * 0.03) / 28px 26px no-repeat,
+    var(--lantern) 70% calc(var(--horse-unit) * 0.03) / 28px 26px no-repeat,
+    var(--lantern) 90% calc(var(--horse-unit) * 0.03) / 28px 26px no-repeat,
+    radial-gradient(38% 55% at 10% 8%, rgba(255, 214, 140, .55), transparent 72%),
+    radial-gradient(38% 55% at 30% 8%, rgba(255, 214, 140, .55), transparent 72%),
+    radial-gradient(38% 55% at 70% 8%, rgba(255, 214, 140, .55), transparent 72%),
+    radial-gradient(38% 55% at 90% 8%, rgba(255, 214, 140, .55), transparent 72%);
   animation: barn-glow 4.5s ease-in-out infinite;
 }
 .paddock.sanctuary-paddock::after {
