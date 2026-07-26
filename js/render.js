@@ -613,22 +613,19 @@ export function renderShopModal(state) {
   // Build the next paddock (Expansions tab), whenever one can be built — no
   // need to fill the current ones first (issue #48). An empty paddock is fine;
   // it opens up as a fresh space to fill and decorate. Priced/gated by
-  // nextPaddockPrice, so this only shows for a paddock the rescue is actually
-  // allowed to build (the fourth needs the Sanctuary field first); the whole
-  // section folds away once the last paddock is built.
+  // nextPaddockPrice, which only ever offers the second or third paddock now
+  // -- the fourth (the Sanctuary Barn) spawns already built the moment the
+  // Sanctuary field facility is bought, so it never appears here. The whole
+  // section folds away once the third paddock is built.
   const paddockPrice = nextPaddockPrice(state);
   document.getElementById('shop-section-paddocks').hidden = paddockPrice === null;
   if (paddockPrice !== null) {
     const afford = state.coins >= paddockPrice;
-    const buildingSanctuary = isSanctuaryPaddock(paddockCount(state), state);
-    const note = buildingSanctuary
-      ? `Room for ${SANCTUARY_CAP} horses to stay forever, and a fresh spot to decorate.`
-      : `Room for ${PADDOCK_CAP} more horses, and a fresh spot to decorate.`;
     buildSlot.innerHTML = `
       <button class="build-paddock-btn" type="button" data-build-paddock ${afford ? '' : 'disabled'}>
         🔨 Build a new paddock · €${paddockPrice.toLocaleString()}
       </button>
-      <p class="build-paddock-note">${note}</p>`;
+      <p class="build-paddock-note">Room for ${PADDOCK_CAP} more horses, and a fresh spot to decorate.</p>`;
   }
 
   // Bought decor and earned keepsakes (gift statues) get their own sections, so

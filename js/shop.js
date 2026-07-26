@@ -37,13 +37,14 @@ export function paddockCapacity(p, state) {
   return isSanctuaryPaddock(p, state) ? SANCTUARY_CAP : PADDOCK_CAP;
 }
 
-// The rescue starts with the home paddock; more can be built. Prices keyed by
-// which paddock number the purchase would be: the second is a mid-game save-up
-// (the herd needs it around the 8th rescue), the third an end-game sink priced
-// with the companions. The fourth only unlocks with the Sanctuary field facility
-// (issue #48) -- see maxPaddocks() -- so most players never see it.
+// The rescue starts with the home paddock; the second and third can be built.
+// Prices keyed by which paddock number the purchase would be: the second is a
+// mid-game save-up (the herd needs it around the 8th rescue), the third an
+// end-game sink priced with the companions. The fourth (the Sanctuary Barn)
+// isn't bought here at all -- it spawns already built the moment the
+// Sanctuary field facility does (see buyFacility in facilities.js).
 export const MAX_PADDOCKS = 4;
-export const PADDOCK_PRICES = { 2: 2500, 3: 75000, 4: 250000 };
+export const PADDOCK_PRICES = { 2: 2500, 3: 75000 };
 
 // Decor slot index of the magical paddock — the free home of the magical gift
 // horses (unicorn, rainbow, golden pegasus). It exists only while a magical
