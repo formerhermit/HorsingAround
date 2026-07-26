@@ -1,7 +1,7 @@
 // shop.js — the Tack room: wardrobe & paddock decor, plus the stores.
 
 import { isMagicalCoat } from './horse.js';
-import { maxPaddocks } from './facilities.js';
+import { maxPaddocks, hasFacility } from './facilities.js';
 
 //
 // You own at most one of each item (buy once), and move it around freely:
@@ -20,6 +20,22 @@ import { maxPaddocks } from './facilities.js';
 // render.js's view paging). Lives here (not render.js) so decor rules can
 // count paddocks without importing the renderer.
 export const PADDOCK_CAP = 8;
+
+// The sanctuary barn (issue #136) is the last paddock, once built, and
+// deliberately small: a handful of permanent, "forever" residents rather than
+// a full working paddock -- the game's ending, not just its biggest field.
+export const SANCTUARY_CAP = 3;
+
+/** Whether paddock index p is the sanctuary barn (the last paddock, once the
+ *  Sanctuary field facility is built). */
+export function isSanctuaryPaddock(p, state) {
+  return hasFacility(state, 'sanctuary-field') && p === maxPaddocks(state) - 1;
+}
+
+/** How many horses paddock p holds: the sanctuary barn is capped smaller. */
+export function paddockCapacity(p, state) {
+  return isSanctuaryPaddock(p, state) ? SANCTUARY_CAP : PADDOCK_CAP;
+}
 
 // The rescue starts with the home paddock; more can be built. Prices keyed by
 // which paddock number the purchase would be: the second is a mid-game save-up
@@ -146,9 +162,12 @@ export function paddockCount(state) {
 }
 
 /** How many horses the owned paddocks hold. Magical gift horses live in their
- *  own paddock and don't count against this. */
+ *  own paddock and don't count against this. The sanctuary barn, once built,
+ *  holds SANCTUARY_CAP rather than a full PADDOCK_CAP (see paddockCapacity). */
 export function herdCapacity(state) {
-  return paddockCount(state) * PADDOCK_CAP;
+  let total = 0;
+  for (let p = 0; p < paddockCount(state); p++) total += paddockCapacity(p, state);
+  return total;
 }
 
 /** Whether every paddock space is taken (rescuing needs a rehoming or a new

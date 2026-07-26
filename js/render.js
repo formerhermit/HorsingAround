@@ -7,7 +7,8 @@ import { FACILITIES, hasFacility, nextFacility, canBuyFacility } from './facilit
 import { currentSeason, SEASON_CLASSES } from './seasons.js';
 import {
   SHOP_ITEMS, isUnlocked, isAffordable, hasNewAffordableItem,
-  PADDOCK_CAP, MAGIC_PADDOCK, paddockCount, nextPaddockPrice, decorTargets, herdAtCapacity, paddockDecor,
+  PADDOCK_CAP, isSanctuaryPaddock, paddockCapacity,
+  MAGIC_PADDOCK, paddockCount, nextPaddockPrice, decorTargets, herdAtCapacity, paddockDecor,
   horseHasItem, isDecorInPaddock, paddockHasRoomFor,
   paddockExclusiveRival, horseExclusiveRival, EXCLUSIVE_GROUPS,
   STACKABLE_IDS, stockCount, decorLocation,
@@ -619,11 +620,15 @@ export function renderShopModal(state) {
   document.getElementById('shop-section-paddocks').hidden = paddockPrice === null;
   if (paddockPrice !== null) {
     const afford = state.coins >= paddockPrice;
+    const buildingSanctuary = isSanctuaryPaddock(paddockCount(state), state);
+    const note = buildingSanctuary
+      ? `Room for ${SANCTUARY_CAP} horses to stay forever, and a fresh spot to decorate.`
+      : `Room for ${PADDOCK_CAP} more horses, and a fresh spot to decorate.`;
     buildSlot.innerHTML = `
       <button class="build-paddock-btn" type="button" data-build-paddock ${afford ? '' : 'disabled'}>
         🔨 Build a new paddock · €${paddockPrice.toLocaleString()}
       </button>
-      <p class="build-paddock-note">Room for ${PADDOCK_CAP} more horses, and a fresh spot to decorate.</p>`;
+      <p class="build-paddock-note">${note}</p>`;
   }
 
   // Bought decor and earned keepsakes (gift statues) get their own sections, so
@@ -841,10 +846,15 @@ function paddockViews(state) {
     chunks.forEach((chunk, i) =>
       views.push({ paddock, horses: chunk, view: i, viewCount: chunks.length, isMagic }));
   };
+  // Paddocks are filled from the newest end backward, each taking its own
+  // capacity's worth -- uniform PADDOCK_CAP, except the sanctuary barn (the
+  // last paddock, once built), which only ever holds SANCTUARY_CAP.
   const regular = state.horses.filter((h) => !isMagicalCoat(h.paletteKey));
+  let cursor = regular.length;
   for (let p = 0; p < paddockCount(state); p++) {
-    const end = Math.max(0, regular.length - p * PADDOCK_CAP);
-    const start = Math.max(0, regular.length - (p + 1) * PADDOCK_CAP);
+    const end = cursor;
+    const start = Math.max(0, end - paddockCapacity(p, state));
+    cursor = start;
     pushViews(p, regular.slice(start, end), false);
   }
   const magical = state.horses.filter((h) => isMagicalCoat(h.paletteKey));

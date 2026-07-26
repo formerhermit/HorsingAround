@@ -9,7 +9,7 @@ import {
   RESCUE_MILESTONES, REHOME_MILESTONES, DONATE_MILESTONE, SUPPORTER_MILESTONES,
 } from './state.js';
 import { PALETTE_KEYS, isMagicalCoat } from './horse.js';
-import { attractionBonus, shareMultiplier, PADDOCK_CAP, herdAtCapacity, SHOP_ITEMS, paddockHasRoomFor } from './shop.js';
+import { attractionBonus, shareMultiplier, PADDOCK_CAP, SANCTUARY_CAP, herdAtCapacity, SHOP_ITEMS, paddockHasRoomFor } from './shop.js';
 import {
   TRAITS, QUIRK_TRAITS, TRAIT_INFO, isFearTrait, FEAR_OVERCOME_AT,
   FEAR_CARE_MESSAGES, FEAR_CRIT_MESSAGES,
@@ -1587,10 +1587,12 @@ function isAdoptable(h) {
 }
 
 // ---- the sanctuary: permanent residents (issue #83) ----
-// Once the Sanctuary field is built, a paddock's worth of horses can be kept
-// for good: they live at the rescue and are never offered for rehoming. The cap
-// keeps the rehoming loop alive rather than letting the whole herd be kept.
-export const SANCTUARY_CAP = PADDOCK_CAP;
+// Once the Sanctuary field is built, the sanctuary barn's worth of horses can
+// be kept for good: they live at the rescue and are never offered for
+// rehoming. The cap (SANCTUARY_CAP, from shop.js) matches the barn's own
+// small capacity, keeping the rehoming loop alive rather than letting the
+// whole herd be kept.
+export { SANCTUARY_CAP };
 
 /** Whether keeping horses is unlocked yet (the Sanctuary field is built). */
 export function canKeep(state = gameState) {
