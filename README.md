@@ -2,7 +2,7 @@
 
 A little game about looking after rescue horses. It's here to raise a smile, and a bit of real money, for [ARCH, the Andalucian Rescue Centre for Horses](https://www.horserescuespain.org/), a volunteer-run horse rescue near Málaga, Spain.
 
-**[Play it live →](https://formerhermit.github.io/HorsingAround/)**
+**[Play it live →](https://horses.sillygame.studio/)**
 
 ![Horsing Around Revamped](https://github.com/formerhermit/HorsingAround/blob/main/Horsing-Around-Revamped.png?raw=true)
 

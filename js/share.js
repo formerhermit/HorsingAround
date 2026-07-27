@@ -8,7 +8,7 @@
 
 import { gameState, save } from './state.js';
 
-const SHARE_URL = 'https://formerhermit.github.io/HorsingAround/';
+const SHARE_URL = 'https://horses.sillygame.studio/';
 const SHARE_TITLE = 'Horsing Around';
 const SHARE_TEXT =
   'I found this little game about looking after rescue horses. It raises real money for ARCH horse rescue. Come and play 💛';
