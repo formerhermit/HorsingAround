@@ -104,22 +104,29 @@ const DEFAULT_EAR_FLOWER = { cx: 392, cy: 70 };
 // sits higher), so a back garment tuned to the common horses' withers line
 // floats above or sinks below the actual back on those coats (issue #128,
 // and a follow-up once piebald/spotty/etc turned out to need the same fix).
-// Offsets are ~80% of the raw y-distance measured between each coat's back
-// line and the horse-tuned path (sampled across each garment's own x-span --
-// the rug reaches further along the back than the blanket, so it gets its
-// own slightly larger offsets): the raw distance runs a bit high because it
-// catches mane pixels standing proud of the back on some coats, and the 80%
-// figure is calibrated against the donkeys, where player feedback on the
-// first pass confirmed the raw number overshot by almost exactly that much.
-// Coats not listed sit right with no offset.
+// Offsets are measured per coat by sampling the art's own top line (the first
+// non-transparent pixel down each column, on the 500x480 frame the costume SVG
+// shares 1:1 with the PNG) and comparing it with the garment's top edge across
+// that garment's x-span. Two things make this fiddly, and both bit earlier
+// passes: a column's topmost pixel is often mane, tail or wing rather than
+// back, so those regions have to be excluded by eye; and the garment's top edge
+// arcs UP toward the middle while a donkey's back slopes DOWN about twice as
+// steeply as the horse the path was drawn for. The second means no single
+// offset fits a donkey's whole span -- covering the rear corner floats the
+// middle clear of the back -- so each value here is the midpoint of the range,
+// then confirmed against a 2.5x render of the back rather than trusted from
+// arithmetic. An earlier pass scaled a raw measurement by 80% instead, which
+// pushed the rug offsets far enough past the midpoint to leave a visible strip
+// of back above the rug on piebald donkeys (and, less obviously, on patchy,
+// spotty and brown donkeys). Coats not listed sit right with no offset.
 const BACK_GARMENT_OFFSET = {
   rug: {
-    'brown-donkey': 52, 'grey-donkey': 60, 'piebald-donkey': 44, zebra: 30,
-    piebald: 26, spotty: 39, 'red-boy': 16, patchy: 8, creamy: 19, golden: -39,
+    'brown-donkey': 48, 'grey-donkey': 57, 'piebald-donkey': 36, zebra: 30,
+    piebald: 26, spotty: 35, 'red-boy': 16, patchy: 3, creamy: 19, golden: -39,
   },
   blanket: {
-    'brown-donkey': 47, 'grey-donkey': 55, 'piebald-donkey': 36, zebra: 30,
-    piebald: 25, spotty: 37, 'red-boy': 16, patchy: 8, creamy: 20, golden: -40,
+    'brown-donkey': 47, 'grey-donkey': 55, 'piebald-donkey': 30, zebra: 30,
+    piebald: 25, spotty: 37, 'red-boy': 16, patchy: 4, creamy: 20, golden: -40,
   },
 };
 
