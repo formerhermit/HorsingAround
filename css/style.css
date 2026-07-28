@@ -2918,6 +2918,14 @@ main {
   text-align: left;
 }
 
+/* Without this the display:block above wins over the hidden attribute, so
+   updateRestoreWhisper()'s retirement never took effect and the whisper sat
+   there for good. Every other component here pairs its display with a
+   [hidden] rule; this one was missed. */
+.restore-whisper[hidden] {
+  display: none;
+}
+
 .restore-whisper-link {
   text-decoration: underline;
   text-decoration-color: #d8c39a;

@@ -7,18 +7,29 @@
   <meta name="description" content="A little game about looking after rescue horses: raising a smile, and a bit of real money, for ARCH horse rescue.">
 
   <!-- Social share cards (Open Graph + Twitter). Absolute URLs so links unfurl
-       correctly on Facebook / X / WhatsApp, which can't resolve relative paths. -->
+       correctly on Facebook / X / WhatsApp, which can't resolve relative paths.
+       The image is purpose-built at 1200x630 (the 1.91:1 every platform crops
+       to) by scripts/share-card.mjs — re-run it whenever the paddock's look
+       changes. It replaced a 4:3 screenshot that was getting centre-cropped,
+       losing the title and the banner. Declaring width/height lets a platform
+       lay the card out before the picture has downloaded.
+       Note: these services cache scraped images hard, so give a new card a NEW
+       filename rather than overwriting the old one, or the change won't show. -->
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Horsing Around">
   <meta property="og:title" content="Horsing Around: a little rescue paddock">
   <meta property="og:description" content="Look after a paddock of rescue horses, and help the real ones at ARCH. Come and play 💛">
   <meta property="og:url" content="https://horses.sillygame.studio/">
-  <meta property="og:image" content="https://horses.sillygame.studio/Horsing-Around-Revamped.png">
-  <meta property="og:image:alt" content="A paddock of friendly cartoon rescue horses.">
+  <meta property="og:image" content="https://horses.sillygame.studio/share-card.png">
+  <meta property="og:image:type" content="image/png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="A spring paddock of cartoon rescue horses, with a flower barrow, a bucket of flowers and a ginger cat.">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Horsing Around: a little rescue paddock">
   <meta name="twitter:description" content="Look after a paddock of rescue horses, and help the real ones at ARCH. Come and play 💛">
-  <meta name="twitter:image" content="https://horses.sillygame.studio/Horsing-Around-Revamped.png">
+  <meta name="twitter:image" content="https://horses.sillygame.studio/share-card.png">
+  <meta name="twitter:image:alt" content="A spring paddock of cartoon rescue horses, with a flower barrow, a bucket of flowers and a ginger cat.">
 
   <link rel="stylesheet" href="css/style.css">
 </head>
