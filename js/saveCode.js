@@ -44,7 +44,7 @@ export async function previewSaveCode(code) {
   try {
     const ctx = await getSession();
     if (!ctx) return { ok: false, reason: 'error' };
-    const { data, error } = await ctx.client.rpc('preview_save_code', { input_code: code.trim() });
+    const { data, error } = await ctx.client.rpc('preview_save_code', { input_code: code.trim().toUpperCase() });
     if (error) return { ok: false, reason: isCodeError(error.message) ? 'invalid' : 'error' };
     return { ok: true, gameState: data };
   } catch (err) {
@@ -61,7 +61,7 @@ export async function confirmSaveCode(code) {
   try {
     const ctx = await getSession();
     if (!ctx) return 'error';
-    const { error } = await ctx.client.rpc('confirm_save_code', { input_code: code.trim() });
+    const { error } = await ctx.client.rpc('confirm_save_code', { input_code: code.trim().toUpperCase() });
     if (error) return isCodeError(error.message) ? 'invalid' : 'error';
     return 'ok';
   } catch (err) {
