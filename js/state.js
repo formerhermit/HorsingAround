@@ -152,7 +152,8 @@ export function defaultState() {
       driftIntroShown: false,   // the one-time "horses love routine" top-up explainer
       utilidadShown: false,     // Utilidad Pública recognition earned (permanent +10% supporter donations)
       championMonthsCelebrated: [], // leaderboard months whose winner's popup has fired
-      introToastShown: false,   // the "tap Biscuit" nudge new players get once
+      introToastShown: false,   // the three-card welcome new players get once
+      wantIntroShown: false,    // the one-time "that thought bubble means a want" explainer
       hasSharedUpdate: false,   // resolves the "share to raise money" onboarding popup
       hasRescuedAgain: false,   // resolves the "rescue another horse" onboarding popup
       shopIntroDone: false,     // resolves the "shop is open" onboarding popup
@@ -317,6 +318,9 @@ function repair(save) {
   // The first-want windfall is new: only a player still on their very first horse
   // should ever see it, so anyone already past the second rescue is marked done.
   save.milestones.firstWantRewarded ??= (save.stats?.horsesRescued ?? 1) > 1;
+  // The "what a thought bubble means" explainer rides along with it: anyone who
+  // has already collected the first-want windfall has met a want in person.
+  save.milestones.wantIntroShown ??= save.milestones.firstWantRewarded;
   // Paddock-life additions: the article chain, the Utilidad Pública beat (a
   // returning player past the mark earns its popup on next tick, on purpose),
   // and the once-per-month champion celebration.

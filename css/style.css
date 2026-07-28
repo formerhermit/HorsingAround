@@ -1291,6 +1291,24 @@ main {
   display: none;
 }
 
+/* The saving-up goal line (render.js renderGoalHint). Takes a whole flex row of
+   its own above the action buttons, so it reads as a caption for them rather
+   than competing as a third button. Deliberately quiet: it's guidance during a
+   wait, not a call to action. */
+.goal-hint {
+  flex-basis: 100%;
+  margin: 0;
+  text-align: center;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #7a6f5c;
+  line-height: 1.35;
+}
+
+.goal-hint.is-ready {
+  color: #6f8f4f;
+}
+
 .action-btn {
   display: flex;
   flex-direction: column;
@@ -2650,6 +2668,29 @@ main {
 
 .nudge-dismiss:hover {
   background: #9a7135;
+}
+
+/* Click-through protection (render.js ARM_DELAY): for a beat after a popup
+   opens its buttons take no clicks, so a tap already in flight from a tapping
+   spree can't dismiss an explanation the player never saw. They fade in over
+   the same beat, so the delay reads as the card settling rather than as a
+   broken button. */
+.nudge-overlay.is-arming .nudge-dismiss,
+.dialog-overlay.is-arming .dialog-btn {
+  pointer-events: none;
+  opacity: 0.45;
+}
+
+.nudge-dismiss,
+.dialog-btn {
+  transition: opacity 0.35s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nudge-dismiss,
+  .dialog-btn {
+    transition: none;
+  }
 }
 
 .nudge-arrow {

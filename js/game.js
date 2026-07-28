@@ -182,6 +182,18 @@ const CRIT_MESSAGES = [
   '🌼 a proper cuddle',
 ];
 
+// Petting a horse that's already full gains nothing, and one fixed line
+// ("...is thriving") repeated on every tap read to playtesters as the game
+// having stopped responding -- right at the point where the player is waiting
+// to afford their second horse. Same zero gain, but the paddock still answers.
+const MAXED_MESSAGES = [
+  '♥ thriving',
+  '😌 dozing happily in the sun',
+  '💛 nuzzles your shoulder',
+  '✨ coat positively gleaming',
+  '🌼 not a care in the world',
+];
+
 function randomFrom(list) {
   return list[Math.floor(Math.random() * list.length)];
 }
@@ -298,7 +310,7 @@ export function careFor(horse) {
 
   let message;
   if (maxed) {
-    message = `${horse.name} is thriving ♥`;
+    message = `${horse.name}: ${randomFrom(MAXED_MESSAGES)}`;
   } else if (traitMoment) {
     message = info.moment;
   } else if (crit) {
@@ -907,8 +919,12 @@ function eligibleWantHorses() {
 
 /** Advance the little-needs cycle by dt seconds. One want at a time; spawns
  *  when the gap elapses, clears when it's tended, times out, or its horse
- *  leaves. Called from tick (so it only runs once the money side is unlocked). */
-function updateWants(dt, now) {
+ *  leaves. Called from tick (so it only runs once the money side is unlocked).
+ *  Pushes a one-time explainer the first time a want ever appears: until a
+ *  player has tended one, a thought bubble is just an unexplained emoji, and
+ *  the very first want is the windfall that pays for the second horse -- left
+ *  to lapse (WANT_TTL), the early game stalls for minutes. */
+function updateWants(dt, now, events) {
   if (activeWant) {
     const horseGone = !gameState.horses.some((h) => h.id === activeWant.horseId);
     if (horseGone || now > activeWant.expiresAt) {
@@ -937,6 +953,10 @@ function updateWants(dt, now) {
     need,
     expiresAt: now + WANT_TTL * 1000,
   };
+  if (!gameState.milestones.wantIntroShown) {
+    gameState.milestones.wantIntroShown = true;
+    events.push({ type: 'want-intro', horseName: horse.name, bubble: need.bubble });
+  }
 }
 
 /** Tend the active want if this is the horse that wanted something. Grants the
@@ -1630,7 +1650,7 @@ export function tick(dt) {
   updateFoals(events); // foals grow up over play (issue #48)
   maybeOfferRehome(dt, events);
   checkMilestones(events);
-  updateWants(dt, Date.now()); // the little-needs cycle (bubbles drawn by main)
+  updateWants(dt, Date.now(), events); // the little-needs cycle (bubbles drawn by main)
   updatePaddockLife(dt, Date.now(), events); // bills & Visitors Day story cards
 
   return events;

@@ -82,22 +82,72 @@ renderAll(state);
 save(); // persist immediately so the save shape exists from first load
 backfillAchievements(); // grant already-earned badges quietly, before live play can toast
 
-// ---- intro popup ----
-// Brand-new players don't know clicking a horse does anything. A small toast
-// was too easy to miss, so this is a big centred welcome card (the same modal
-// as the other event dialogs) that introduces the rescue and points them at
-// Biscuit. Shown once ever, a couple of seconds after load so the paddock has
-// painted first, then dismissed with a single obvious button.
+// ---- intro ----
+// Brand-new players told us they never learned what the game was *for*: the old
+// single card only said "tap Biscuit", so the rescue loop and the real charity
+// behind it went unexplained. Three short cards instead, each a paged dialog:
+// what this is, how the loop turns care into the next rescue, and the first
+// thing to do. Small pieces beat one dense card, and the popup arming (see
+// render.js) means a player already tapping can't blow through them.
+// Shown once ever; the header's ❓ replays it any time.
+
+/** The welcome cards, in order. `last` gets the call-to-action label. */
+function introCards() {
+  const first = state.horses[0]?.name ?? 'Biscuit';
+  return [
+    {
+      emoji: '🐴',
+      text: `Welcome to Horsing Around.<br><br>In this game, you rescue horses, and help them to recover. The horses here are pretend, but the game is based on a real charity called ${fig('ARCH')}, who rescue, rehab and re-home real horses in Spain 💛`,
+      button: 'What else?',
+    },
+    {
+      emoji: '💛',
+      text: `How to play: Click a horse to help them recover. As they get better, people notice and become ${fig('supporters')} who make donations. That money can be used to rescue more horses, as well as buy them gifts and expand your facilities.`,
+      button: 'What else?',
+    },
+    {
+      emoji: '🥕',
+      // Names come from a mixed list (Victoria, Biscuit, Patch...), so the copy
+      // stays gender-neutral rather than calling every first horse "he".
+      text: `This is ${fig(first)}, your very first rescue. They arrived tired and hungry, and need some care to recover. ${fig('Tap them')} to look after them, and watch them perk up 💛`,
+      button: `Let's help ${first}!`,
+    },
+  ];
+}
+
+/** Show the welcome cards one after another, each button queueing the one
+ *  after it. Chained rather than queued up front so the dialog queue's
+ *  one-at-a-time pumping can't interleave a story beat into the middle.
+ *  A card without its own `button` falls back to a counted "Next". */
+function showIntro(step = 0) {
+  const cards = introCards();
+  const card = cards[step];
+  if (!card) return;
+  const isLast = step === cards.length - 1;
+  enqueueDialog({
+    emoji: card.emoji,
+    text: card.text,
+    buttons: [{
+      label: card.button ?? `Next (${step + 1}/${cards.length})`,
+      variant: 'primary',
+      onClick: isLast ? undefined : () => showIntro(step + 1),
+    }],
+  });
+}
+
 if (!state.milestones.introToastShown) {
   state.milestones.introToastShown = true;
   save();
-  const first = state.horses[0]?.name ?? 'Biscuit';
-  setTimeout(() => enqueueDialog({
-    emoji: '🐴',
-    text: `Welcome to your little horse rescue! This is ${fig(first)}, your very first rescue. He arrived tired and hungry, and needs some care to recover. Tap him to look after him, and watch him perk up 💛`,
-    buttons: [{ label: `Let's help ${first}!`, variant: 'primary' }],
-  }), 2000);
+  // A short beat so the paddock paints behind the card first. Shorter than it
+  // used to be: the longer this waits, the likelier it is to land on top of a
+  // player who has already started tapping.
+  setTimeout(() => showIntro(), 900);
 }
+
+// The header's "how to play" button: replays the welcome cards. Nothing else in
+// the game explained the loop after the first minute, so there was no way back
+// to it for anyone who skimmed.
+document.getElementById('help-btn').addEventListener('click', () => showIntro());
 
 // (Onboarding nudges are re-asserted on load once their definitions below have
 // run -- see the updateOnboardingNudges() call after the dismiss wiring.)
@@ -340,7 +390,13 @@ function updateOnboardingNudges() {
 // nothing, so a player can't skip past the prompt by accident. Snoozes just the
 // popup that's showing, so a later prompt still fires when its button goes live.
 document.getElementById('nudge-dismiss').addEventListener('click', () => {
-  const id = document.getElementById('nudge-overlay').dataset.nudge;
+  const overlay = document.getElementById('nudge-overlay');
+  // Still disarmed (see render.js ARM_DELAY): this is a tap left over from a
+  // tapping spree, not a decision. The CSS makes it unclickable by pointer,
+  // but that doesn't cover a keyboard Enter/Space on the focused button, so
+  // the real guard lives here.
+  if (overlay.classList.contains('is-arming')) return;
+  const id = overlay.dataset.nudge;
   if (id) snoozedNudges.add(id);
   if (id === 'collection') { state.milestones.collectionIntroDone = true; save(); }
   if (id === 'left-behind') { state.milestones.leftBehindShown = true; leftBehindPending = false; save(); }
@@ -732,6 +788,15 @@ function handleEvent(e) {
     // freshly-filled share meter.
     showToast(e.message);
     showSupporterPop(e.supporters);
+  } else if (e.type === 'want-intro') {
+    // The first thought bubble ever. A toast was never going to carry this --
+    // it's the mechanic that pays for the second horse, and it lapses in a
+    // minute if nobody tends it -- so it gets a proper card.
+    enqueueDialog({
+      emoji: e.bubble,
+      text: `${fig(e.horseName)} is settled enough to fancy a little something, and it's there in the thought bubble above them. ${fig('Tap them')} to fetch it: happy little moments like this are exactly what wins the rescue new supporters 💛`,
+      buttons: [{ label: 'On my way!', variant: 'primary' }],
+    });
   } else if (e.type === 'supporter-quiet') {
     showSupporterPop(e.count); // subtle chip pop, not a toast
   } else if (e.type === 'supporter-milestone') {

@@ -96,6 +96,39 @@ export function renderActions(state) {
       rescue.disabled = state.coins < cost;
     }
   }
+
+  renderGoalHint(state, bar);
+}
+
+/**
+ * The saving-up beat, made visible. Between a first horse reaching "content"
+ * and affording the second, the player's one learned verb (tap the horse) has
+ * gone quiet: the horse is full, and the rescue button is just a greyed-out
+ * price. Playtesters read that stretch as "the game stopped". So while the
+ * second rescue is the outstanding goal, a line above the buttons names it and
+ * counts down the shortfall, and points at the two things that close it.
+ * Retires for good once they've rescued again -- by then the loop is learned.
+ */
+function renderGoalHint(state, bar) {
+  let hint = bar.querySelector('#goal-hint');
+  const wanted = state.unlocks.rescue && !state.milestones.hasRescuedAgain
+    && !herdAtCapacity(state);
+  if (!wanted) {
+    hint?.remove();
+    return;
+  }
+  if (!hint) {
+    hint = document.createElement('p');
+    hint.id = 'goal-hint';
+    hint.className = 'goal-hint';
+    bar.prepend(hint); // above the buttons it's talking about
+  }
+  const first = state.horses[0]?.name ?? 'your horse';
+  const short = Math.ceil(rescuePrice(state) - state.coins);
+  hint.classList.toggle('is-ready', short <= 0);
+  hint.textContent = short <= 0
+    ? `🐴 You've saved enough: bring ${first} a friend home.`
+    : `🐴 Next goal: a friend for ${first} — €${short} to go. Share an update when the bar is full, and tend any 💭 that pops up.`;
 }
 
 const ITEM_EMOJI = {
@@ -1339,6 +1372,24 @@ export function showToast(message, variant = null) {
   toast.addEventListener('animationend', () => toast.remove());
 }
 
+// ---- click-through protection ----
+// Playtesters tapping a horse at speed were dismissing popups they never saw:
+// a card appears centred over the paddock -- exactly where the finger already
+// is -- and the very next tap of a spree lands on its button. So every popup
+// button starts *disarmed*: for ARM_DELAY it takes no clicks and reads as
+// faded, then settles in. A tap already in flight hits nothing instead of
+// throwing away the explanation, and anyone actually reading never notices.
+const ARM_DELAY = 700; // ms a popup's buttons ignore clicks after opening
+
+/** Disarm `overlay`'s buttons, then arm them ARM_DELAY later. Re-arming is
+ *  per-overlay: opening a second popup restarts its own timer only. */
+const armTimers = new WeakMap();
+function armOverlay(overlay) {
+  clearTimeout(armTimers.get(overlay));
+  overlay.classList.add('is-arming');
+  armTimers.set(overlay, setTimeout(() => overlay.classList.remove('is-arming'), ARM_DELAY));
+}
+
 // Onboarding popups: a big centred card (shop-modal styling) with a playful
 // curved arrow pointing toward the button it's teaching. The arrow is hand-drawn
 // so it matches the flat, rounded look of the rest of the game.
@@ -1361,6 +1412,7 @@ export function showNudgePopup(id, { emoji, text, dir }) {
   arrow.setAttribute('class', `nudge-arrow nudge-arrow-${dir}`); // SVG className is read-only
   arrow.innerHTML = dir.startsWith('up') ? NUDGE_ARROWS.up : NUDGE_ARROWS.down;
   overlay.hidden = false;
+  armOverlay(overlay);
 }
 
 export function hideNudgePopup() {
@@ -1398,10 +1450,16 @@ export function showDialog({ emoji = '', text, buttons = [], confetti = false, s
     const btn = document.createElement('button');
     btn.className = `dialog-btn${b.variant ? ` dialog-btn-${b.variant}` : ''}`;
     btn.textContent = b.label;
+    // Not { once: true }: a click that arrives while the card is still disarmed
+    // has to be ignored *without* spending the listener, or the button would be
+    // dead for the rest of the popup's life. A local flag keeps it single-shot.
+    let used = false;
     btn.addEventListener('click', () => {
+      if (used || overlay.classList.contains('is-arming')) return;
+      used = true;
       overlay.hidden = true;
       b.onClick?.();
-    }, { once: true });
+    });
     row.append(btn);
   }
 
@@ -1423,6 +1481,7 @@ export function showDialog({ emoji = '', text, buttons = [], confetti = false, s
   }
 
   overlay.hidden = false;
+  armOverlay(overlay);
   if (confetti) burstConfetti();
 }
 
