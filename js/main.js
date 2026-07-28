@@ -1212,7 +1212,7 @@ scConfirmLoad.addEventListener('click', async () => {
   adoptCloudState(scPreviewedState);
   state.milestones.restoreWhisperRetired = true; // they've got their real game now
   scResetPanels();
-  closePrivacy();
+  closeSync();
   resetPaddockView();
   renderAll(state);
   refreshUI();
