@@ -2314,6 +2314,16 @@ main {
   border-bottom-color: #6f8f4f;
 }
 
+/* The book's five tabs (Collection / Badges / Stats / Top rescuers / Postcards)
+   don't fit one row on a phone, so let them wrap onto a second row instead of
+   scrolling sideways where the last two stay hidden off-screen. */
+@media (max-width: 480px) {
+  #collection-modal > .modal-tabs {
+    flex-wrap: wrap;
+    overflow-x: visible;
+  }
+}
+
 /* Unread-postcards count on the 💌 tab. */
 .tab-badge {
   display: inline-block;
