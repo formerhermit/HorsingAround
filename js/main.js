@@ -102,7 +102,7 @@ function introCards() {
     },
     {
       emoji: '💛',
-      text: `How to play:<br>Click a horse to help them recover. As they get better, people notice and become ${fig('supporters')} who make donations. That money can be used to rescue more horses, as well as buy them gifts and expand your facilities.`,
+      text: `How to play:<br><br>Click a horse to help them recover. As they get better, people notice and become ${fig('supporters')} who make donations. That money can be used to rescue more horses, as well as buy them gifts and expand your facilities.`,
       button: 'What else?',
     },
     {
