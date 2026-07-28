@@ -89,38 +89,52 @@ backfillAchievements(); // grant already-earned badges quietly, before live play
 // what this is, how the loop turns care into the next rescue, and the first
 // thing to do. Small pieces beat one dense card, and the popup arming (see
 // render.js) means a player already tapping can't blow through them.
-// Shown once ever; the header's ❓ replays it any time.
+// The full three run once ever, on a brand-new save; the header's ❓ replays the
+// two evergreen ones any time (see introCards for why the third is left out).
 
-/** The welcome cards, in order. `last` gets the call-to-action label. */
-function introCards() {
+/**
+ * The welcome cards, in order. `advance` labels the button when more cards
+ * follow, `final` when the card ends the run, so the same card can close a
+ * sequence or hand on to the next one.
+ *
+ * The first two are evergreen: what the game is, and how the loop works. The
+ * third belongs to a brand-new save only -- it introduces the starting horse by
+ * name and says to tap them, which stops being true almost immediately. Replayed
+ * from the header later it would point at a horse who has long since recovered,
+ * or who has been rehomed and isn't in the paddock at all.
+ */
+function introCards({ firstRun }) {
   const first = state.horses[0]?.name ?? 'Biscuit';
-  return [
+  const cards = [
     {
       emoji: '🐴',
       text: `Welcome to Horsing Around.<br><br>In this game, you rescue horses, and help them to recover. The horses here are pretend, but the game is based on a real charity called ${fig('ARCH')}, who rescue, rehab and re-home real horses in Spain 💛`,
-      button: 'What else?',
+      advance: 'What else?',
     },
     {
       emoji: '💛',
       text: `How to play:<br><br>Click a horse to help them recover. As they get better, people notice and become ${fig('supporters')} who make donations. That money can be used to rescue more horses, as well as buy them gifts and expand your facilities.`,
-      button: 'What else?',
+      advance: 'What else?',
+      final: 'Got it!',
     },
-    {
+  ];
+  if (firstRun) {
+    cards.push({
       emoji: '🥕',
       // Names come from a mixed list (Victoria, Biscuit, Patch...), so the copy
       // stays gender-neutral rather than calling every first horse "he".
       text: `This is ${fig(first)}, your very first rescue. They arrived tired and hungry, and need some care to recover. ${fig('Tap them')} to look after them, and watch them perk up 💛`,
-      button: `Let's help ${first}!`,
-    },
-  ];
+      final: `Let's help ${first}!`,
+    });
+  }
+  return cards;
 }
 
 /** Show the welcome cards one after another, each button queueing the one
  *  after it. Chained rather than queued up front so the dialog queue's
- *  one-at-a-time pumping can't interleave a story beat into the middle.
- *  A card without its own `button` falls back to a counted "Next". */
-function showIntro(step = 0) {
-  const cards = introCards();
+ *  one-at-a-time pumping can't interleave a story beat into the middle. */
+function showIntro(step = 0, { firstRun = false } = {}) {
+  const cards = introCards({ firstRun });
   const card = cards[step];
   if (!card) return;
   const isLast = step === cards.length - 1;
@@ -128,9 +142,9 @@ function showIntro(step = 0) {
     emoji: card.emoji,
     text: card.text,
     buttons: [{
-      label: card.button ?? `Next (${step + 1}/${cards.length})`,
+      label: (isLast ? card.final : card.advance) ?? 'Got it!',
       variant: 'primary',
-      onClick: isLast ? undefined : () => showIntro(step + 1),
+      onClick: isLast ? undefined : () => showIntro(step + 1, { firstRun }),
     }],
   });
 }
@@ -141,12 +155,13 @@ if (!state.milestones.introToastShown) {
   // A short beat so the paddock paints behind the card first. Shorter than it
   // used to be: the longer this waits, the likelier it is to land on top of a
   // player who has already started tapping.
-  setTimeout(() => showIntro(), 900);
+  setTimeout(() => showIntro(0, { firstRun: true }), 900);
 }
 
-// The header's "how to play" button: replays the welcome cards. Nothing else in
-// the game explained the loop after the first minute, so there was no way back
-// to it for anyone who skimmed.
+// The header's "how to play" button: replays the evergreen cards (no firstRun,
+// so the "tap your first horse" card stays out of it). Nothing else in the game
+// explained the loop after the first minute, so there was no way back to it for
+// anyone who skimmed.
 document.getElementById('help-btn').addEventListener('click', () => showIntro());
 
 // (Onboarding nudges are re-asserted on load once their definitions below have
