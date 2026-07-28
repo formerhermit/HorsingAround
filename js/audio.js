@@ -29,15 +29,25 @@ btn.addEventListener('click', () => {
 
 function attemptPlay() {
   // Play (even while muted) so position keeps advancing and unmuting
-  // resumes mid-track instead of restarting from the top.
-  audio.play().catch(() => {}); // blocked until a user gesture — retried below
+  // resumes mid-track instead of restarting from the top. Returns the promise
+  // so the gesture hook below can tell a real start from a refusal.
+  return audio.play().catch(() => {}); // blocked until a user gesture — retried below
 }
 
 attemptPlay();
+
+// The first gesture is what lets the soundtrack in (browsers refuse audio with
+// sound before one). Unhook only once a play attempt has actually succeeded:
+// not every gesture grants permission — a touch that turns into a scroll, or a
+// pointerdown on iOS Safari, can leave audio still blocked — and unhooking on
+// the attempt rather than the result used to spend the one and only retry, so
+// music stayed silent for the whole session. Listening on click as well as
+// pointerdown covers browsers that only count the completed tap.
+const GESTURES = ['pointerdown', 'click', 'keydown'];
 const startOnGesture = () => {
-  attemptPlay();
-  document.removeEventListener('pointerdown', startOnGesture);
-  document.removeEventListener('keydown', startOnGesture);
+  attemptPlay().then(() => {
+    if (audio.paused) return; // still refused; leave the hooks up for next time
+    for (const type of GESTURES) document.removeEventListener(type, startOnGesture);
+  });
 };
-document.addEventListener('pointerdown', startOnGesture);
-document.addEventListener('keydown', startOnGesture);
+for (const type of GESTURES) document.addEventListener(type, startOnGesture);
