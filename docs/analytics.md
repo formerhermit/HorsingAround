@@ -1,14 +1,14 @@
-# Analytics — what we measure, and how (issue #161)
+# Analytics: what we measure, and how (issue #161)
 
 ## The launch cutoff
 
 **2026-07-29** is the day the game went out to ARCH. Every identity created before
-that date is us testing, and would badly distort the baseline — a handful of test
+that date is us testing, and would badly distort the baseline: a handful of test
 players against a real audience of unknown size.
 
 So the rule for every query below is: **count only identities whose
 `auth.users.created_at >= '2026-07-29'`.** That excludes the test accounts once,
-permanently, from every metric — rather than trying to remember to subtract them.
+permanently, from every metric, rather than trying to remember to subtract them.
 
 The date appears as a `launch` CTE at the top of each query so there's one place to
 change it if the real launch date turns out to be different.
@@ -21,20 +21,20 @@ We looked at GoatCounter, Cloudflare Web Analytics and GA4 (see the discussion i
 issue #161). The decision was to use what we already store, because:
 
 - The privacy notice promises **"No ads, no tracking, no analytics"** in bold. Querying
-  records we already hold and already disclose is reporting, not tracking — so that
+  records we already hold and already disclose is reporting, not tracking, so that
   promise stays intact and honest.
 - Client-side analytics is blocked by adblockers, Brave, and Firefox strict mode, so
   it undercounts by an unpredictable margin. Our own data has no such gap.
 - No new third party, no new processor, no new data collected, nothing added to the page.
 
-What we give up is **referrer** — we cannot tell how people found the game. If that
+What we give up is **referrer**: we cannot tell how people found the game. If that
 ever becomes the question we most need answered, revisit GoatCounter then, and update
 the privacy copy in the same change (see the note at the top of the privacy section
 in `js/main.js`).
 
 ---
 
-## Available now — no code change
+## Available now, no code change
 
 Run these in the Supabase dashboard's SQL editor. They need the dashboard's own
 privileges: `auth.users` is not reachable from the client, and RLS hides other
@@ -93,7 +93,7 @@ where u.created_at >= launch.at;
 
 `saves.updated_at` and `auth.users.last_sign_in_at` are **overwritten** on every visit.
 So "how many were active in the last 24 hours" works, but "how many were active on
-3rd August" cannot be reconstructed after the fact — a player active in August and
+3rd August" cannot be reconstructed after the fact. A player active in August and
 again today only shows today.
 
 Fixing that needs a daily snapshot, which is the proposal below.
@@ -102,7 +102,7 @@ Fixing that needs a daily snapshot, which is the proposal below.
 
 ## Proposed: a daily snapshot (issue #161)
 
-Add a `daily_stats` table holding **two integers per day and nothing else** — no
+Add a `daily_stats` table holding **two integers per day and nothing else**: no
 per-visitor rows, no identifiers, nothing to leak or disclose:
 
 ```sql
@@ -119,9 +119,9 @@ alter table public.daily_stats enable row level security;
 ```
 
 The existing keep-alive workflow already pings Supabase on a schedule with the anon
-key. It cannot read `auth.users` or other players' saves — correctly — so the snapshot
-goes through a `security definer` function, exactly the pattern the save-code functions
-in `supabase/schema.sql` already use:
+key. It cannot read `auth.users` or other players' saves, correctly so, which means
+the snapshot goes through a `security definer` function, exactly the pattern the
+save-code functions in `supabase/schema.sql` already use:
 
 ```sql
 create or replace function public.record_daily_stats()
@@ -184,10 +184,10 @@ series as "near-daily" rather than guaranteed.
 ## Caveats worth remembering when quoting these numbers
 
 - **Browsers, not people.** An identity is per-browser-storage. Clearing storage, using
-  a private window, or switching device creates a new one — so `new_players` runs
+  a private window, or switching device creates a new one, so `new_players` runs
   somewhat high versus real humans.
 - **No bounces.** Someone who closes the tab before the JS runs is never counted.
 - **No referrer.** We cannot say how anyone found the game.
-- **Test identities.** Excluded by the launch cutoff above, not deleted — a few
+- **Test identities.** Excluded by the launch cutoff above, not deleted. A few
   pre-launch rows still exist in `saves` and will show up in any query that forgets the
   `created_at >= launch` filter.
