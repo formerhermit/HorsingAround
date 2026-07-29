@@ -274,6 +274,18 @@ function loadSave() {
  * millisecond), and missing fields added after a save was first created.
  */
 function repair(save) {
+  // Containers first, before anything below reaches into them. Every backfill
+  // that follows writes fields like `save.stats.foo ??= 0`, which throws on a
+  // save missing the parent object -- and loadSave's catch turns that throw
+  // into "start fresh", silently discarding the whole save. So the one job
+  // here is to make sure there's always something to write into. Keep new
+  // container guards in this block rather than beside their first use, where
+  // the ordering has to be got right all over again.
+  save.stats ??= {};
+  save.milestones ??= {};
+  save.shop ??= {};
+  save.shop.stock ??= {};
+
   const seen = new Set();
   for (const horse of save.horses ?? []) {
     while (seen.has(horse.id)) {
@@ -309,8 +321,6 @@ function repair(save) {
     if (horse.name === 'Pantoja 2' || horse.name === 'Panjota 2') horse.name = 'Binky';
     if (horse.name === 'Lola (Gabbi)') horse.name = 'Gabbi';
   }
-  save.shop ??= {};
-  save.shop.stock ??= {};
   // The share charge meter is new; 0 means "never shared", i.e. a full charge.
   save.lastSharedAt ??= 0;
   // The gentle-upkeep drift is new; returning players get its explainer too.
@@ -377,7 +387,6 @@ function repair(save) {
 
   // Reward/donate milestones are new; backfill any the existing save has already
   // passed so a returning player isn't hit with a flood of retroactive popups.
-  save.stats ??= {};
   save.stats.horsesRescued ??= save.horses?.length ?? 1;
   save.stats.horsesRehomed ??= 0;
   // Backfill from horses that already show a trait, so returning players don't
