@@ -1,6 +1,6 @@
 // main.js — boot the game: load state, render, wire input and persistence.
 
-import { initState, save, gameState, adoptCloudState, DONATE_MILESTONE, SAVE_KEY, disableSaving } from './state.js';
+import { initState, save, gameState, adoptCloudState, DONATE_MILESTONE, SAVE_KEY, SAVE_BACKUP_KEY, disableSaving } from './state.js';
 import { careFor, tick, rescueHorse, shareUpdate, rescueCost, rescuePrice, acceptRehome, declineRehome, requestRehome, collectOfflineEarnings, collectDuePostcards, collectDueStatues, markPostcardsRead, fulfilWant, grantUnicorn, hasUnicorn, acceptBill, declineBill, scheduleVisitorsDay, hurryPaddockLife, setKept, SANCTUARY_CAP, DRIFT_GRACE } from './game.js';
 import {
   renderAll, renderHUD, renderActions, updateHorseCard,
@@ -1123,6 +1123,10 @@ deleteBtn.addEventListener('click', async () => {
   // would write the save straight back -- shut saving off before wiping.
   disableSaving();
   localStorage.removeItem(SAVE_KEY);
+  // "Delete everything" has to mean everything: loadSave keeps a verbatim copy
+  // of any save it couldn't read, and leaving that behind would make the
+  // privacy notice's "deleting has no undo" untrue.
+  localStorage.removeItem(SAVE_BACKUP_KEY);
   location.replace(location.pathname);
 });
 

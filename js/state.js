@@ -7,6 +7,8 @@ import { isFearTrait, FEAR_OVERCOME_AT } from './traits.js';
 import { hasFacility } from './facilities.js';
 
 export const SAVE_KEY = 'horsing-around:save';
+// The last save that couldn't be loaded, kept verbatim. See loadSave.
+export const SAVE_BACKUP_KEY = 'horsing-around:save-backup';
 export const SAVE_VERSION = 1;
 
 // Counts at which a celebratory reward popup fires (a cash bonus into the
@@ -256,14 +258,32 @@ export function save() {
 }
 
 function loadSave() {
+  // Reading it at all can throw (private mode, storage disabled), and that's
+  // not a corrupt save -- there's nothing to back up, so just play locally.
+  let raw = null;
   try {
-    const raw = localStorage.getItem(SAVE_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw);
-    if (parsed.version !== SAVE_VERSION) return migrate(parsed);
-    return repair(parsed);
+    raw = localStorage.getItem(SAVE_KEY);
   } catch (err) {
-    console.warn('Could not load save, starting fresh:', err);
+    console.warn('Could not read the save, starting fresh:', err);
+    return null;
+  }
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw);
+    return parsed.version !== SAVE_VERSION ? migrate(parsed) : repair(parsed);
+  } catch (err) {
+    // Starting fresh here means the player's rescue is gone, and main.js saves
+    // the fresh state within milliseconds of boot -- so by the time anyone
+    // notices, the original bytes have already been overwritten. Keep a copy
+    // first: it costs one localStorage write on a path that should never run,
+    // and it's the difference between "we can look at what went wrong" and
+    // "it's gone". Nothing reads this back yet; recovery is by hand for now.
+    try {
+      localStorage.setItem(SAVE_BACKUP_KEY, raw);
+      console.warn(`Could not load save, starting fresh. The unreadable save was kept at "${SAVE_BACKUP_KEY}":`, err);
+    } catch {
+      console.warn('Could not load save, starting fresh (and could not back it up):', err);
+    }
     return null;
   }
 }
@@ -529,7 +549,15 @@ function repair(save) {
 }
 
 function migrate(oldSave) {
-  // No older versions exist yet; when the shape changes, upgrade old saves
-  // here instead of discarding them.
-  return null;
+  // No older versions exist yet. When the shape changes, add the upgrade steps
+  // here, before the repair() below.
+  //
+  // This deliberately falls through to repair() rather than returning null:
+  // every migration so far has been done idempotently inside repair(), so a
+  // save from an unknown version is far likelier to just need the usual
+  // backfill than to be genuinely unreadable. Returning null would hand
+  // loadSave a "start fresh", which discards a real save over a version number
+  // -- and a bump made without writing a migration would do that to every
+  // player at once, silently. Best effort beats deleting their rescue.
+  return repair(oldSave);
 }
