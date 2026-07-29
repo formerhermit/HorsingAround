@@ -1,6 +1,7 @@
 // render.js — turns gameState into DOM. No game logic lives here.
 
 import { horseFigureHTML, horseImageSrc, wellbeingLabel, wellbeingColor, isShinyCoat, isMagicalCoat, COAT_CATALOG } from './horse.js';
+import { escapeHtml } from './escape.js';
 import { rescuePrice, shareValue, shareCharge, SHARE_READY_AT, FRONT_ROW, getActiveWant, foalSizeFactor, foalGrowth, canKeep, keptCount, SANCTUARY_CAP } from './game.js';
 import { ACHIEVEMENTS, ACHIEVEMENT_GROUPS, isEarned } from './achievements.js';
 import { FACILITIES, hasFacility, nextFacility, canBuyFacility } from './facilities.js';
@@ -176,7 +177,7 @@ function residentAge(horse) {
 /** A resident's personality: a foal's stays a mystery until its reveal beat. */
 function residentPersonality(horse) {
   if (horse.foal && !horse.foalTraitRevealed) return 'still emerging';
-  return horse.trait ?? 'still settling in';
+  return escapeHtml(horse.trait ?? 'still settling in');
 }
 
 /** One resident's profile card: portrait, name, and a few facts. Built to grow
@@ -188,13 +189,13 @@ function residentKeepControl(horse, ctx) {
   if (isMagicalCoat(horse.paletteKey) || horse.foal) return '';
   if (horse.kept) {
     return `<div class="resident-keep">
-      <button class="resident-keep-btn is-kept" type="button" data-keep-toggle="off" data-horse-id="${horse.id}">🏡 Permanent resident</button>
+      <button class="resident-keep-btn is-kept" type="button" data-keep-toggle="off" data-horse-id="${escapeHtml(horse.id)}">🏡 Permanent resident</button>
     </div>`;
   }
   if (!ctx.canKeep) return ''; // sanctuary not built yet
   const full = ctx.keptCount >= ctx.cap;
   return `<div class="resident-keep">
-    <button class="resident-keep-btn" type="button" data-keep-toggle="on" data-horse-id="${horse.id}"${full ? ' disabled' : ''}>🏡 Keep forever</button>
+    <button class="resident-keep-btn" type="button" data-keep-toggle="on" data-horse-id="${escapeHtml(horse.id)}"${full ? ' disabled' : ''}>🏡 Keep forever</button>
     ${full ? `<span class="resident-keep-note">Sanctuary full (${ctx.cap})</span>` : ''}
   </div>`;
 }
@@ -212,7 +213,7 @@ function residentCardHTML(horse, ctx) {
 <figure class="resident-card${horse.kept ? ' is-kept' : ''}">
   <div class="resident-photo">${portrait}</div>
   <figcaption class="resident-info">
-    <p class="resident-name">${horse.name}${horse.sponsor ? ' <span class="resident-heart" title="Sponsored">💛</span>' : ''}</p>
+    <p class="resident-name">${escapeHtml(horse.name)}${horse.sponsor ? ' <span class="resident-heart" title="Sponsored">💛</span>' : ''}</p>
     <dl class="resident-facts">
       <div><dt>Breed</dt><dd>${residentBreed(horse)}</dd></div>
       <div><dt>Age</dt><dd>${residentAge(horse)}</dd></div>
@@ -279,8 +280,8 @@ function postcardHTML(pc) {
 <figure class="postcard">
   <div class="postcard-photo">${horseFigureHTML(horse, pc.wardrobe)}</div>
   <figcaption class="postcard-caption">
-    <p class="postcard-name">${pc.name}</p>
-    <p class="postcard-msg">${pc.message}</p>
+    <p class="postcard-name">${escapeHtml(pc.name)}</p>
+    <p class="postcard-msg">${escapeHtml(pc.message)}</p>
     <p class="postcard-date">${date}</p>
   </figcaption>
 </figure>`;
@@ -1220,10 +1221,10 @@ function horseCard(horse, scale = 1, isBack = false, wardrobe = [], seasonKey = 
   // class) so a sponsorship reveal never changes card height mid-game.
   card.innerHTML = `
     ${horseFigureHTML(horse, wardrobe, seasonKey)}
-    <p class="horse-name">${horse.name}</p>
+    <p class="horse-name">${escapeHtml(horse.name)}</p>
     <p class="horse-condition">${horse.foal ? foalConditionLabel(horse) : wellbeingLabel(horse.wellbeing)}</p>
-    <p class="horse-sponsor${horse.sponsor ? ' shown' : ''}">${horse.sponsor ? `sponsored by ${horse.sponsor} 💛` : ''}</p>
-    <div class="wellbeing" role="meter" aria-label="${horse.name}'s wellbeing"
+    <p class="horse-sponsor${horse.sponsor ? ' shown' : ''}">${horse.sponsor ? `sponsored by ${escapeHtml(horse.sponsor)} 💛` : ''}</p>
+    <div class="wellbeing" role="meter" aria-label="${escapeHtml(horse.name)}'s wellbeing"
          aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(horse.wellbeing)}">
       <div class="wellbeing-fill" style="width:${horse.wellbeing}%; background:${wellbeingColor(horse.wellbeing)}"></div>
     </div>`;

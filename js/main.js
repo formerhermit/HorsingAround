@@ -27,12 +27,16 @@ import {
   pushScore, joinBoard, fetchBoard, leaveBoard, fetchChampion, fetchMyChampionship,
 } from './leaderboard.js';
 import { initShare } from './share.js';
+import { escapeHtml } from './escape.js';
 import './audio.js';
 
 // Wrap a key figure (a count, a € amount, a supporter tally) so it renders bold
-// and green in a popup -- see the .fig rule and showDialog's innerHTML. Values
-// are always numbers/short strings authored in-code, so plain interpolation is safe.
-const fig = (v) => `<span class="fig">${v}</span>`;
+// and green in a popup -- see the .fig rule and showDialog's innerHTML. Most
+// values are numbers/short strings authored in-code, but some (a horse's name,
+// a leaderboard display name) trace back to gameState, which a crafted save or
+// a direct API write can fill with arbitrary text -- so this always escapes
+// before wrapping, rather than trusting the caller to know which case it is.
+const fig = (v) => `<span class="fig">${escapeHtml(v)}</span>`;
 
 // Visit index.html?reset to discard the save during development.
 const reset = new URLSearchParams(location.search).has('reset');
@@ -514,9 +518,10 @@ function showWelcomeBack(summary) {
   // herd eased down while you were gone, the same line invites the top-up.
   const horse = state.horses[Math.floor(Math.random() * state.horses.length)];
   const earnings = parts.length === 2 ? `${parts[0]} and ${parts[1]}` : parts[0];
+  const horseName = escapeHtml(horse.name);
   const missedYou = (summary.drifted ?? 0) > 0
-    ? `${horse.name} missed you, and the herd would love a little top-up of care 🐴`
-    : `${horse.name} missed you 🐴`;
+    ? `${horseName} missed you, and the herd would love a little top-up of care 🐴`
+    : `${horseName} missed you 🐴`;
   enqueueDialog({
     emoji: '💛',
     text: `Welcome back! While you were away (${formatAway(summary.awaySeconds)}), ${earnings}. ${missedYou}`,
@@ -656,11 +661,12 @@ function handleEvent(e) {
   if (e.type === 'rehome-offer') {
     // A home-raised horse (grew up here from a foal) gets a fonder send-off,
     // and a returned horse's second try gets its own hopeful note.
+    const horseName = escapeHtml(e.horseName);
     const text = e.returned
-      ? `${e.horseName} came back to you once, and now a lovely new family is ready. Agree to adoption for ${fig(`€${e.income}`)}?`
+      ? `${horseName} came back to you once, and now a lovely new family is ready. Agree to adoption for ${fig(`€${e.income}`)}?`
       : e.bornHere
-        ? `${e.horseName} was born and raised right here, and is ready for a home of their own. Agree to adoption for ${fig(`€${e.income}`)}?`
-        : `${e.horseName} is ready for rehoming. Agree to adoption for ${fig(`€${e.income}`)}?`;
+        ? `${horseName} was born and raised right here, and is ready for a home of their own. Agree to adoption for ${fig(`€${e.income}`)}?`
+        : `${horseName} is ready for rehoming. Agree to adoption for ${fig(`€${e.income}`)}?`;
     enqueueDialog({
       emoji: '🏡',
       text,
@@ -823,7 +829,10 @@ function handleEvent(e) {
     renderAll(state);
     enqueueDialog({
       emoji: '', image: 'assets/events/returned.jpg', share: true,
-      text: `${fig(e.name)} is coming home for a while: ${e.reason}. So the stable is theirs again, remembered and loved, until the right new family comes along 💛`,
+      // e.reason is built from a plain-text template (game.js's RETURN_REASONS)
+      // with the horse's own name/adopter substituted in, so the whole string
+      // -- not just fig(e.name) -- needs escaping, not only the name.
+      text: `${fig(e.name)} is coming home for a while: ${escapeHtml(e.reason)}. So the stable is theirs again, remembered and loved, until the right new family comes along 💛`,
       buttons: [{ label: 'Welcome home 💛', variant: 'primary' }],
     });
   } else if (e.type === 'foal-grown') {
@@ -832,7 +841,7 @@ function handleEvent(e) {
     resetPaddockView();
     renderAll(state);
     const book = e.newForCollection ? ' 📖 A new coat for your collection!' : '';
-    const raised = e.damName ? `, raised alongside ${e.damName},` : '';
+    const raised = e.damName ? `, raised alongside ${escapeHtml(e.damName)},` : '';
     enqueueDialog({
       emoji: '🎉', confetti: true, share: true,
       text: `${fig(e.name)}${raised} has grown up into a fine horse, born and raised right here at the rescue. Ready now for a forever home of their own 💛${book}`,
@@ -1428,8 +1437,12 @@ async function renderLeaderboardPanel() {
   }
   if (champion) {
     championEl.hidden = false;
+    // champion.name is a leaderboard display_name: normally generated from a
+    // fixed word list, but nothing stops a direct API write (the anon key is
+    // public by design) from setting it to arbitrary text, so it's escaped
+    // like any other untrusted field before it reaches innerHTML.
     championEl.innerHTML =
-      `${ROSETTE_SVG} Reigning champion: <strong>${champion.name}</strong> · ${champion.rescues} rescues in ${prevMonthLabel()}`;
+      `${ROSETTE_SVG} Reigning champion: <strong>${escapeHtml(champion.name)}</strong> · ${champion.rescues} rescues in ${prevMonthLabel()}`;
   }
   if (rows.length === 0) {
     list.innerHTML = '<li class="lb-status">Nobody on the board yet this month.</li>';

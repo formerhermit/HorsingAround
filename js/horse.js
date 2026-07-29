@@ -6,6 +6,8 @@
 // up as it's cared for. Costumes are an SVG layer overlaid on top of the image
 // in the image's own 500x480 coordinate space (see costumeMarkup).
 
+import { escapeHtml } from './escape.js';
+
 // The common coats. Kept exported as PALETTE_KEYS so game.js can pick one
 // at random for an ordinary rescue. Donkeys share the horses' common pool.
 export const PALETTE_KEYS = ['bay', 'brown', 'grey', 'palomino', 'white', 'brown-donkey', 'grey-donkey'];
@@ -264,7 +266,7 @@ export function horseFigureHTML(horse, wardrobe = [], seasonKey = 'default') {
   return `
 <div class="horse-figure">
   <div class="horse-shadow"></div>
-  <img class="horse-img" src="${horseImageSrc(horse)}" alt="${horse.name} the horse" draggable="false">
+  <img class="horse-img" src="${horseImageSrc(horse)}" alt="${escapeHtml(horse.name)} the horse" draggable="false">
   <svg class="horse-costume" viewBox="0 0 ${FIGURE_W} ${FIGURE_H}" aria-hidden="true">${costumeMarkup(wardrobe, horse.paletteKey, seasonKey)}</svg>
 </div>`;
 }
