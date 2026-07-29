@@ -1,6 +1,12 @@
 /*
-  Run once in the Supabase SQL editor (SQL Editor -> New query) after
-  creating your project.
+  Run in the Supabase SQL editor (SQL Editor -> New query) after creating your
+  project, and again whenever this file gains something new.
+
+  The whole file is safe to re-run: every statement is guarded. Note that
+  Postgres has no CREATE POLICY IF NOT EXISTS, so each policy is preceded by a
+  DROP POLICY IF EXISTS instead. Without those, a re-run aborts on the first
+  policy with "42710: policy already exists" and everything after it is skipped,
+  which looks a lot like the whole file having run fine.
 
   Also enable anonymous sign-ins, which is a dashboard toggle, not SQL:
   Authentication -> Sign In / Providers -> Anonymous Sign-Ins -> on.
@@ -18,14 +24,17 @@ alter table public.saves enable row level security;
   Every playtester is an anonymous auth user; RLS scopes each row to its
   own owner so one player can never read or overwrite another's save.
 */
+drop policy if exists "read own save" on public.saves;
 create policy "read own save"
   on public.saves for select
   using (auth.uid() = user_id);
 
+drop policy if exists "insert own save" on public.saves;
 create policy "insert own save"
   on public.saves for insert
   with check (auth.uid() = user_id);
 
+drop policy if exists "update own save" on public.saves;
 create policy "update own save"
   on public.saves for update
   using (auth.uid() = user_id);
@@ -40,6 +49,7 @@ create policy "update own save"
   If your project predates this policy, run these two statements in the SQL
   editor to enable the delete button.
 */
+drop policy if exists "delete own save" on public.saves;
 create policy "delete own save"
   on public.saves for delete
   using (auth.uid() = user_id);
@@ -75,18 +85,22 @@ alter table public.leaderboard enable row level security;
 
 /* Publicly readable -- that's the point of a leaderboard -- but each player
    can only write their own rows. */
+drop policy if exists "board is public" on public.leaderboard;
 create policy "board is public"
   on public.leaderboard for select
   using (true);
 
+drop policy if exists "insert own entry" on public.leaderboard;
 create policy "insert own entry"
   on public.leaderboard for insert
   with check (auth.uid() = user_id);
 
+drop policy if exists "update own entry" on public.leaderboard;
 create policy "update own entry"
   on public.leaderboard for update
   using (auth.uid() = user_id);
 
+drop policy if exists "delete own entry" on public.leaderboard;
 create policy "delete own entry"
   on public.leaderboard for delete
   using (auth.uid() = user_id);
