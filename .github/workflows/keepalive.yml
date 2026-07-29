@@ -1,19 +1,36 @@
-name: Keep Supabase project awake
+name: Keep Supabase awake and record daily stats
 
 on:
   schedule:
-    # Every 3 days — comfortably inside Supabase's 7-day pause-on-inactivity
-    # window, with margin either side.
-    - cron: '0 6 */3 * *'
+    # Daily. Was every 3 days (only ever needed to stay inside Supabase's 7-day
+    # pause-on-inactivity window), but the stats snapshot below needs a run per
+    # day: a day this doesn't run is a day with no data point, and active-player
+    # counts can't be reconstructed after the fact. See docs/analytics.md.
+    - cron: '0 6 * * *'
   workflow_dispatch: {} # lets you trigger a manual run to test the setup
 
 jobs:
   ping:
     runs-on: ubuntu-latest
     steps:
+      # Deliberately first, and deliberately its own step: keeping the project
+      # from pausing is the critical job here, so it must not be able to fail
+      # just because the stats function is missing or broken.
       - name: Ping Supabase REST API
         run: |
           curl -sf "${{ secrets.SUPABASE_URL }}/rest/v1/saves?select=user_id&limit=1" \
             -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
             -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -o /dev/null
+
+      # Fails loudly if the function isn't deployed yet: silently recording no
+      # stats would look identical to nobody playing. Run the daily_stats block
+      # in supabase/schema.sql to set it up.
+      - name: Record daily player stats
+        run: |
+          curl -sf -X POST "${{ secrets.SUPABASE_URL }}/rest/v1/rpc/record_daily_stats" \
+            -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d '{}' \
             -o /dev/null

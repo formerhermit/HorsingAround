@@ -96,85 +96,51 @@ So "how many were active in the last 24 hours" works, but "how many were active 
 3rd August" cannot be reconstructed after the fact. A player active in August and
 again today only shows today.
 
-Fixing that needs a daily snapshot, which is the proposal below.
+Fixing that needs a daily snapshot, which is what the section below sets up.
 
 ---
 
-## Proposed: a daily snapshot (issue #161)
+## The daily snapshot (issue #161)
 
-Add a `daily_stats` table holding **two integers per day and nothing else**: no
-per-visitor rows, no identifiers, nothing to leak or disclose:
+**The SQL lives in `supabase/schema.sql`** (the `daily_stats` block at the end), so
+there's one copy rather than two that can drift. Run that block in the Supabase SQL
+editor to deploy it. What follows is why it looks the way it does.
 
-```sql
-create table if not exists public.daily_stats (
-  day date primary key,
-  new_players integer not null default 0,
-  active_24h integer not null default 0,
-  recorded_at timestamptz not null default now()
-);
+A `daily_stats` table holds **two integers per day and nothing else**: no per-visitor
+rows, no identifiers, nothing to leak or disclose.
 
-alter table public.daily_stats enable row level security;
--- Deliberately no policies: only the dashboard (service role) reads this.
--- The cron reaches it solely through the function below.
-```
+### Design notes
 
-The existing keep-alive workflow already pings Supabase on a schedule with the anon
-key. It cannot read `auth.users` or other players' saves, correctly so, which means
-the snapshot goes through a `security definer` function, exactly the pattern the
-save-code functions in `supabase/schema.sql` already use:
+- **`active_24h` is nullable.** Null means "not measured" (a day backfilled before the
+  job existed), which is a different thing from a measured zero.
+- **It snapshots the day that has just finished**, not the one in progress. The cron
+  runs early morning, so recording the current date would freeze a row holding only the
+  first few hours of a day that hasn't happened yet.
+- **`active_24h` is a rolling 24h window, not a calendar day.** A player here yesterday
+  *and* today has had their `updated_at` overwritten to today, so bucketing by date
+  would lose them. Running daily keeps the window close enough to read as "yesterday".
+- **`new_players` gets backfilled** for every day since launch, because
+  `auth.users.created_at` is never overwritten. `active_24h` stays null on those rows:
+  it was never measured and can't be recovered.
+- **The function is `security definer` and granted to `anon`**, so the cron can use the
+  publishable key the keep-alive already holds rather than needing a new service-role
+  secret. It takes no arguments, returns nothing, and no-ops if the day's row was
+  written in the last 12 hours, so a stranger calling it achieves nothing. That guard
+  also means a manual re-run inside the window is a no-op.
+- **Dates are bucketed explicitly in UTC** rather than relying on the session timezone,
+  so the series can't shift underneath us.
 
-```sql
-create or replace function public.record_daily_stats()
-returns void
-language plpgsql
-security definer
-set search_path = public, auth
-as $$
-declare
-  launch constant timestamptz := timestamptz '2026-07-29 00:00:00+00';
-begin
-  insert into public.daily_stats (day, new_players, active_24h, recorded_at)
-  select
-    current_date,
-    (select count(*) from auth.users u
-      where u.created_at >= launch and u.created_at::date = current_date),
-    (select count(*) from auth.users u join public.saves s on s.user_id = u.id
-      where u.created_at >= launch and s.updated_at > now() - interval '24 hours'),
-    now()
-  on conflict (day) do update
-    set new_players = excluded.new_players,
-        active_24h  = excluded.active_24h,
-        recorded_at = excluded.recorded_at;
-end;
-$$;
+### The cron
 
-grant execute on function public.record_daily_stats() to anon;
-```
+`.github/workflows/keepalive.yml` now runs **daily** rather than every 3 days: a day it
+doesn't run is a day with no data point, and unlike `new_players` the active count
+can't be recovered afterwards.
 
-Granting `anon` execute is safe: the function takes no arguments, returns nothing,
-reveals nothing to its caller, and upserts on `day`, so the worst a stranger can do is
-make today's row recompute to the same numbers.
-
-### Workflow change
-
-`.github/workflows/keepalive.yml` currently runs every 3 days and pings a URL. It needs
-to run **daily** (a day it doesn't run is a day with no data point) and call the RPC.
-The call doubles as the keep-alive ping, so it replaces the existing curl rather than
-adding to it:
-
-```yaml
-    - cron: '0 6 * * *'   # daily; also keeps Supabase awake
-```
-
-```yaml
-      - name: Record daily stats (also keeps Supabase awake)
-        run: |
-          curl -sf -X POST "${{ secrets.SUPABASE_URL }}/rest/v1/rpc/record_daily_stats" \
-            -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
-            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
-            -H "Content-Type: application/json" \
-            -o /dev/null
-```
+It keeps the keep-alive ping as its own step, **before** the stats call and separate
+from it. Stopping the project from pausing is the critical job, so it must not be able
+to fail just because the stats function is missing or broken. The stats step then fails
+loudly if the function isn't deployed, because silently recording nothing would look
+exactly like nobody playing.
 
 Note GitHub's scheduled runners can be delayed or skipped under load, so treat the
 series as "near-daily" rather than guaranteed.

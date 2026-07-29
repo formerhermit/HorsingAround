@@ -250,3 +250,109 @@ grant execute on function public.confirm_save_code(text) to authenticated;
   auth.uid() = user_id, so an anon request always sees zero rows.
 */
 grant select on public.saves to anon;
+
+/*
+  Daily player stats (issue #161). We report from data the game already stores
+  rather than adding a third-party analytics service, so the privacy notice's
+  "no ads, no tracking, no analytics" promise stays true and adblockers can't
+  undercount us. See docs/analytics.md for the reasoning and the queries.
+
+  This table holds two integers per day and nothing else: no per-visitor rows,
+  no identifiers, nothing that could identify anyone. It exists because
+  saves.updated_at is OVERWRITTEN on every visit -- so "active in the last 24
+  hours" can be read right now but can never be reconstructed for a past date.
+  new_players needs no snapshot (auth.users.created_at is never overwritten and
+  so stays queryable retroactively), but it's recorded here too so one table
+  answers the whole question.
+
+  Run this whole block in the SQL editor when deploying daily stats.
+*/
+create table if not exists public.daily_stats (
+  day date primary key,
+  new_players integer not null default 0,
+  -- Nullable on purpose: null means "not measured" (a backfilled day predating
+  -- the snapshot job), which is a different thing from a measured zero.
+  active_24h integer,
+  recorded_at timestamptz not null default now()
+);
+
+alter table public.daily_stats enable row level security;
+/*
+  Deliberately no policies: nothing reads this from the browser. The dashboard
+  (service role) bypasses RLS to read it, and the cron only ever reaches it
+  through the security-definer function below.
+*/
+
+/*
+  Snapshot one day's figures. Called by the GitHub Actions cron.
+
+  Records the day that has just FINISHED, not the one in progress: the cron runs
+  early each morning, so writing current_date would freeze a row holding only the
+  first few hours of a day that hasn't happened yet.
+
+  Dates are bucketed explicitly in UTC rather than relying on the session's
+  timezone, so the series doesn't shift if that ever differs.
+*/
+create or replace function public.record_daily_stats()
+returns void
+language plpgsql
+security definer
+set search_path = public, auth
+as $$
+declare
+  -- The day the game went out to ARCH. Anything before this is us testing, and
+  -- would distort the baseline. Keep in step with docs/analytics.md.
+  launch constant timestamptz := timestamptz '2026-07-29 00:00:00+00';
+  target constant date := ((now() at time zone 'UTC')::date - 1);
+begin
+  /*
+    The function is granted to anon (so the cron can use the same publishable
+    key the keep-alive ping already holds), which means a stranger could call
+    it. Once the day's row is fresh there's nothing to recompute, so bail out --
+    that takes the sting out of anyone hammering it. A manual re-run within the
+    window is a no-op for the same reason.
+  */
+  if exists (
+    select 1 from public.daily_stats
+    where day = target and recorded_at > now() - interval '12 hours'
+  ) then
+    return;
+  end if;
+
+  insert into public.daily_stats (day, new_players, active_24h, recorded_at)
+  select
+    target,
+    (select count(*) from auth.users u
+      where u.created_at >= launch
+        and (u.created_at at time zone 'UTC')::date = target),
+    /*
+      A rolling window ending now, not a calendar day: a player who was here
+      yesterday AND today has had their updated_at overwritten to today, so
+      bucketing by date would lose them. Running daily makes this window line up
+      with `target` closely enough to read as "yesterday".
+    */
+    (select count(*) from auth.users u
+      join public.saves s on s.user_id = u.id
+      where u.created_at >= launch
+        and s.updated_at > now() - interval '24 hours'),
+    now()
+  on conflict (day) do update
+    set new_players = excluded.new_players,
+        active_24h  = excluded.active_24h,
+        recorded_at = excluded.recorded_at;
+end;
+$$;
+
+grant execute on function public.record_daily_stats() to anon;
+
+/*
+  One-off backfill: new_players is recoverable for every day since launch,
+  because auth.users.created_at is never overwritten. active_24h is left null
+  on these rows -- it was never measured and cannot be recovered. Safe to re-run.
+*/
+insert into public.daily_stats (day, new_players, recorded_at)
+select (u.created_at at time zone 'UTC')::date, count(*), now()
+from auth.users u
+where u.created_at >= timestamptz '2026-07-29 00:00:00+00'
+group by 1
+on conflict (day) do update set new_players = excluded.new_players;
