@@ -184,6 +184,7 @@ js/achievements.js     the pride-only badge catalog and its earn checks
 js/facilities.js       the "grow the rescue" upgrade ladder and its effects
 js/shop.js             shop items and their rules
 js/horse.js            the horse illustration, drawn in code
+js/escape.js           makes text safe to put on the page
 js/render.js           turns the game state into what you see on screen
 js/main.js             starts it all up and handles your taps
 js/share.js            the "tell a friend" buttons
@@ -196,9 +197,12 @@ js/config.js           Supabase keys (safe to commit, protected by RLS)
 assets/                horse art and decor images
 audio/soundtrack.mp3   the music
 supabase/schema.sql    database setup: saves, leaderboard, save codes
+test/                  the test suite, and what it does and doesn't cover
 ```
 
 Your progress saves to your browser on its own. Cloud saving is optional. The game runs on browser storage alone, and only talks to Supabase if `js/config.js` has real keys in it.
+
+Run the tests with `npm test`. They also run automatically on every push, though they can't stop a broken change going live: the site deploys from `main` on its own. [test/README.md](test/README.md) explains why, and what it would take to change.
 
 ### Run it locally
 

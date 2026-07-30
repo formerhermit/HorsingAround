@@ -1,0 +1,30 @@
+name: Tests
+
+# Advisory only, by design. GitHub Pages builds this site straight from the
+# main branch with no workflow involved, so nothing here can block, delay or
+# corrupt a deploy: a red run tells you something broke, it does not stop it
+# reaching players. See test/README.md for why it is set up that way and what
+# it would take to change.
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch: {} # lets you trigger a manual run
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          # node --test has been stable since Node 20; pinning a major keeps
+          # runs reproducible rather than shifting under us.
+          node-version: '24'
+
+      # No install step on purpose. The suite uses Node's built-in test runner
+      # and the game has no runtime dependencies, so there is nothing to fetch:
+      # the run takes seconds and can't be broken by an npm registry outage.
+      - name: Run the test suite
+        run: npm test

@@ -33,6 +33,37 @@ Also skipped: `saveCode.js` and similar. It has been touched twice ever, and
 testing it would need module-mocking machinery more fragile than the code it
 guards. Low churn plus low blast radius does not earn a test.
 
+## They run on every push, but they do not gate the deploy
+
+`.github/workflows/test.yml` runs the suite on every push and pull request.
+
+**A red run cannot stop a broken change reaching players.** GitHub Pages builds
+this site straight from the `main` branch, with no workflow involved, so nothing
+in Actions has any say over the deploy. The run is a notification, not a gate.
+If it goes red on `main`, the broken code is already live and the fix is to push
+another commit, not to retry the build.
+
+That is a deliberate trade rather than an oversight. Making it a real gate would
+need one of:
+
+- **Branch protection with a required check**, which means every change goes via
+  a pull request. That is the honest option, and worth revisiting once the suite
+  has a track record of being reliably green.
+- **Actions-based Pages deploys**, which hands the deploy to a workflow that can
+  itself fail. More control, more moving parts, and the current deploy just
+  works.
+
+Neither is worth it yet for a project this size, but the reason to write it down
+is so nobody later assumes CI is protecting them when it is only informing them.
+
+## The suite never touches the database
+
+Worth knowing, because a test run that could reach production data would be a
+real hazard. It structurally cannot: the imports reach `state.js`, `game.js`,
+`escape.js` and their pure dependencies, none of which pull in `cloud.js` or
+`config.js`, and `localStorage` is faked in `helpers.mjs`. So the tests cannot
+disturb a player's save or the `daily_stats` figures, wherever they run.
+
 ## The rule these follow
 
 **Assert relationships and bounds, never tuned numbers.**
