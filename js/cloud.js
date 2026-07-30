@@ -117,10 +117,19 @@ export async function syncOnLoad(lastPlayedAt) {
       session = data.session;
     }
 
-    const { data: row } = await client
+    // Check the error, don't just take the data: supabase-js reports a failed
+    // query in `error` rather than throwing, so ignoring it makes a read that
+    // FAILED look identical to one that found nothing. Here that difference
+    // decides the reconciliation below -- "no cloud save" falls through to
+    // pushing this device's copy up, which on a transient blip would write a
+    // stale local save over the newer cloud one we never managed to read.
+    // That's the progress-going-backwards failure of issue #67, so a failed
+    // read has to abort the whole reconciliation rather than guess.
+    const { data: row, error } = await client
       .from('saves')
       .select('game_state, updated_at')
       .maybeSingle();
+    if (error) throw error;
 
     // A pristine local game (fresh default state: no care given, nothing
     // unlocked) never outranks an existing cloud save, whatever its
@@ -130,6 +139,7 @@ export async function syncOnLoad(lastPlayedAt) {
     const localPlayedAt = lastPlayedAt ?? gameState.savedAt;
     if (row && (pristineLocal || !localPlayedAt || new Date(row.updated_at) > new Date(localPlayedAt))) {
       adoptCloudState(row.game_state);
+      markSyncSettled(); // reconciliation decided: the cloud save wins
       return true;
     }
 
@@ -137,10 +147,17 @@ export async function syncOnLoad(lastPlayedAt) {
     await pushCloudSave(); // first sync, or local was genuinely newer
     return false;
   } catch (err) {
-    console.warn('Cloud sync failed, continuing locally:', err);
+    // Deliberately NOT settling here. Settling is what unlocks pushCloudSave,
+    // and this branch is reached when we could not read the cloud row -- so we
+    // have no idea whether local or cloud is newer. Letting saves flow would
+    // hand the 15-second autosave a licence to overwrite a cloud save we never
+    // saw, which is exactly the reconciliation this function exists to avoid.
+    //
+    // The cost of staying locked is small: play continues, localStorage still
+    // saves normally, and the next load reconciles properly. The cost of the
+    // alternative is a player's progress replaced by an older device's copy.
+    console.warn('Cloud sync failed, playing on locally (cloud saving paused until next load):', err);
     return false;
-  } finally {
-    markSyncSettled(); // however it went, ordinary saves may flow again
   }
 }
 
@@ -203,7 +220,15 @@ export async function deleteCloudData() {
     if (!session) return true;
     const { error } = await client.from('saves').delete().eq('user_id', session.user.id);
     if (error) throw error;
-    const { data: remaining } = await client.from('saves').select('user_id').maybeSingle();
+    // This read is the verification, so its own failure has to count as
+    // "could not confirm" rather than "confirmed empty". Without the error
+    // check, a failed read leaves `remaining` undefined, the check below
+    // passes vacuously, and we tell the player their data is gone on the
+    // strength of a request that never completed. That is the one claim in
+    // the privacy notice that must never be wrong.
+    const { data: remaining, error: checkError } = await client
+      .from('saves').select('user_id').maybeSingle();
+    if (checkError) throw checkError;
     if (remaining) throw new Error('save row still present after delete');
     // Leaderboard entries go too (all months). PGRST205 = the table doesn't
     // exist yet on this deployment, which just means there's nothing to delete.

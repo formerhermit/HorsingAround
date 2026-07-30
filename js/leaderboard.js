@@ -114,10 +114,14 @@ export async function pushScore() {
     // rescues than the local counter (a synced save can lag behind or have
     // regressed, see #67), adopt the higher number instead of writing the
     // score backwards.
-    const { data: mine } = await ctx.client.from('leaderboard')
+    // A failed read here is not "no row on the board": it means we don't know
+    // what the board holds, and writing anyway would skip the very protection
+    // these lines exist for. Bail instead and try again on the next rescue.
+    const { data: mine, error: readError } = await ctx.client.from('leaderboard')
       .select('rescues')
       .eq('user_id', ctx.session.user.id).eq('month', lb.month)
       .maybeSingle();
+    if (readError) throw readError;
     if (mine && mine.rescues > lb.rescues) lb.rescues = mine.rescues;
 
     const row = {

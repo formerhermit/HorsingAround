@@ -1115,7 +1115,11 @@ deleteBtn.addEventListener('click', async () => {
   if (!cloudGone) {
     deleteBtn.disabled = false;
     deleteArmedTimer = null;
-    deleteBtn.textContent = 'Couldn’t reach the cloud, nothing deleted. Try again?';
+    // Deliberately says "couldn't confirm" rather than "nothing deleted": the
+    // delete may well have gone through and only the check that follows it
+    // failed, in which case claiming nothing happened is its own wrong answer.
+    // Trying again finishes the job either way.
+    deleteBtn.textContent = 'Couldn’t confirm the deletion. Try again?';
     deleteBtn.classList.remove('is-armed');
     return;
   }
