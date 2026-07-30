@@ -9,7 +9,7 @@
 // never blocks on the board, and a player who never opts in sends nothing.
 
 import { gameState } from './state.js';
-import { isConfigured, getClient, getValidSession } from './cloud.js';
+import { isConfigured, getClient, getValidSession, requestTimeout } from './cloud.js';
 
 // Months follow ARCH's clock (Europe/Madrid), so the board rolls over at the
 // same moment for everyone, wherever they play.
@@ -120,7 +120,8 @@ export async function pushScore() {
     const { data: mine, error: readError } = await ctx.client.from('leaderboard')
       .select('rescues')
       .eq('user_id', ctx.session.user.id).eq('month', lb.month)
-      .maybeSingle();
+      .maybeSingle()
+      .abortSignal(requestTimeout());
     if (readError) throw readError;
     if (mine && mine.rescues > lb.rescues) lb.rescues = mine.rescues;
 
@@ -131,7 +132,7 @@ export async function pushScore() {
       rescues: lb.rescues,
       updated_at: new Date().toISOString(),
     };
-    const { error } = await ctx.client.from('leaderboard').upsert(row);
+    const { error } = await ctx.client.from('leaderboard').upsert(row).abortSignal(requestTimeout());
     if (error && error.code === '23505') {
       // Our name is held by a different identity this month (usually our own
       // save arriving on a new device via a save code or an old sync mishap).
@@ -139,7 +140,8 @@ export async function pushScore() {
       // unsticks instead of failing on every rescue for the rest of the month.
       for (let attempt = 0; attempt < 4; attempt++) {
         lb.name = attempt < 2 ? generateName() : `${generateName()} ${2 + Math.floor(Math.random() * 97)}`;
-        const retry = await ctx.client.from('leaderboard').upsert({ ...row, display_name: lb.name });
+        const retry = await ctx.client.from('leaderboard').upsert({ ...row, display_name: lb.name })
+          .abortSignal(requestTimeout());
         if (!retry.error) return;
         if (retry.error.code !== '23505') throw retry.error;
       }
@@ -164,7 +166,8 @@ export async function fetchChampion() {
       .eq('month', prevMonthKey())
       .order('rescues', { ascending: false })
       .order('updated_at', { ascending: true }) // ties: first to the score wins
-      .limit(1);
+      .limit(1)
+      .abortSignal(requestTimeout());
     if (error) throw error;
     return data?.[0] ? { name: data[0].display_name, rescues: data[0].rescues } : null;
   } catch (err) {
@@ -192,7 +195,7 @@ export async function joinBoard(name) {
       display_name: name,
       rescues: lb.rescues,
       updated_at: new Date().toISOString(),
-    });
+    }).abortSignal(requestTimeout());
     if (error) return error.code === '23505' ? 'taken' : 'error';
     lb.optedIn = true;
     lb.name = name;
@@ -215,7 +218,8 @@ export async function fetchBoard(limit = 20) {
       .eq('month', monthKey())
       .order('rescues', { ascending: false })
       .order('updated_at', { ascending: true }) // ties: first to the score wins
-      .limit(limit);
+      .limit(limit)
+      .abortSignal(requestTimeout());
     if (error) throw error;
     return data.map((row) => ({
       name: row.display_name,
@@ -240,7 +244,8 @@ export async function fetchMyChampionship() {
       .eq('month', prevMonthKey())
       .order('rescues', { ascending: false })
       .order('updated_at', { ascending: true }) // ties: first to the score wins
-      .limit(1);
+      .limit(1)
+      .abortSignal(requestTimeout());
     if (error) throw error;
     const top = data?.[0];
     return top && top.user_id === ctx.session.user.id
@@ -259,7 +264,8 @@ export async function leaveBoard() {
     const ctx = await getSession();
     if (!ctx) return false;
     const { error } = await ctx.client
-      .from('leaderboard').delete().eq('user_id', ctx.session.user.id);
+      .from('leaderboard').delete().eq('user_id', ctx.session.user.id)
+      .abortSignal(requestTimeout());
     if (error) throw error;
     const lb = gameState.leaderboard;
     lb.optedIn = false;

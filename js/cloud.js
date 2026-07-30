@@ -128,7 +128,8 @@ export async function syncOnLoad(lastPlayedAt) {
     const { data: row, error } = await client
       .from('saves')
       .select('game_state, updated_at')
-      .maybeSingle();
+      .maybeSingle()
+      .abortSignal(requestTimeout());
     if (error) throw error;
 
     // A pristine local game (fresh default state: no care given, nothing
@@ -179,7 +180,8 @@ export async function pullCloudSave() {
     const { data: row, error } = await client
       .from('saves')
       .select('game_state')
-      .maybeSingle();
+      .maybeSingle()
+      .abortSignal(requestTimeout());
     if (error) throw error;
     if (!row) return false;
     adoptCloudState(row.game_state);
@@ -218,7 +220,8 @@ export async function deleteCloudData() {
     const client = await getClient();
     const { data: { session } } = await client.auth.getSession();
     if (!session) return true;
-    const { error } = await client.from('saves').delete().eq('user_id', session.user.id);
+    const { error } = await client.from('saves').delete().eq('user_id', session.user.id)
+      .abortSignal(requestTimeout());
     if (error) throw error;
     // This read is the verification, so its own failure has to count as
     // "could not confirm" rather than "confirmed empty". Without the error
@@ -227,12 +230,14 @@ export async function deleteCloudData() {
     // strength of a request that never completed. That is the one claim in
     // the privacy notice that must never be wrong.
     const { data: remaining, error: checkError } = await client
-      .from('saves').select('user_id').maybeSingle();
+      .from('saves').select('user_id').maybeSingle()
+      .abortSignal(requestTimeout());
     if (checkError) throw checkError;
     if (remaining) throw new Error('save row still present after delete');
     // Leaderboard entries go too (all months). PGRST205 = the table doesn't
     // exist yet on this deployment, which just means there's nothing to delete.
-    const lbDel = await client.from('leaderboard').delete().eq('user_id', session.user.id);
+    const lbDel = await client.from('leaderboard').delete().eq('user_id', session.user.id)
+      .abortSignal(requestTimeout());
     if (lbDel.error && lbDel.error.code !== 'PGRST205') throw lbDel.error;
     await client.auth.signOut();
     return true;

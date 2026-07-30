@@ -9,7 +9,7 @@
 // This is a one-time transfer, not a sign-in: after redeeming, the two
 // devices are independent accounts again, same as any other pair of players.
 
-import { isConfigured, getClient, getValidSession } from './cloud.js';
+import { isConfigured, getClient, getValidSession, requestTimeout } from './cloud.js';
 
 /**
  * The session these calls run under, with a fresh-enough token.
@@ -45,7 +45,7 @@ export async function createSaveCode() {
   try {
     const ctx = await getSession();
     if (!ctx) return null;
-    const { data, error } = await ctx.client.rpc('create_save_code');
+    const { data, error } = await ctx.client.rpc('create_save_code').abortSignal(requestTimeout());
     if (error) throw error;
     return data;
   } catch (err) {
@@ -65,7 +65,8 @@ export async function previewSaveCode(code) {
   try {
     const ctx = await getSession();
     if (!ctx) return { ok: false, reason: 'error' };
-    const { data, error } = await ctx.client.rpc('preview_save_code', { input_code: code.trim().toUpperCase() });
+    const { data, error } = await ctx.client.rpc('preview_save_code', { input_code: code.trim().toUpperCase() })
+      .abortSignal(requestTimeout());
     if (error) return { ok: false, reason: isCodeError(error.message) ? 'invalid' : 'error' };
     return { ok: true, gameState: data };
   } catch (err) {
@@ -82,7 +83,8 @@ export async function confirmSaveCode(code) {
   try {
     const ctx = await getSession();
     if (!ctx) return 'error';
-    const { error } = await ctx.client.rpc('confirm_save_code', { input_code: code.trim().toUpperCase() });
+    const { error } = await ctx.client.rpc('confirm_save_code', { input_code: code.trim().toUpperCase() })
+      .abortSignal(requestTimeout());
     if (error) return isCodeError(error.message) ? 'invalid' : 'error';
     return 'ok';
   } catch (err) {
