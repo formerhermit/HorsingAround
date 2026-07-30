@@ -1,4 +1,10 @@
 {
+  "name": "horsing-around",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test test/*.test.mjs"
+  },
   "devDependencies": {
     "playwright": "^1.62.0"
   }
