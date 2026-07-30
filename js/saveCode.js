@@ -9,12 +9,33 @@
 // This is a one-time transfer, not a sign-in: after redeeming, the two
 // devices are independent accounts again, same as any other pair of players.
 
-import { isConfigured, getClient } from './cloud.js';
+import { isConfigured, getClient, getValidSession } from './cloud.js';
 
+/**
+ * The session these calls run under, with a fresh-enough token.
+ *
+ * A save code is minted and redeemed from a popup the player opens whenever
+ * they like, which is often on a tab that has been sitting open for hours or
+ * has just woken from sleep. Supabase's hourly token can easily be stale by
+ * then, and this used to send it as-is: the code lookup would fail with
+ * "couldn't reach the service", or worse, confirmSaveCode would fail *after*
+ * the player had committed, burning a one-time code. That's the same silent
+ * failure #66 fixed for the leaderboard, so this now shares its refresh
+ * (getValidSession in cloud.js).
+ *
+ * The existing-session check in front of it is deliberate: getValidSession
+ * mints a brand-new anonymous identity when there isn't one, which is right
+ * for an ordinary save but wrong here. A fresh identity has no save row, so
+ * minting a code against it would hand the player a code that resolves to an
+ * empty paddock on their other device. Better to report that we couldn't
+ * reach the service, which is the truth.
+ */
 async function getSession() {
   if (!isConfigured()) return null;
   const client = await getClient();
-  const { data: { session } } = await client.auth.getSession();
+  const { data: { session: existing } } = await client.auth.getSession();
+  if (!existing) return null;
+  const session = await getValidSession(client);
   return session ? { client, session } : null;
 }
 
