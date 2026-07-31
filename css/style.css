@@ -3138,6 +3138,25 @@ main {
   text-decoration-color: #d8c39a;
 }
 
+/* The copyright line sits on its own row, a shade quieter than the ARCH
+   credit above it, so a legal notice never reads as part of the charity's
+   own words. */
+.credit-legal {
+  display: block;
+  margin-top: 0.6rem;
+  font-size: 0.72rem;
+  color: #a89b86;
+}
+
+.credit-legal a {
+  color: inherit;
+  text-decoration-color: #cfc2a8;
+}
+
+.credit-legal a:hover {
+  color: #8a5f28;
+}
+
 .credit a:hover {
   color: #8a5f28;
 }

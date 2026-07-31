@@ -1,0 +1,43 @@
+Horsing Around
+Copyright (c) 2026 Joanna Hutchins-Joss (Silly Game Studio)
+
+WHAT THIS LICENCE COVERS
+------------------------
+
+The MIT licence below applies to the SOURCE CODE of this project: everything
+in js/, css/, scripts/, supabase/, test/, and index.html.
+
+It does NOT apply to the artwork, the audio, or the horses themselves. The
+following are all rights reserved, and are not licensed for reuse:
+
+  * everything in assets/ (horse art, decor, event images)
+  * everything in audio/ (including audio/soundtrack.mp3)
+  * Horsing-Around-Revamped.png, horsing-around-screenshot.png, share-card.png
+  * the names, personalities and written characterisation of the horses
+
+If you want to use any of that, ask.
+
+ARCH, the Andalucian Rescue Centre for Horses, is an independent charity. Its
+name and logo belong to ARCH and are used here with their blessing, not
+licensed onward by this file.
+
+MIT LICENCE (SOURCE CODE ONLY)
+------------------------------
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

@@ -235,3 +235,15 @@ Without a verified custom domain, Google's consent screen will show your raw Sup
 
 - Translations (Spanish)
 - Migrate to permanent hosting
+
+## Licence
+
+© 2026 Joanna Hutchins-Joss (Silly Game Studio).
+
+The **code** is MIT licensed. Take it, learn from it, build your own thing with it. If you make a fundraising game for a rescue near you, that's the best possible outcome.
+
+The **art and music** are not. Everything in `assets/` and `audio/`, the screenshots and share card, and the horses' names and personalities are all rights reserved. They're the part that makes this game feel like itself, and I'd rather they stayed here. If you want to use any of it, ask.
+
+[LICENSE](LICENSE) has the exact wording.
+
+ARCH is an independent charity. Its name and logo belong to ARCH, and nothing here licenses them onward.
