@@ -3140,10 +3140,11 @@ main {
 
 /* The copyright line sits on its own row, a shade quieter than the ARCH
    credit above it, so a legal notice never reads as part of the charity's
-   own words. */
+   own words. It's a <p> rather than a styled span on purpose: the line
+   break is structural, so a stale cached stylesheet can't glue the notice
+   onto the end of the charity credit. */
 .credit-legal {
-  display: block;
-  margin-top: 0.6rem;
+  margin: 0.6rem 0 0;
   font-size: 0.72rem;
   color: #a89b86;
 }
