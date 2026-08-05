@@ -2664,7 +2664,14 @@ main {
   margin: 0.7rem 0 1.2rem;
 }
 
-.nudge-dismiss {
+.nudge-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 0.6rem;
+}
+
+.nudge-dismiss,
+.nudge-action {
   font: inherit;
   font-weight: 700;
   font-size: 0.9rem;
@@ -2676,8 +2683,21 @@ main {
   cursor: pointer;
 }
 
-.nudge-dismiss:hover {
+.nudge-dismiss:hover,
+.nudge-action:hover {
   background: #9a7135;
+}
+
+/* Next to a primary action, the dismiss button becomes a quiet outline. */
+.nudge-dismiss.is-quiet {
+  color: #b0823f;
+  background: transparent;
+  border: 2px solid #d9c39a;
+  padding: calc(0.5rem - 2px) calc(1.5rem - 2px);
+}
+
+.nudge-dismiss.is-quiet:hover {
+  background: #f3ead9;
 }
 
 /* Click-through protection (render.js ARM_DELAY): for a beat after a popup
@@ -2686,18 +2706,21 @@ main {
    the same beat, so the delay reads as the card settling rather than as a
    broken button. */
 .nudge-overlay.is-arming .nudge-dismiss,
+.nudge-overlay.is-arming .nudge-action,
 .dialog-overlay.is-arming .dialog-btn {
   pointer-events: none;
   opacity: 0.45;
 }
 
 .nudge-dismiss,
+.nudge-action,
 .dialog-btn {
   transition: opacity 0.35s ease;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .nudge-dismiss,
+  .nudge-action,
   .dialog-btn {
     transition: none;
   }

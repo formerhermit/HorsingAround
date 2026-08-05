@@ -1402,13 +1402,22 @@ const NUDGE_ARROWS = {
 };
 
 /** Show the onboarding popup for `id`. Idempotent per id, so calling it every
- *  refresh keeps the one popup up without restarting its entrance animation. */
-export function showNudgePopup(id, { emoji, text, dir }) {
+ *  refresh keeps the one popup up without restarting its entrance animation.
+ *  Pass action: { label } for a primary button next to the dismiss one; the
+ *  caller owns its click handling (the #nudge-action listener in main.js). */
+export function showNudgePopup(id, { emoji, text, dir, action, dismissLabel }) {
   const overlay = document.getElementById('nudge-overlay');
   if (overlay.dataset.nudge === id && !overlay.hidden) return; // already up
   overlay.dataset.nudge = id;
   document.getElementById('nudge-emoji').textContent = emoji;
   document.getElementById('nudge-text').textContent = text;
+  const actionBtn = document.getElementById('nudge-action');
+  actionBtn.hidden = !action;
+  if (action) actionBtn.textContent = action.label;
+  const dismissBtn = document.getElementById('nudge-dismiss');
+  dismissBtn.textContent = dismissLabel ?? 'Got it!';
+  // Next to a primary action the dismiss button steps back to a quiet outline.
+  dismissBtn.classList.toggle('is-quiet', Boolean(action));
   const arrow = document.getElementById('nudge-arrow');
   arrow.setAttribute('class', `nudge-arrow nudge-arrow-${dir}`); // SVG className is read-only
   arrow.innerHTML = dir.startsWith('up') ? NUDGE_ARROWS.up : NUDGE_ARROWS.down;

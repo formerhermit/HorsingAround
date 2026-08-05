@@ -364,6 +364,16 @@ function nudgeConfig(id) {
   if (id === 'leaderboard') return {
     emoji: '🏆', dir: 'up-right',
     text: "Rescuers like you are on this month's Top rescuers board. It lives in the book up top, if you'd like to join in.",
+    dismissLabel: 'Not now',
+    action: {
+      label: 'Join in',
+      onClick: () => {
+        // renderLeaderboardPanel marks the nudge shown, so it won't re-fire.
+        hideNudgePopup();
+        showCollectionTab('leaderboard');
+        openCollection(state);
+      },
+    },
   };
   return {
     emoji: '🛍️', dir: 'up-right',
@@ -421,6 +431,14 @@ document.getElementById('nudge-dismiss').addEventListener('click', () => {
   if (id === 'left-behind') { state.milestones.leftBehindShown = true; leftBehindPending = false; save(); }
   if (id === 'leaderboard') { state.milestones.leaderboardNudgeShown = true; save(); }
   hideNudgePopup();
+});
+
+// The optional primary button (only the leaderboard nudge has one so far).
+// Same arming guard as the dismiss button above.
+document.getElementById('nudge-action').addEventListener('click', () => {
+  const overlay = document.getElementById('nudge-overlay');
+  if (overlay.classList.contains('is-arming')) return;
+  nudgeConfig(overlay.dataset.nudge).action?.onClick();
 });
 
 // Re-assert the onboarding nudge on load: a player who unlocked money but never
